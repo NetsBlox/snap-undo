@@ -1,17 +1,12 @@
-var logger = {
-    log: console.log,
-    debug: console.debug,
-    info: console.info,
-    warn: console.warn,
-    error: console.error
-};
+// If not the leader, send operations to the leader for approval
+// TODO
 
-function Collaborator() {
-    this.time = [];  // vector clock
+function SimpleCollaborator() {
+    this.lastSeen = 0;
+
     this.id = null;
     this.rank = null;
     this.isLeader = false;
-    this.actionCnt = 0;
     this.addedBlocks = {};
     this.removedBlocks = {};
     this.blockChildren = {};
@@ -25,7 +20,7 @@ function Collaborator() {
     this.initialize();
 };
 
-Collaborator.prototype.initialize = function() {
+SimpleCollaborator.prototype.initialize = function() {
     var url = 'ws://' + window.location.host,
         ws = new WebSocket(url),
         self = this;
@@ -48,8 +43,8 @@ Collaborator.prototype.initialize = function() {
             logger.info('assigned rank of', self.rank);
         } else if (msg.type === 'leader-appoint') {
             self.isLeader = true;
+            logger.info('Appointed leader!');
         } else {  // block action
-            // TODO
             self.onMessage(msg);
         }
         logger.debug('received msg:', msg);
@@ -59,9 +54,15 @@ Collaborator.prototype.initialize = function() {
     this.serializer = new SnapSerializer();
 };
 
-Collaborator.prototype.send = function(json) {
-    json.rank = this.rank;  // TODO: Add vector clock info
-    json.time = this.time;
+SimpleCollaborator.prototype.acceptEvent = function(msg) {
+    msg.id = msg.id || this.lastSeen + 1;
+    this.lastSeen = msg.id;
+    this.send(msg);
+    SimpleCollaborator.Events[msg.type].call(this, msg.args);
+};
+
+SimpleCollaborator.prototype.send = function(json) {
+    json.id = json.id || this.lastSeen + 1;
     json.args = Array.prototype.map.call(json.args, function(arg) {
         if (arg instanceof BlockMorph) {
             return {
@@ -77,12 +78,12 @@ Collaborator.prototype.send = function(json) {
     this._ws.send(JSON.stringify(json));
 };
 
-Collaborator.prototype.newId = function() {
-    return this.id + '_' + this.time[this.rank];
+SimpleCollaborator.prototype.newId = function() {
+    return 'item_' + this.lastSeen;
 };
 
 /* * * * * * * * * * * * Updating internal rep * * * * * * * * * * * */
-Collaborator.prototype._addBlock = function(id, owner, isLocal) {
+SimpleCollaborator.prototype._addBlock = function(id, owner, isLocal) {
     if (this.addedBlocks[id]) {
         // TODO: Check if the block has a position. If not, then we should set
         // it...
@@ -101,7 +102,7 @@ Collaborator.prototype._addBlock = function(id, owner, isLocal) {
     }
 };
 
-Collaborator.prototype._moveBlock = function(id, pId, connId) {
+SimpleCollaborator.prototype._moveBlock = function(id, pId, connId) {
     // TODO: Create the target region to snap to...
     // This is tricky since getting the target region is related to the position...
     // and we can't trust position...
@@ -147,48 +148,58 @@ Collaborator.prototype._moveBlock = function(id, pId, connId) {
     }
 };
 
-Collaborator.prototype._removeBlock = function(id) {
+SimpleCollaborator.prototype._removeBlock = function(id) {
     logger.log('<<< removeBlock', id);
     this.removedBlocks[id] = true;
     this.onBlockRemoved.apply(this, arguments);
 };
 
-Collaborator.prototype._setBlockPosition = function(id, x, y) {
+SimpleCollaborator.prototype._setBlockPosition = function(id, x, y) {
     logger.log('<<< setting position of ', id, 'to', x, ',', y);
-    // FIXME: make this commutative
     this.positionOf[id] = [x, y];
     this.onSetBlockPosition(id, x, y);
 };
 
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
-Collaborator.prototype.addBlock = function(block, owner) {
+SimpleCollaborator.prototype.addBlock = function(block, owner) {
     var position = block.position(),
-        args = Array.prototype.slice.call(arguments);
+        args = Array.prototype.slice.call(arguments),
+        msg;
 
     args.push(position);
     block.id = this.newId();
-    this.time[this.rank]++;
 
-    this._blocks[block.id] = block;
-    this._owners[owner.id] = owner;
-    this._addBlock(block.id, owner.id, true);
-
-    this.send({
+    msg = {
         type: '_addBlock',
         args: args
-    });
+    };
+
+    if (this.isLeader) {
+        this.acceptEvent(msg);
+    } else {
+        this.send(msg);
+    }
+
+    block.destroy();
 };
 
-Collaborator.prototype.setBlockPosition = function(block, x, y) {
-    logger.log('<<< setting position of ' + block.id + ' to', x, ',', y);
-    this._setBlockPosition(block.id, x, y);
-    this.send({
+SimpleCollaborator.prototype.setBlockPosition = function(block, x, y) {
+    var msg = {
         type: '_setBlockPosition',
         args: [block.id, x, y]
-    });
+    };
+
+    if (this.isLeader) {
+        this.acceptEvent(msg);
+    } else {
+        var oldPos = this.positionOf[block.id];
+        block.setPosition(new Point(oldPos[0], oldPos[1]));
+        this.send(msg);
+        // TODO: Move back to starting position in case it is not accepted
+    }
 };
 
-Collaborator.prototype.moveBlock = function(block, pId, target) {
+SimpleCollaborator.prototype.moveBlock = function(block, pId, target) {
     var connId = target.loc + '/' + target.type;
 
     // If the block doesn't exist, create it
@@ -217,23 +228,33 @@ Collaborator.prototype.moveBlock = function(block, pId, target) {
         this.setBlockPosition(parent, x, y);
     }
 
-    this._moveBlock(block.id, pId, connId);
-    this.send({
+    var msg = {
         type: '_moveBlock',
         args: [block.id, pId, connId]
-    });
+    };
+
+    if (this.isLeader) {
+        this.acceptEvent(msg);
+    } else {
+        this.send(msg);
+    }
 };
 
-Collaborator.prototype.removeBlock = function(blockId) {
-    this._removeBlock(blockId);
-    this.send({
+SimpleCollaborator.prototype.removeBlock = function(blockId) {
+    var msg = {
         type: '_removeBlock',
         args: arguments
-    });
+    };
+
+    if (this.isLeader) {
+        this.acceptEvent(msg);
+    } else {
+        this.send(msg);
+    }
 };
 
 /* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
-Collaborator.prototype.onBlockAdded = function(id, ownerId, isLocal) {
+SimpleCollaborator.prototype.onBlockAdded = function(id, ownerId, isLocal) {
     var block = this._blocks[id],
         owner = this._owners[ownerId],
         world = this.ide.parentThatIsA(WorldMorph),
@@ -251,7 +272,7 @@ Collaborator.prototype.onBlockAdded = function(id, ownerId, isLocal) {
     }
 };
 
-Collaborator.prototype.onBlockMoved = function(id, pId, connId) {
+SimpleCollaborator.prototype.onBlockMoved = function(id, pId, connId) {
     // Convert the pId, connId back to the target...
     var block = this._blocks[id],
         parent = this._blocks[pId],
@@ -273,28 +294,39 @@ Collaborator.prototype.onBlockMoved = function(id, pId, connId) {
     block.snap(target);
 };
 
-Collaborator.prototype.onBlockRemoved = function(id) {
+SimpleCollaborator.prototype.onBlockRemoved = function(id) {
     if (this._blocks[id]) {
         this._blocks[id].destroy();
     }
 };
 
-Collaborator.prototype.onSetBlockPosition = function(id, x, y) {
+SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
+    // Disconnect from previous...
+    // TODO
     this._blocks[id].setPosition(new Point(x, y));
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
-Collaborator.prototype.onMessage = function(msg) {
-    var method = msg.type;
+SimpleCollaborator.prototype.onMessage = function(msg) {
+    var method = msg.type,
+        accepted = true;
 
-    if (Collaborator.Events[method] && msg.rank !== this.rank) {
-        Collaborator.Events[method].call(this, msg.args);
-        this.time[msg.rank]++;
+    if (this.isLeader) {
+        // Verify that the lastSeen value is the same as the current
+        accepted = this.lastSeen === (msg.id - 1);
+        if (accepted) {
+            this.acceptEvent(msg);
+        }
+    } else {
+        if (SimpleCollaborator.Events[method]) {
+            SimpleCollaborator.Events[method].call(this, msg.args);
+            this.lastSeen = msg.id;
+        }
     }
 };
 
 // Remote message handlers
-Collaborator.Events = {
+SimpleCollaborator.Events = {
     _addBlock: function(args) {
         var block = SpriteMorph.prototype.blockForSelector(args[0].selector, true),
             ownerId = args[1].id,
@@ -306,22 +338,18 @@ Collaborator.Events = {
         this._blocks[block.id] = block;
 
         this._addBlock(block.id, ownerId);
+        this.positionOf[block.id] = [args[2].x, args[2].y];
         block.setPosition(new Point(args[2].x, args[2].y));
     },
 
     _setBlockPosition: function(args) {
         // TODO: Check if the block should be detached
         var blockId = args[0];
-        if (this.blockToParent[blockId]) {
-            logger.warn('setting block position of attached block!');
-            this._moveBlock(blockId, null);
-        }
         this._setBlockPosition.apply(this, args);
     },
 
     _moveBlock: function(args) {
         // If the block doesn't exist, create it
-        // TODO
         if (!this._blocks[args[0]]) {
             // FIXME: Set the position
             logger.error('Received move event for nonexistent block:', args[0]);
@@ -339,4 +367,4 @@ Collaborator.Events = {
     }
 };
 
-//SnapCollaborator = new Collaborator();
+SnapCollaborator = new SimpleCollaborator();
