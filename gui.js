@@ -214,6 +214,7 @@ IDE_Morph.prototype.init = function (isAutoFill) {
     this.cloudMsg = null;
     this.source = 'local';
     this.serializer = new SnapSerializer();
+    SnapCollaborator.ide = this;  // FIXME
 
     this.globalVariables = new VariableFrame();
     this.currentSprite = new SpriteMorph(this.globalVariables);
@@ -981,7 +982,7 @@ IDE_Morph.prototype.createPalette = function (forSearching) {
             myself.currentSprite.wearCostume(null);
             droppedMorph.destroy();
         } else {
-            droppedMorph.destroy();
+            SnapCollaborator.removeBlock(droppedMorph.id);
         }
     };
 
@@ -3207,6 +3208,8 @@ IDE_Morph.prototype.newProject = function () {
     Process.prototype.enableLiveCoding = false;
     this.setProjectName('');
     this.projectNotes = '';
+    this.collaborator = new Collaborator(this);
+    // FIXME
     this.createStage();
     this.add(this.stage);
     this.createCorral();

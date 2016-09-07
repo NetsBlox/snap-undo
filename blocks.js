@@ -2094,6 +2094,7 @@ function BlockMorph() {
 }
 
 BlockMorph.prototype.init = function (silently) {
+    this.id = null;
     this.selector = null; // name of method to be triggered
     this.blockSpec = ''; // formal description of label and arguments
     this.comment = null; // optional "sticky" comment morph
@@ -3299,6 +3300,7 @@ BlockMorph.prototype.fullCopy = function (forClone) {
         }
     }
     var ans = BlockMorph.uber.fullCopy.call(this);
+    ans.id = this.id;
     ans.removeHighlight();
     ans.isDraggable = true;
     if (this.instantiationSpec) {
@@ -3545,6 +3547,10 @@ BlockMorph.prototype.stackWidth = function () {
             function (comment) {return comment.right(); }
         )) || this.right();
     return Math.max(fb.right(), commentsRight) - fb.left();
+};
+
+BlockMorph.prototype.snapTarget = function () {
+    return null;
 };
 
 BlockMorph.prototype.snap = function () {
@@ -3798,9 +3804,12 @@ CommandBlockMorph.prototype.closestAttachTarget = function (newParent) {
     return answer;
 };
 
-CommandBlockMorph.prototype.snap = function () {
-    var target = this.closestAttachTarget(),
-        scripts = this.parentThatIsA(ScriptsMorph),
+CommandBlockMorph.prototype.snapTarget = function () {
+    return this.closestAttachTarget();
+};
+
+CommandBlockMorph.prototype.snap = function (target) {
+    var scripts = this.parentThatIsA(ScriptsMorph),
         next,
         offsetY,
         affected;
@@ -4499,11 +4508,14 @@ ReporterBlockMorph.prototype.init = function (isPredicate, silently) {
 
 // ReporterBlockMorph drag & drop:
 
-ReporterBlockMorph.prototype.snap = function (hand) {
+ReporterBlockMorph.prototype.snapTarget = function (hand) {
+    return this.parent.closestInput(this, hand);
+};
+
+ReporterBlockMorph.prototype.snap = function (target) {
     // passing the hand is optional (for when blocks are dragged & dropped)
     var scripts = this.parent,
-        nb,
-        target;
+        nb;
 
     this.cachedSlotSpec = null;
     if (!(scripts instanceof ScriptsMorph)) {
@@ -4513,7 +4525,6 @@ ReporterBlockMorph.prototype.snap = function (hand) {
     scripts.clearDropHistory();
     scripts.lastDroppedBlock = this;
 
-    target = scripts.closestInput(this, hand);
     if (target !== null) {
         scripts.lastReplacedInput = target;
         scripts.lastDropTarget = target.parent;
@@ -5751,9 +5762,35 @@ ScriptsMorph.prototype.wantsDropOf = function (aMorph) {
 };
 
 ScriptsMorph.prototype.reactToDropOf = function (droppedMorph, hand) {
+    var target,
+        connId;
+
     if (droppedMorph instanceof BlockMorph ||
             droppedMorph instanceof CommentMorph) {
-        droppedMorph.snap(hand);
+
+        target = droppedMorph.snapTarget(hand);
+        if (!droppedMorph.id) {  // addBlock
+            SnapCollaborator.addBlock(droppedMorph, this.owner);
+        } else if (target) {  // moveBlock
+            // Get the target info
+            if (droppedMorph instanceof CommandBlockMorph) {
+                // TODO: Switch the target.element & droppedMorph (if necessary)
+                SnapCollaborator.moveBlock(droppedMorph, target.element.id, target);
+            } else if (droppedMorph instanceof ReporterBlockMorph) {
+                // target is a block to replace...
+                connId = target.parent.children.indexOf(target);
+                SnapCollaborator.moveBlock(droppedMorph, target.parent.id, connId);
+            } else {  // CommentMorph
+                console.log('comment...');
+                SnapCollaborator.moveBlock(droppedMorph, target.id, null);
+            }
+        } else {  // change position
+            var position = droppedMorph.position(),
+                x = position.x,
+                y = position.y;
+
+            SnapCollaborator.setBlockPosition(droppedMorph, x, y);
+        }
     }
     this.adjustBounds();
 };
@@ -11757,10 +11794,13 @@ CommentMorph.prototype.prepareToBeGrabbed = function () {
     }
 };
 
-CommentMorph.prototype.snap = function (hand) {
+CommentMorph.prototype.snapTarget = function (hand) {
+    return this.parent.closestBlock(this, hand);
+};
+
+CommentMorph.prototype.snap = function (target) {
     // passing the hand is optional (for when blocks are dragged & dropped)
-    var scripts = this.parent,
-        target;
+    var scripts = this.parent;
 
     if (!(scripts instanceof ScriptsMorph)) {
         return null;
@@ -11768,7 +11808,6 @@ CommentMorph.prototype.snap = function (hand) {
 
     scripts.clearDropHistory();
     scripts.lastDroppedBlock = this;
-    target = scripts.closestBlock(this, hand);
 
     if (target !== null) {
         target.comment = this;
