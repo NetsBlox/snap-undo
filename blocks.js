@@ -7115,15 +7115,13 @@ InputSlotMorph.prototype.arrow = function () {
 };
 
 InputSlotMorph.prototype.accept = function () {
-    // TODO: Set the value back to the initial value before editing...
-    // TODO: Set the value using the SnapEditor
     var newValue = this.contents().text,
         field;
 
     if (this.parent.id) {
         field = this.parent.children.indexOf(this);
         SnapCollaborator.setField(this.parent.id, field, newValue);
-        this.setContents(this.lastValue);
+        this.setContents(this.lastValue);  // set to original value in case it fails
     } else {
         console.error('Cannot set field text: no parent found!');
         // FIXME
@@ -7163,11 +7161,16 @@ InputSlotMorph.prototype.setContents = function (aStringOrFloat) {
 
 // InputSlotMorph drop-down menu:
 
+InputSlotMorph.prototype.setDropDownValue = function (value) {
+    this.setContents(value);
+    this.accept();
+};
+
 InputSlotMorph.prototype.dropDownMenu = function (enableKeyboard) {
     var choices = this.choices,
         key,
         menu = new MenuMorph(
-            this.setContents,
+            this.setDropDownValue,
             null,
             this,
             this.fontSize
