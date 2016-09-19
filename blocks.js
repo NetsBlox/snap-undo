@@ -5770,29 +5770,57 @@ ScriptsMorph.prototype.reactToDropOf = function (droppedMorph, hand) {
 
         target = droppedMorph.snapTarget(hand);
         if (!droppedMorph.id) {  // addBlock
-            SnapCollaborator.addBlock(droppedMorph, this.owner);
-        } else if (target) {  // moveBlock
-            // Get the target info
-            if (droppedMorph instanceof CommandBlockMorph) {
-                // TODO: Switch the target.element & droppedMorph (if necessary)
-                SnapCollaborator.moveBlock(droppedMorph, target.element.id, target);
-            } else if (droppedMorph instanceof ReporterBlockMorph) {
-                // target is a block to replace...
-                connId = target.parent.children.indexOf(target);
-                SnapCollaborator.moveBlock(droppedMorph, target.parent.id, connId);
-            } else {  // CommentMorph
-                console.log('comment...');
-                SnapCollaborator.moveBlock(droppedMorph, target.id, null);
-            }
-        } else {  // change position
-            var position = droppedMorph.position(),
-                x = position.x,
-                y = position.y;
+            this.addBlock(droppedMorph);
 
-            SnapCollaborator.setBlockPosition(droppedMorph, x, y);
+        } else if (target) {  // moveBlock
+            this.moveBlock(droppedMorph, target);
+        } else {  // change position
+            this.setBlockPosition(droppedMorph);
         }
     }
     this.adjustBounds();
+};
+
+ScriptsMorph.prototype.addBlock = function (block, target) {
+    var position = block.position();
+
+    // Check if the block is simply placed at a given position or connected to another
+    if (target) {
+        console.error('Dropping block directly to a connection is not yet supported.');
+        // TODO:
+    } else {
+        SnapCollaborator.addBlock(block.selector, this.owner.id, position.x, position.y);
+    }
+
+    block.destroy();
+};
+
+ScriptsMorph.prototype.moveBlock = function (block, target) {
+    // Get the target info
+    // TODO: Come up w/ a good way to represent these things...
+    if (block instanceof CommandBlockMorph) {
+        // TODO: Switch the target.element & block (if necessary)
+        SnapCollaborator.moveBlock(block, target.element.id, target);
+    } else if (block instanceof ReporterBlockMorph) {
+        // target is a block to replace...
+        connId = target.parent.children.indexOf(target);
+        SnapCollaborator.moveBlock(block, target.parent.id, connId);
+    } else {  // CommentMorph
+        console.log('comment...');
+        SnapCollaborator.moveBlock(block, target.id, null);
+    }
+};
+
+ScriptsMorph.prototype.setBlockPosition = function (block) {
+    var position = block.position(),
+        oldPos = SnapCollaborator.positionOf[block.id];
+        x = position.x,
+        y = position.y;
+
+    // Move back to starting position in case it is not accepted
+    // TODO: Latency makes this look bad :(
+    block.setPosition(new Point(oldPos[0], oldPos[1]));
+    SnapCollaborator.setBlockPosition(block.id, x, y);
 };
 
 // ScriptsMorph events
@@ -7029,7 +7057,8 @@ InputSlotMorph.prototype.init = function (
     choiceDict,
     isReadOnly
 ) {
-    var contents = new StringMorph(''),
+    var myself = this,
+        contents = new StringMorph(''),
         arrow = new ArrowMorph(
             'down',
             0,
@@ -7085,6 +7114,22 @@ InputSlotMorph.prototype.arrow = function () {
     );
 };
 
+InputSlotMorph.prototype.accept = function () {
+    // TODO: Set the value back to the initial value before editing...
+    // TODO: Set the value using the SnapEditor
+    var newValue = this.contents().text,
+        field;
+
+    if (this.parent.id) {
+        field = this.parent.children.indexOf(this);
+        SnapCollaborator.setField(this.parent.id, field, newValue);
+        this.setContents(this.lastValue);
+    } else {
+        console.error('Cannot set field text: no parent found!');
+        // FIXME
+    }
+};
+
 InputSlotMorph.prototype.setContents = function (aStringOrFloat) {
     var cnts = this.contents(),
         dta = aStringOrFloat,
@@ -7113,6 +7158,7 @@ InputSlotMorph.prototype.setContents = function (aStringOrFloat) {
 
     // remember the constant, if any
     this.constant = isConstant ? aStringOrFloat : null;
+    this.lastValue = aStringOrFloat;
 };
 
 // InputSlotMorph drop-down menu:

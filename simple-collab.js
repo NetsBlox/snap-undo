@@ -11,9 +11,11 @@ function SimpleCollaborator() {
     this.removedBlocks = {};
     this.blockChildren = {};
     this.blockToParent = {};
+    this.fieldValues = {};
 
     // Helpers
     this._blocks = {};
+    this.spliceConnections = {'bottom/block': true};
     this._owners = {};
     this.positionOf = {};  // Last writer, highest rank wins
 
@@ -39,7 +41,6 @@ SimpleCollaborator.prototype.initialize = function() {
         if (msg.type === 'rank') {
             self.rank = msg.value;
             self.id = 'client_' + self.rank;
-            self.time[self.rank] = 0;
             logger.info('assigned rank of', self.rank);
         } else if (msg.type === 'leader-appoint') {
             self.isLeader = true;
@@ -58,23 +59,11 @@ SimpleCollaborator.prototype.acceptEvent = function(msg) {
     msg.id = msg.id || this.lastSeen + 1;
     this.lastSeen = msg.id;
     this.send(msg);
-    SimpleCollaborator.Events[msg.type].call(this, msg.args);
+    this[msg.type].apply(this, msg.args);
 };
 
 SimpleCollaborator.prototype.send = function(json) {
     json.id = json.id || this.lastSeen + 1;
-    json.args = Array.prototype.map.call(json.args, function(arg) {
-        if (arg instanceof BlockMorph) {
-            return {
-                isBlock: true,
-                id: arg.id,
-                selector: arg.selector
-            };
-        } else if (arg instanceof SpriteMorph) {
-            return {isSprite: true, id: arg.id};
-        }
-        return arg;
-    });
     this._ws.send(JSON.stringify(json));
 };
 
@@ -83,7 +72,19 @@ SimpleCollaborator.prototype.newId = function() {
 };
 
 /* * * * * * * * * * * * Updating internal rep * * * * * * * * * * * */
-SimpleCollaborator.prototype._addBlock = function(id, owner, isLocal) {
+SimpleCollaborator.prototype._setField = function(pId, connId, value) {
+    console.assert(!this.blockChildren[pId] || !this.blockChildren[pId][connId],'Connection occupied!');
+
+    if (!this.fieldValues[pId]) {
+        this.fieldValues[pId] = {};
+    }
+
+    this.fieldValues[pId][connId] = value;
+
+    this.onFieldSet(pId, connId, value);
+};
+
+SimpleCollaborator.prototype._addBlock = function(id, type, ownerId, x, y) {
     if (this.addedBlocks[id]) {
         // TODO: Check if the block has a position. If not, then we should set
         // it...
@@ -93,10 +94,14 @@ SimpleCollaborator.prototype._addBlock = function(id, owner, isLocal) {
     // Create the unique id
     logger.log('<<< adding block', id);
 
+    //if (isCommand) {
+        //this.commandBlocks[id] = true;
+    //}
+
     // Store in 2P Set (can only add once)
     this.addedBlocks[id] = id;
     if (!this.removedBlocks[id]) {
-        this.onBlockAdded(id, owner, isLocal);
+        this.onBlockAdded.apply(this, arguments);
     } else {
         delete this.removedBlocks[id];
     }
@@ -126,7 +131,8 @@ SimpleCollaborator.prototype._moveBlock = function(id, pId, connId) {
     }
 
     if (this.blockChildren[pId][connId]) {  // conflict!
-        // TODO: Check if concurrent. If so, place them in order of the rank
+        // If the block is a command, insert between
+        // TODO
         logger.log('CONFLICT!', pId, connId, 'is already occupied!');
     } else {  // create connection
         if (!pId) {  // disconnect
@@ -136,6 +142,7 @@ SimpleCollaborator.prototype._moveBlock = function(id, pId, connId) {
             if (oldParent) {
                 delete this.blockChildren[oldParent.id][oldParent.conn];
             }
+            this.onBlockDisconnected(id, oldParent.id, oldParent.conn);
         } else {
             this.blockChildren[pId][connId] = id;
             this.blockToParent[id] = {
@@ -157,18 +164,39 @@ SimpleCollaborator.prototype._removeBlock = function(id) {
 SimpleCollaborator.prototype._setBlockPosition = function(id, x, y) {
     logger.log('<<< setting position of ', id, 'to', x, ',', y);
     this.positionOf[id] = [x, y];
+
+    // Check if this is causing a disconnect
+    var parent = this.blockToParent[id];
+    if (parent) {
+        delete this.blockChildren[parent.id][parent.conn];
+        this.onBlockDisconnected(id, parent.id, parent.conn);
+    }
+
     this.onSetBlockPosition(id, x, y);
 };
 
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
-SimpleCollaborator.prototype.addBlock = function(block, owner) {
-    var position = block.position(),
-        args = Array.prototype.slice.call(arguments),
+SimpleCollaborator.prototype.setField = function(pId, connId, value) {
+    var args = Array.prototype.slice.apply(arguments),
         msg;
 
-    args.push(position);
-    block.id = this.newId();
+    msg = {
+        type: '_setField',
+        args: args
+    };
 
+    if (this.isLeader) {
+        this.acceptEvent(msg);
+    } else {
+        this.send(msg);
+    }
+};
+
+SimpleCollaborator.prototype.addBlock = function(/*blockType, ownerId, x, y*/) {
+    var args = Array.prototype.slice.apply(arguments),
+        msg;
+
+    args.unshift(this.newId());
     msg = {
         type: '_addBlock',
         args: args
@@ -179,23 +207,31 @@ SimpleCollaborator.prototype.addBlock = function(block, owner) {
     } else {
         this.send(msg);
     }
-
-    block.destroy();
 };
 
-SimpleCollaborator.prototype.setBlockPosition = function(block, x, y) {
+SimpleCollaborator.prototype.setBlockPosition = function(blockId, x, y) {
     var msg = {
         type: '_setBlockPosition',
-        args: [block.id, x, y]
+        args: [blockId, x, y]
     };
 
     if (this.isLeader) {
         this.acceptEvent(msg);
     } else {
-        var oldPos = this.positionOf[block.id];
-        block.setPosition(new Point(oldPos[0], oldPos[1]));
         this.send(msg);
-        // TODO: Move back to starting position in case it is not accepted
+    }
+};
+
+SimpleCollaborator.prototype.removeBlock = function(blockId) {
+    var msg = {
+        type: '_removeBlock',
+        args: [blockId]
+    };
+
+    if (this.isLeader) {
+        this.acceptEvent(msg);
+    } else {
+        this.send(msg);
     }
 };
 
@@ -210,6 +246,7 @@ SimpleCollaborator.prototype.moveBlock = function(block, pId, target) {
 
     // If connecting CommandBlockMorphs, make sure the blocks are in
     // the correct order
+    // TODO: Should probably move some of this to Snap itself
     if (target.loc === 'top') {  // switch!
         var parent = block,
             x,
@@ -225,7 +262,7 @@ SimpleCollaborator.prototype.moveBlock = function(block, pId, target) {
         bottom = block.top() + parent.corner - offsetY;
         y = bottom - parent.height();
         x = block.left();
-        this.setBlockPosition(parent, x, y);
+        this.setBlockPosition(parent.id, x, y);
     }
 
     var msg = {
@@ -240,36 +277,27 @@ SimpleCollaborator.prototype.moveBlock = function(block, pId, target) {
     }
 };
 
-SimpleCollaborator.prototype.removeBlock = function(blockId) {
-    var msg = {
-        type: '_removeBlock',
-        args: arguments
-    };
-
-    if (this.isLeader) {
-        this.acceptEvent(msg);
-    } else {
-        this.send(msg);
-    }
-};
-
 /* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
-SimpleCollaborator.prototype.onBlockAdded = function(id, ownerId, isLocal) {
-    var block = this._blocks[id],
+SimpleCollaborator.prototype.onBlockAdded = function(id, type, ownerId, x, y) {
+    var block = SpriteMorph.prototype.blockForSelector(type, true),
         owner = this._owners[ownerId],
         world = this.ide.parentThatIsA(WorldMorph),
         hand = world.hand;
 
-    if (!isLocal) {  // check if remote
-        owner.scripts.add(block);
-        //block.cachedFullImage = null;
-        //block.cachedFullBounds = null;
-        block.changed();
-        //block.removeShadow();
-        //block.justDropped(hand);
-        //block.snap(null);
-        //owner.scripts.adjustBounds();
+    block.isDraggable = true;
+    block.isTemplate = false;
+    block.id = id;
+    this._blocks[block.id] = block;
+
+    if (arguments.length === 5) {
+        this.positionOf[block.id] = [x, y];
+        block.setPosition(new Point(x, y));
+    } else {
+        // TODO: Connect to another block
     }
+
+    owner.scripts.add(block);
+    block.changed();
 };
 
 SimpleCollaborator.prototype.onBlockMoved = function(id, pId, connId) {
@@ -302,10 +330,33 @@ SimpleCollaborator.prototype.onBlockRemoved = function(id) {
 
 SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     // Disconnect from previous...
-    // TODO
+    var parentInfo = this.blockToParent[id],
+        parent;
+
+    if (parentInfo) {
+        parent = this._blocks[id]
+        parent
+    }
+
     this._blocks[id].setPosition(new Point(x, y));
+    this._blocks[id].snap(null);
 };
 
+SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
+    var block = this._blocks[id],
+        scripts = block.parentThatIsA(ScriptsMorph);
+
+    scripts.add(block);
+};
+
+SimpleCollaborator.prototype.onFieldSet = function(pId, connId, value) {
+    var parent = this._blocks[pId],
+        block = parent.children[connId];
+
+    console.assert(block instanceof InputSlotMorph,
+        'Unexpected block type: ' + block.constructor);
+    block.setContents(value);
+};
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
 SimpleCollaborator.prototype.onMessage = function(msg) {
     var method = msg.type,
@@ -318,8 +369,8 @@ SimpleCollaborator.prototype.onMessage = function(msg) {
             this.acceptEvent(msg);
         }
     } else {
-        if (SimpleCollaborator.Events[method]) {
-            SimpleCollaborator.Events[method].call(this, msg.args);
+        if (this[method]) {
+            this[method].apply(this, msg.args);
             this.lastSeen = msg.id;
         }
     }
@@ -328,18 +379,6 @@ SimpleCollaborator.prototype.onMessage = function(msg) {
 // Remote message handlers
 SimpleCollaborator.Events = {
     _addBlock: function(args) {
-        var block = SpriteMorph.prototype.blockForSelector(args[0].selector, true),
-            ownerId = args[1].id,
-            hand = this.ide.parentThatIsA(WorldMorph).hand;
-
-        block.isDraggable = true;
-        block.isTemplate = false;
-        block.id = args[0].id;
-        this._blocks[block.id] = block;
-
-        this._addBlock(block.id, ownerId);
-        this.positionOf[block.id] = [args[2].x, args[2].y];
-        block.setPosition(new Point(args[2].x, args[2].y));
     },
 
     _setBlockPosition: function(args) {
