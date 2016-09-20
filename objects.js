@@ -1755,6 +1755,10 @@ SpriteMorph.prototype.blockTemplates = function (category) {
         }
     }
 
+    function deleteVar(name) {
+        SnapCollaborator.deleteVariable(name, myself.id);
+    }
+
     if (cat === 'motion') {
 
         blocks.push(block('forward'));
@@ -2075,7 +2079,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
                 null,
                 function () {
                     var menu = new MenuMorph(
-                        myself.deleteVariable,
+                        deleteVar,
                         null,
                         myself
                     );
@@ -5792,6 +5796,10 @@ StageMorph.prototype.blockTemplates = function (category) {
         }
     }
 
+    function deleteVar(name) {
+        SnapCollaborator.deleteVariable(name, myself.id);
+    }
+
     if (cat === 'motion') {
 
         txt = new TextMorph(localize(
@@ -6056,7 +6064,7 @@ StageMorph.prototype.blockTemplates = function (category) {
                 null,
                 function () {
                     var menu = new MenuMorph(
-                        myself.deleteVariable,  // TODO: make this work...
+                        deleteVar,
                         null,
                         myself
                     );

@@ -360,6 +360,8 @@ SimpleCollaborator.prototype.onAddVariable = function(name, ownerId) {
 };
 
 SimpleCollaborator.prototype.onDeleteVariable = function(name, ownerId) {
+    var owner = this._owners[ownerId];
+    owner.deleteVariable(name)
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
