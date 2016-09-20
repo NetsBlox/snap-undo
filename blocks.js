@@ -5789,7 +5789,11 @@ ScriptsMorph.prototype.addBlock = function (block, target) {
         console.error('Dropping block directly to a connection is not yet supported.');
         // TODO:
     } else {
-        SnapCollaborator.addBlock(block.selector, this.owner.id, position.x, position.y);
+        var type = block.selector;
+        if (type === 'reportGetVar') {
+            type += '/' + block.blockSpec;
+        }
+        SnapCollaborator.addBlock(type, this.owner.id, position.x, position.y);
     }
 
     block.destroy();

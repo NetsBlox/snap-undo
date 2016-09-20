@@ -269,11 +269,26 @@ SimpleCollaborator.prototype.moveBlock = function(block, pId, target) {
 
 /* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
 SimpleCollaborator.prototype.onBlockAdded = function(id, type, ownerId, x, y) {
-    var block = SpriteMorph.prototype.blockForSelector(type, true),
+    var block,
         owner = this._owners[ownerId],
         world = this.ide.parentThatIsA(WorldMorph),
         hand = world.hand;
 
+    if (type.indexOf('reportGetVar') === 0) {
+        var name = type.split('/').slice(1).join('/');
+        block = new ReporterBlockMorph();
+        if (modules.objects !== undefined) {
+            block.color = SpriteMorph.prototype.blockColor.variables;
+            block.category = 'variables';
+        } else {
+            block.color = new Color(243, 118, 29);
+            block.category = null;
+        }
+        block.setSpec(name);
+        block.selector = 'reportGetVar';
+    } else {
+        block = SpriteMorph.prototype.blockForSelector(type, true);
+    }
     block.isDraggable = true;
     block.isTemplate = false;
     block.id = id;
