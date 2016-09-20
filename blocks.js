@@ -5796,11 +5796,14 @@ ScriptsMorph.prototype.addBlock = function (block, target) {
 };
 
 ScriptsMorph.prototype.moveBlock = function (block, target) {
+    var pId;
+
     // Get the target info
     // TODO: Come up w/ a good way to represent these things...
     if (block instanceof CommandBlockMorph) {
         // TODO: Switch the target.element & block (if necessary)
-        SnapCollaborator.moveBlock(block, target.element.id, target);
+        pId = target.element.id || target.element.parent.id;
+        SnapCollaborator.moveBlock(block, pId, target);
     } else if (block instanceof ReporterBlockMorph) {
         // target is a block to replace...
         connId = target.parent.children.indexOf(target);

@@ -1,6 +1,4 @@
 // If not the leader, send operations to the leader for approval
-// TODO
-
 function SimpleCollaborator() {
     this.lastSeen = 0;
 
@@ -126,7 +124,8 @@ SimpleCollaborator.prototype._moveBlock = function(id, pId, connId) {
     // The second case is a little trickier... I should represent it the same way...
     //   I need a good way to represent the connection areas... Spec?
     logger.log('<<< moveBlock', id, 'to', pId, 'at', connId);
-    if (pId && !this.blockChildren[pId]) {
+    console.assert(pId, 'No parent block defined!');
+    if (!this.blockChildren[pId]) {
         this.blockChildren[pId] = {};
     }
 
@@ -175,22 +174,39 @@ SimpleCollaborator.prototype._setBlockPosition = function(id, x, y) {
     this.onSetBlockPosition(id, x, y);
 };
 
-/* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
-SimpleCollaborator.prototype.setField = function(pId, connId, value) {
-    var args = Array.prototype.slice.apply(arguments),
-        msg;
-
-    msg = {
-        type: '_setField',
-        args: args
-    };
-
-    if (this.isLeader) {
-        this.acceptEvent(msg);
-    } else {
-        this.send(msg);
-    }
+// / / / / / / / / / / / Variables / / / / / / / / / / / //
+SimpleCollaborator.prototype._addVariable = function(name, ownerId) {
+    this.onAddVariable(name, ownerId);
 };
+
+SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
+    this.onDeleteVariable(name, ownerId);
+};
+
+/* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
+[
+    'addVariable',
+    'deleteVariable',
+    'setField',
+    'removeBlock',
+    'setBlockPosition'
+].forEach(function(method) {
+    SimpleCollaborator.prototype[method] = function() {
+        var args = Array.prototype.slice.apply(arguments),
+            msg;
+
+        msg = {
+            type: '_' + method,
+            args: args
+        };
+
+        if (this.isLeader) {
+            this.acceptEvent(msg);
+        } else {
+            this.send(msg);
+        }
+    };
+});
 
 SimpleCollaborator.prototype.addBlock = function(/*blockType, ownerId, x, y*/) {
     var args = Array.prototype.slice.apply(arguments),
@@ -200,32 +216,6 @@ SimpleCollaborator.prototype.addBlock = function(/*blockType, ownerId, x, y*/) {
     msg = {
         type: '_addBlock',
         args: args
-    };
-
-    if (this.isLeader) {
-        this.acceptEvent(msg);
-    } else {
-        this.send(msg);
-    }
-};
-
-SimpleCollaborator.prototype.setBlockPosition = function(blockId, x, y) {
-    var msg = {
-        type: '_setBlockPosition',
-        args: [blockId, x, y]
-    };
-
-    if (this.isLeader) {
-        this.acceptEvent(msg);
-    } else {
-        this.send(msg);
-    }
-};
-
-SimpleCollaborator.prototype.removeBlock = function(blockId) {
-    var msg = {
-        type: '_removeBlock',
-        args: [blockId]
     };
 
     if (this.isLeader) {
@@ -357,6 +347,21 @@ SimpleCollaborator.prototype.onFieldSet = function(pId, connId, value) {
         'Unexpected block type: ' + block.constructor);
     block.setContents(value);
 };
+
+SimpleCollaborator.prototype.onAddVariable = function(name, ownerId) {
+    // Get the sprite or the stage
+    var owner;
+    if (ownerId !== true) {
+        owner = this._owners[ownerId];
+    } else {
+        owner = this._owners[Object.keys(this._owners)[0]];
+    }
+    owner.addVariable(name, ownerId === true)
+};
+
+SimpleCollaborator.prototype.onDeleteVariable = function(name, ownerId) {
+};
+
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
 SimpleCollaborator.prototype.onMessage = function(msg) {
     var method = msg.type,

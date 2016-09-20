@@ -1744,7 +1744,8 @@ SpriteMorph.prototype.blockTemplates = function (category) {
                 myself.inform('that name is already in use');
             } else {
                 ide = myself.parentThatIsA(IDE_Morph);
-                myself.addVariable(pair[0], pair[1]);
+                SnapCollaborator.addVariable(pair[0], pair[1] || myself.id);
+                //myself.addVariable(pair[0], pair[1]);
                 if (!myself.showingVariableWatcher(pair[0])) {
                     myself.toggleVariableWatcher(pair[0], pair[1]);
                 }
@@ -5780,7 +5781,9 @@ StageMorph.prototype.blockTemplates = function (category) {
             if (myself.isVariableNameInUse(pair[0])) {
                 myself.inform('that name is already in use');
             } else {
-                myself.addVariable(pair[0], pair[1]);
+                // TODO: Change this to use the SnapCollaborator
+                SnapCollaborator.addVariable(pair[0], pair[1] || myself.id);
+                //myself.addVariable(pair[0], pair[1]);
                 myself.toggleVariableWatcher(pair[0], pair[1]);
                 myself.blocksCache[cat] = null;
                 myself.paletteCache[cat] = null;
@@ -6053,7 +6056,7 @@ StageMorph.prototype.blockTemplates = function (category) {
                 null,
                 function () {
                     var menu = new MenuMorph(
-                        myself.deleteVariable,
+                        myself.deleteVariable,  // TODO: make this work...
                         null,
                         myself
                     );
