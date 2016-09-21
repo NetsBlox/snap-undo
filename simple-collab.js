@@ -55,9 +55,9 @@ SimpleCollaborator.prototype.initialize = function() {
 
 SimpleCollaborator.prototype.acceptEvent = function(msg) {
     msg.id = msg.id || this.lastSeen + 1;
-    this.lastSeen = msg.id;
     this.send(msg);
     this[msg.type].apply(this, msg.args);
+    this.lastSeen = msg.id;
 };
 
 SimpleCollaborator.prototype.send = function(json) {
@@ -66,6 +66,7 @@ SimpleCollaborator.prototype.send = function(json) {
 };
 
 SimpleCollaborator.prototype.newId = function() {
+    // This is the same across devices since it uses the currently last seen value
     return 'item_' + this.lastSeen;
 };
 
@@ -205,6 +206,8 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
 [
     'setSelector',
+    'addListInput',
+    'removeListInput',
     'moveBlock',
     'addVariable',
     'deleteVariable',
@@ -214,10 +217,15 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 ].forEach(function(method) {
     SimpleCollaborator.prototype[method] = function() {
         var args = Array.prototype.slice.apply(arguments),
+            fnName = '_' + method,
             msg;
 
+        if (!this[fnName]) {
+            fnName = 'on' + method.substring(0,1).toUpperCase() + method.substring(1);
+        }
+
         msg = {
-            type: '_' + method,
+            type: fnName,
             args: args
         };
 
@@ -352,8 +360,7 @@ SimpleCollaborator.prototype.onBlockMoved = function(id, target) {
     }
 
     if (isNewBlock) {
-        block.id = this.newId();  // FIXME: make sure this is same id across devices...
-        console.log('assigned block id:', block.id);
+        block.id = this.newId();
         this._blocks[block.id] = block;
         scripts.add(block);
     }
@@ -363,21 +370,26 @@ SimpleCollaborator.prototype.onBlockMoved = function(id, target) {
 SimpleCollaborator.prototype.onBlockRemoved = function(id) {
     if (this._blocks[id]) {
         this._blocks[id].destroy();
+        delete this._blocks[id];
     }
 };
 
 SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     // Disconnect from previous...
-    var parentInfo = this.blockToParent[id],
-        parent;
+    var block = this._blocks[id],
+        scripts;
 
-    if (parentInfo) {
-        parent = this._blocks[id]
-        parent
+    console.assert(block, 'Block "' + id + '" does not exist! Cannot set position');
+
+    if (!(block.parent instanceof ScriptsMorph)) {
+        block.parent.revertToDefaultInput(block);
     }
 
-    this._blocks[id].setPosition(new Point(x, y));
-    this._blocks[id].snap(null);
+    block.setPosition(new Point(x, y));
+
+    scripts = block.parentThatIsA(ScriptsMorph);
+    scripts.add(block);
+    // TODO: Fix the block size and inputs of the parent
 };
 
 SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
@@ -385,6 +397,20 @@ SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
         scripts = block.parentThatIsA(ScriptsMorph);
 
     scripts.add(block);
+};
+
+SimpleCollaborator.prototype.onAddListInput = function(pId, id) {
+    var parent = this._blocks[pId],
+        block = parent.children[id];
+
+    block.addInput();
+};
+
+SimpleCollaborator.prototype.onRemoveListInput = function(pId, id) {
+    var parent = this._blocks[pId],
+        block = parent.children[id];
+
+    block.removeInput();
 };
 
 SimpleCollaborator.prototype.onFieldSet = function(pId, connId, value) {
@@ -430,8 +456,8 @@ SimpleCollaborator.prototype.onMessage = function(msg) {
         }
     } else {
         if (this[method]) {
-            this.lastSeen = msg.id;
             this[method].apply(this, msg.args);
+            this.lastSeen = msg.id;
         }
     }
 };

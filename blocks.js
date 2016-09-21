@@ -5842,7 +5842,9 @@ ScriptsMorph.prototype.setBlockPosition = function (block) {
 
     // Move back to starting position in case it is not accepted
     // TODO: Latency makes this look bad :(
-    block.setPosition(new Point(oldPos[0], oldPos[1]));
+    if (oldPos) {
+        block.setPosition(new Point(oldPos[0], oldPos[1]));
+    }
     SnapCollaborator.setBlockPosition(block.id, x, y);
 };
 
@@ -10491,13 +10493,13 @@ MultiArgMorph.prototype.mouseClickLeft = function (pos) {
     if (rightArrow.bounds.containsPoint(pos)) {
         for (i = 0; i < repetition; i += 1) {
             if (rightArrow.isVisible) {
-                this.addInput();
+                SnapCollaborator.addListInput(this.parent.id, this.parent.children.indexOf(this));
             }
         }
     } else if (leftArrow.bounds.containsPoint(pos)) {
         for (i = 0; i < repetition; i += 1) {
             if (leftArrow.isVisible) {
-                this.removeInput();
+                SnapCollaborator.removeListInput(this.parent.id, this.parent.children.indexOf(this));
             }
         }
     } else {
