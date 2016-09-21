@@ -2333,7 +2333,7 @@ BlockMorph.prototype.userMenu = function () {
             function () {
                 new DialogBoxMorph(
                     myself,
-                    myself.setSpec,
+                    myself.setSpec,  // FIXME: this doesn't redraw appropriately
                     myself
                 ).prompt(
                     "Variable name",
@@ -2368,6 +2368,7 @@ BlockMorph.prototype.userMenu = function () {
         function () {
             var dup = myself.fullCopy(),
                 ide = myself.parentThatIsA(IDE_Morph);
+            dup.id = null;
             dup.pickUp(world);
             if (ide) {
                 world.hand.grabOrigin = {
@@ -2399,7 +2400,7 @@ BlockMorph.prototype.userMenu = function () {
     }
     menu.addItem(
         "delete",
-        'userDestroy'
+        'userDestroy'  // FIXME: Send this through the collaborator
     );
     menu.addItem(
         "script pic...",
@@ -2463,7 +2464,7 @@ BlockMorph.prototype.userMenu = function () {
 BlockMorph.prototype.developersMenu = function () {
     var menu = BlockMorph.uber.developersMenu.call(this);
     menu.addLine();
-    menu.addItem("delete block", 'deleteBlock');
+    menu.addItem("delete block", 'deleteBlock');  // TODO: Send this through collaborator
     menu.addItem("spec...", function () {
 
         new DialogBoxMorph(
@@ -2625,7 +2626,7 @@ BlockMorph.prototype.relabel = function (alternativeSelectors) {
         menu.addItem(
             block,
             function () {
-                myself.setSelector(sel);
+                SnapCollaborator.setSelector(myself.id, sel);
             }
         );
     });
@@ -11794,11 +11795,14 @@ CommentMorph.prototype.userMenu = function () {
     menu.addItem(
         "duplicate",
         function () {
-            myself.fullCopy().pickUp(myself.world());
+            // FIXME: Create a new one
+            var copy = myself.fullCopy();
+            copy.id = null;
+            copy.pickUp(myself.world());
         },
         'make a copy\nand pick it up'
     );
-    menu.addItem("delete", 'destroy');
+    menu.addItem("delete", 'destroy');  // TODO: Send this through collaborator
     menu.addItem(
         "comment pic...",
         function () {

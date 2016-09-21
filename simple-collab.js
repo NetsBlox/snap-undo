@@ -174,6 +174,10 @@ SimpleCollaborator.prototype._setBlockPosition = function(id, x, y) {
     this.onSetBlockPosition(id, x, y);
 };
 
+SimpleCollaborator.prototype._setSelector = function(id, selector) {
+    this.onSetSelector(id, selector);
+};
+
 // / / / / / / / / / / / Variables / / / / / / / / / / / //
 SimpleCollaborator.prototype._addVariable = function(name, ownerId) {
     this.onAddVariable(name, ownerId);
@@ -185,6 +189,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
 [
+    'setSelector',
     'addVariable',
     'deleteVariable',
     'setField',
@@ -361,6 +366,11 @@ SimpleCollaborator.prototype.onFieldSet = function(pId, connId, value) {
     console.assert(block instanceof InputSlotMorph,
         'Unexpected block type: ' + block.constructor);
     block.setContents(value);
+};
+
+SimpleCollaborator.prototype.onSetSelector = function(id, sel) {
+    var block = this._blocks[id];
+    block.setSelector(sel);
 };
 
 SimpleCollaborator.prototype.onAddVariable = function(name, ownerId) {
