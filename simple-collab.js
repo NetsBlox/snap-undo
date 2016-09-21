@@ -92,10 +92,6 @@ SimpleCollaborator.prototype._addBlock = function(id, type, ownerId, x, y) {
     // Create the unique id
     logger.log('<<< adding block', id);
 
-    //if (isCommand) {
-        //this.commandBlocks[id] = true;
-    //}
-
     // Store in 2P Set (can only add once)
     this.addedBlocks[id] = id;
     if (!this.removedBlocks[id]) {
@@ -105,7 +101,7 @@ SimpleCollaborator.prototype._addBlock = function(id, type, ownerId, x, y) {
     }
 };
 
-SimpleCollaborator.prototype._moveBlock = function(id, pId, connId) {
+SimpleCollaborator.prototype._moveBlock = function(id, target) {
     // TODO: Create the target region to snap to...
     // This is tricky since getting the target region is related to the position...
     // and we can't trust position...
@@ -123,35 +119,36 @@ SimpleCollaborator.prototype._moveBlock = function(id, pId, connId) {
     // I could merge loc, type into a single connection id for the CBM...
     // The second case is a little trickier... I should represent it the same way...
     //   I need a good way to represent the connection areas... Spec?
-    logger.log('<<< moveBlock', id, 'to', pId, 'at', connId);
-    console.assert(pId, 'No parent block defined!');
-    if (!this.blockChildren[pId]) {
-        this.blockChildren[pId] = {};
-    }
+    logger.log('<<< moveBlock', id, 'to', target);
+    //console.assert(pId, 'No parent block defined!');
+    //if (!this.blockChildren[pId]) {
+        //this.blockChildren[pId] = {};
+    //}
 
-    if (this.blockChildren[pId][connId]) {  // conflict!
-        // If the block is a command, insert between
-        // TODO
-        logger.log('CONFLICT!', pId, connId, 'is already occupied!');
-    } else {  // create connection
-        if (!pId) {  // disconnect
-            var oldParent = this.blockToParent[id] || null;
+    //if (this.blockChildren[pId][connId]) {  // conflict!
+        //// If the block is a command, insert between
+        //// TODO
+        //logger.log('CONFLICT!', pId, connId, 'is already occupied!');
+    //} else {  // create connection
+        //if (!pId) {  // disconnect
+            //var oldParent = this.blockToParent[id] || null;
 
-            delete this.blockToParent[id];
-            if (oldParent) {
-                delete this.blockChildren[oldParent.id][oldParent.conn];
-            }
-            this.onBlockDisconnected(id, oldParent.id, oldParent.conn);
-        } else {
-            this.blockChildren[pId][connId] = id;
-            this.blockToParent[id] = {
-                id: pId,
-                conn: connId
-            };
-        }
-        this.onBlockMoved(id, pId, connId);
-        // TODO: Update records appropriately if inserting node between others...
-    }
+            //delete this.blockToParent[id];
+            //if (oldParent) {
+                //delete this.blockChildren[oldParent.id][oldParent.conn];
+            //}
+            //this.onBlockDisconnected(id, oldParent.id, oldParent.conn);
+        //} else {
+            //this.blockChildren[pId][connId] = id;
+            //this.blockToParent[id] = {
+                //id: pId,
+                //conn: connId
+            //};
+        //}
+        //this.onBlockMoved(id, pId, connId);
+        //// TODO: Update records appropriately if inserting node between others...
+    //}
+    this.onBlockMoved(id, target);
 };
 
 SimpleCollaborator.prototype._removeBlock = function(id) {
@@ -190,6 +187,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
 [
     'setSelector',
+    'moveBlock',
     'addVariable',
     'deleteVariable',
     'setField',
@@ -230,47 +228,51 @@ SimpleCollaborator.prototype.addBlock = function(/*blockType, ownerId, x, y*/) {
     }
 };
 
-SimpleCollaborator.prototype.moveBlock = function(block, pId, target) {
-    var connId = target.loc + '/' + target.type;
+//SimpleCollaborator.prototype.moveBlock = function(block, target) {
+    ////var connId = target.loc + '/' + target.type;
 
-    // If the block doesn't exist, create it
-    if (!this._blocks[block.id]) {
-        var scripts = block.parentThatIsA(ScriptsMorph);
-        this.addBlock(block, scripts.parent);
-    }
+    //// If the block doesn't exist, create it
+    ////if (!this._blocks[block.id]) {
+        ////var scripts = block.parentThatIsA(ScriptsMorph);
+        ////this.addBlock(block, scripts.parent);
+    ////}
 
-    // If connecting CommandBlockMorphs, make sure the blocks are in
-    // the correct order
-    // TODO: Should probably move some of this to Snap itself
-    if (target.loc === 'top') {  // switch!
-        var parent = block,
-            x,
-            y;
+    //// If connecting CommandBlockMorphs, make sure the blocks are in
+    //// the correct order
+    //// TODO: Should probably move some of this to Snap itself
+    ////if (target.loc === 'top') {  // switch!
+        ////var parent = block,
+            ////x,
+            ////y;
 
-        logger.info('Switching parent and block...');
-        connId = 'top';
-        block = this._blocks[pId];
-        pId = parent.id;
+        ////logger.info('Switching parent and block...');
+        ////connId = 'top';
+        ////block = this._blocks[pId];
+        ////pId = parent.id;
 
-        // Correct the position
-        offsetY = parent.bottomBlock().bottom() - parent.bottom();
-        bottom = block.top() + parent.corner - offsetY;
-        y = bottom - parent.height();
-        x = block.left();
-        this.setBlockPosition(parent.id, x, y);
-    }
+        ////// Correct the position
+        ////offsetY = parent.bottomBlock().bottom() - parent.bottom();
+        ////bottom = block.top() + parent.corner - offsetY;
+        ////y = bottom - parent.height();
+        ////x = block.left();
+        ////this.setBlockPosition(parent.id, x, y);
+    ////}
 
-    var msg = {
-        type: '_moveBlock',
-        args: [block.id, pId, connId]
-    };
+    //// What if I just serialize the target in a nice way? Then I can send it and replay
+    //// it easily - shouldn't need to do anything extra...
+    //// TODO
 
-    if (this.isLeader) {
-        this.acceptEvent(msg);
-    } else {
-        this.send(msg);
-    }
-};
+    //var msg = {
+        //type: '_moveBlock',
+        //args: [block.id, pId, connId]
+    //};
+
+    //if (this.isLeader) {
+        //this.acceptEvent(msg);
+    //} else {
+        //this.send(msg);
+    //}
+//};
 
 /* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
 SimpleCollaborator.prototype.onBlockAdded = function(id, type, ownerId, x, y) {
@@ -279,6 +281,7 @@ SimpleCollaborator.prototype.onBlockAdded = function(id, type, ownerId, x, y) {
         world = this.ide.parentThatIsA(WorldMorph),
         hand = world.hand;
 
+    // TODO: Should I serialize blocks rather than just storing the 'type'?
     if (type.indexOf('reportGetVar') === 0) {
         var name = type.split('/').slice(1).join('/');
         block = new ReporterBlockMorph();
@@ -310,21 +313,19 @@ SimpleCollaborator.prototype.onBlockAdded = function(id, type, ownerId, x, y) {
     block.changed();
 };
 
-SimpleCollaborator.prototype.onBlockMoved = function(id, pId, connId) {
+SimpleCollaborator.prototype.onBlockMoved = function(id, target) {
     // Convert the pId, connId back to the target...
-    var block = this._blocks[id],
-        parent = this._blocks[pId],
-        target = null;
+    var block = this._blocks[id];
+        //parent = this._blocks[pId];
 
-    if (!pId) {
-        target = null;
-    } else if (block instanceof CommandBlockMorph) {
-        target = {};
-        target.loc = connId.split('/')[0];
-        target.type = connId.split('/')[1];
-        target.element = parent;
+    if (block instanceof CommandBlockMorph) {
+        if (typeof target.element === 'string') {
+            target.element = this._blocks[target.element];
+        } else {
+            target.element = this._blocks[target.element.pId].children[target.element.id];
+        }
     } else if (block instanceof ReporterBlockMorph) {  // target should be the input to replace
-        target = parent.children[connId];
+        target = this._blocks[target.pId].children[target.id];
     } else {
         logger.error('Unsupported "onBlockMoved":', block);
     }
@@ -405,36 +406,6 @@ SimpleCollaborator.prototype.onMessage = function(msg) {
             this[method].apply(this, msg.args);
             this.lastSeen = msg.id;
         }
-    }
-};
-
-// Remote message handlers
-SimpleCollaborator.Events = {
-    _addBlock: function(args) {
-    },
-
-    _setBlockPosition: function(args) {
-        // TODO: Check if the block should be detached
-        var blockId = args[0];
-        this._setBlockPosition.apply(this, args);
-    },
-
-    _moveBlock: function(args) {
-        // If the block doesn't exist, create it
-        if (!this._blocks[args[0]]) {
-            // FIXME: Set the position
-            logger.error('Received move event for nonexistent block:', args[0]);
-        } else if (!this._blocks[args[1]]) {
-            // FIXME
-            logger.error('Received move event for nonexistent block:', args[1]);
-        }
-
-        this._moveBlock.apply(this, args);
-    },
-
-    _removeBlock: function(args) {
-        var id = args[0];
-        this._removeBlock(id);
     }
 };
 

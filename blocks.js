@@ -5800,22 +5800,32 @@ ScriptsMorph.prototype.addBlock = function (block, target) {
     block.destroy();
 };
 
-ScriptsMorph.prototype.moveBlock = function (block, target) {
-    var pId;
+ScriptsMorph.prototype._getAnonElementId = function (target) {
+    return {
+        id: target.parent.children.indexOf(target),
+        pId: target.parent.id
+    };
+};
 
+ScriptsMorph.prototype.moveBlock = function (block, target) {
     // Get the target info
     // TODO: Come up w/ a good way to represent these things...
+    console.assert(block.id, 'Cannot move block that doesn\'t yet exist!');
     if (block instanceof CommandBlockMorph) {
         // TODO: Switch the target.element & block (if necessary)
-        pId = target.element.id || target.element.parent.id;
-        SnapCollaborator.moveBlock(block, pId, target);
+        if (!target.element.id) {
+            target.element = this._getAnonElementId(target.element);
+        } else {
+            target.element = target.element.id;
+        }
+        SnapCollaborator.moveBlock(block.id, target);
     } else if (block instanceof ReporterBlockMorph) {
         // target is a block to replace...
-        connId = target.parent.children.indexOf(target);
-        SnapCollaborator.moveBlock(block, target.parent.id, connId);
+        target = this._getAnonElementId(target);
+        SnapCollaborator.moveBlock(block.id, target);
     } else {  // CommentMorph
         console.log('comment...');
-        SnapCollaborator.moveBlock(block, target.id, null);
+        SnapCollaborator.moveBlock(block.id, target.id);
     }
 };
 
