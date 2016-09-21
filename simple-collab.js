@@ -69,6 +69,24 @@ SimpleCollaborator.prototype.newId = function() {
     return 'item_' + this.lastSeen;
 };
 
+SimpleCollaborator.prototype.serializeBlock = function(block) {
+    if (block.id) {
+        return block.id;
+    }
+    // TODO: Remove the 'script' tags
+    return block.toXML(this.serializer)
+        .replace(/^\<script\>/, '')
+        .replace(/\<\/script\>$/, '');
+};
+
+SimpleCollaborator.prototype.deserializeBlock = function(ser) {
+    if (ser[0] !== '<') {
+        return this._blocks[ser];
+    } else {
+        return this.serializer.loadBlock(this.serializer.parse(ser));
+    }
+};
+
 /* * * * * * * * * * * * Updating internal rep * * * * * * * * * * * */
 SimpleCollaborator.prototype._setField = function(pId, connId, value) {
     console.assert(!this.blockChildren[pId] || !this.blockChildren[pId][connId],'Connection occupied!');
@@ -101,7 +119,7 @@ SimpleCollaborator.prototype._addBlock = function(id, type, ownerId, x, y) {
     }
 };
 
-SimpleCollaborator.prototype._moveBlock = function(id, target) {
+SimpleCollaborator.prototype._moveBlock = function(block, target) {
     // TODO: Create the target region to snap to...
     // This is tricky since getting the target region is related to the position...
     // and we can't trust position...
@@ -119,7 +137,7 @@ SimpleCollaborator.prototype._moveBlock = function(id, target) {
     // I could merge loc, type into a single connection id for the CBM...
     // The second case is a little trickier... I should represent it the same way...
     //   I need a good way to represent the connection areas... Spec?
-    logger.log('<<< moveBlock', id, 'to', target);
+    logger.log('<<< moveBlock', block, 'to', target);
     //console.assert(pId, 'No parent block defined!');
     //if (!this.blockChildren[pId]) {
         //this.blockChildren[pId] = {};
@@ -148,7 +166,7 @@ SimpleCollaborator.prototype._moveBlock = function(id, target) {
         //this.onBlockMoved(id, pId, connId);
         //// TODO: Update records appropriately if inserting node between others...
     //}
-    this.onBlockMoved(id, target);
+    this.onBlockMoved(block, target);
 };
 
 SimpleCollaborator.prototype._removeBlock = function(id) {
@@ -315,8 +333,9 @@ SimpleCollaborator.prototype.onBlockAdded = function(id, type, ownerId, x, y) {
 
 SimpleCollaborator.prototype.onBlockMoved = function(id, target) {
     // Convert the pId, connId back to the target...
-    var block = this._blocks[id];
-        //parent = this._blocks[pId];
+    var block = this.deserializeBlock(id),
+        isNewBlock = !block.id,
+        scripts;
 
     if (block instanceof CommandBlockMorph) {
         if (typeof target.element === 'string') {
@@ -324,12 +343,20 @@ SimpleCollaborator.prototype.onBlockMoved = function(id, target) {
         } else {
             target.element = this._blocks[target.element.pId].children[target.element.id];
         }
+        scripts = target.element.parentThatIsA(ScriptsMorph);
     } else if (block instanceof ReporterBlockMorph) {  // target should be the input to replace
         target = this._blocks[target.pId].children[target.id];
+        scripts = target.parentThatIsA(ScriptsMorph);
     } else {
         logger.error('Unsupported "onBlockMoved":', block);
     }
 
+    if (isNewBlock) {
+        block.id = this.newId();  // FIXME: make sure this is same id across devices...
+        console.log('assigned block id:', block.id);
+        this._blocks[block.id] = block;
+        scripts.add(block);
+    }
     block.snap(target);
 };
 
@@ -403,8 +430,8 @@ SimpleCollaborator.prototype.onMessage = function(msg) {
         }
     } else {
         if (this[method]) {
-            this[method].apply(this, msg.args);
             this.lastSeen = msg.id;
+            this[method].apply(this, msg.args);
         }
     }
 };

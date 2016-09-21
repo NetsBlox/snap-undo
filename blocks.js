@@ -5770,11 +5770,10 @@ ScriptsMorph.prototype.reactToDropOf = function (droppedMorph, hand) {
             droppedMorph instanceof CommentMorph) {
 
         target = droppedMorph.snapTarget(hand);
-        if (!droppedMorph.id) {  // addBlock
-            this.addBlock(droppedMorph);
-
-        } else if (target) {  // moveBlock
+        if (target) {  // moveBlock
             this.moveBlock(droppedMorph, target);
+        } else if (!droppedMorph.id) {  // addBlock
+            this.addBlock(droppedMorph);
         } else {  // change position
             this.setBlockPosition(droppedMorph);
         }
@@ -5810,7 +5809,9 @@ ScriptsMorph.prototype._getAnonElementId = function (target) {
 ScriptsMorph.prototype.moveBlock = function (block, target) {
     // Get the target info
     // TODO: Come up w/ a good way to represent these things...
-    console.assert(block.id, 'Cannot move block that doesn\'t yet exist!');
+    var blockId = SnapCollaborator.serializeBlock(block),
+        isNewBlock = !block.id;
+
     if (block instanceof CommandBlockMorph) {
         // TODO: Switch the target.element & block (if necessary)
         if (!target.element.id) {
@@ -5818,14 +5819,18 @@ ScriptsMorph.prototype.moveBlock = function (block, target) {
         } else {
             target.element = target.element.id;
         }
-        SnapCollaborator.moveBlock(block.id, target);
+        SnapCollaborator.moveBlock(blockId, target);
     } else if (block instanceof ReporterBlockMorph) {
         // target is a block to replace...
         target = this._getAnonElementId(target);
-        SnapCollaborator.moveBlock(block.id, target);
+        SnapCollaborator.moveBlock(blockId, target);
     } else {  // CommentMorph
         console.log('comment...');
-        SnapCollaborator.moveBlock(block.id, target.id);
+        SnapCollaborator.moveBlock(blockId, target.id);
+    }
+
+    if (isNewBlock) {
+        block.destroy();
     }
 };
 
