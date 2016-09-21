@@ -5800,10 +5800,16 @@ ScriptsMorph.prototype.addBlock = function (block, target) {
 };
 
 ScriptsMorph.prototype._getAnonElementId = function (target) {
-    return {
-        id: target.parent.children.indexOf(target),
-        pId: target.parent.id
-    };
+    var id = '';
+    while (!target.id) {
+        id = target.parent.children.indexOf(target) + '/' + id;
+        target = target.parent;
+        if (!target) {
+            throw Error('Cannot get id from element');
+        }
+    }
+    id = target.id + '/' +  id;
+    return id;
 };
 
 ScriptsMorph.prototype.moveBlock = function (block, target) {
@@ -5813,7 +5819,6 @@ ScriptsMorph.prototype.moveBlock = function (block, target) {
         isNewBlock = !block.id;
 
     if (block instanceof CommandBlockMorph) {
-        // TODO: Switch the target.element & block (if necessary)
         if (!target.element.id) {
             target.element = this._getAnonElementId(target.element);
         } else {

@@ -339,6 +339,19 @@ SimpleCollaborator.prototype.onBlockAdded = function(id, type, ownerId, x, y) {
     block.changed();
 };
 
+SimpleCollaborator.prototype.getBlockFromId = function(id) {
+    var ids = id.split('/'),
+        blockId = ids.shift(),
+        block = this._blocks[blockId];
+
+    for (var i = 0; i < ids.length; i++) {
+        if (ids[i]) {
+            block = block.children[ids[i]];
+        }
+    }
+    return block;
+};
+
 SimpleCollaborator.prototype.onBlockMoved = function(id, target) {
     // Convert the pId, connId back to the target...
     var block = this.deserializeBlock(id),
@@ -346,14 +359,10 @@ SimpleCollaborator.prototype.onBlockMoved = function(id, target) {
         scripts;
 
     if (block instanceof CommandBlockMorph) {
-        if (typeof target.element === 'string') {
-            target.element = this._blocks[target.element];
-        } else {
-            target.element = this._blocks[target.element.pId].children[target.element.id];
-        }
+        target.element = this.getBlockFromId(target.element);
         scripts = target.element.parentThatIsA(ScriptsMorph);
     } else if (block instanceof ReporterBlockMorph) {  // target should be the input to replace
-        target = this._blocks[target.pId].children[target.id];
+        target = this.getBlockFromId(target);
         scripts = target.parentThatIsA(ScriptsMorph);
     } else {
         logger.error('Unsupported "onBlockMoved":', block);
