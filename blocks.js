@@ -7145,19 +7145,6 @@ InputSlotMorph.prototype.arrow = function () {
     );
 };
 
-InputSlotMorph.prototype.accept = function () {
-    var newValue = this.contents().text,
-        field;
-
-    if (this.parent.id) {
-        field = this.parent.children.indexOf(this);
-        SnapCollaborator.setField(this.parent.id, field, newValue);
-        this.setContents(this.lastValue);  // set to original value in case it fails
-    } else if (this.id) {  // not template block - missing parent!
-        console.error('Cannot set field text: no parent found!');
-    }
-};
-
 InputSlotMorph.prototype.setContents = function (aStringOrFloat) {
     var cnts = this.contents(),
         dta = aStringOrFloat,
@@ -7671,6 +7658,17 @@ InputSlotMorph.prototype.reactToKeystroke = function () {
 };
 
 InputSlotMorph.prototype.reactToEdit = function () {
+    var newValue = this.contents().text,
+        field;
+
+    if (this.parent.id) {
+        field = this.parent.children.indexOf(this);
+        SnapCollaborator.setField(this.parent.id, field, newValue);
+        this.setContents(this.lastValue);  // set to original value in case it fails
+    } else if (this.id) {  // not template block - missing parent!
+        console.error('Cannot set field text: no parent found!');
+    }
+
     this.contents().clearSelection();
 };
 
