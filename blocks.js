@@ -11707,6 +11707,11 @@ CommentMorph.prototype.init = function (contents) {
 
 // CommentMorph ops:
 
+CommentMorph.prototype.reactToEdit = function (value) {
+    var text = value.text;
+    SnapCollaborator.setCommentText(this.id, text);
+};
+
 CommentMorph.prototype.fullCopy = function () {
     var cpy = new CommentMorph(this.contents.text);
     cpy.isCollapsed = this.isCollapsed;

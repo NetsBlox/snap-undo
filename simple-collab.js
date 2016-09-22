@@ -121,7 +121,7 @@ SimpleCollaborator.prototype._setField = function(pId, connId, value) {
 
     this.fieldValues[pId][connId] = value;
 
-    this.onFieldSet(pId, connId, value);
+    this.onSetField(pId, connId, value);
 };
 
 SimpleCollaborator.prototype._moveBlock = function(block, target) {
@@ -214,6 +214,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'setSelector',
     'addBlock',
     'setBlockSpec',
+    'setCommentText',
     'addListInput',
     'removeListInput',
     'moveBlock',
@@ -373,13 +374,21 @@ SimpleCollaborator.prototype.onSetBlockSpec = function(id, spec) {
     block.userSetSpec(spec);
 };
 
-SimpleCollaborator.prototype.onFieldSet = function(pId, connId, value) {
+SimpleCollaborator.prototype.onSetField = function(pId, connId, value) {
     var parent = this._blocks[pId],
         block = parent.children[connId];
 
     console.assert(block instanceof InputSlotMorph,
         'Unexpected block type: ' + block.constructor);
     block.setContents(value);
+};
+
+SimpleCollaborator.prototype.onSetCommentText = function(id, text) {
+    var block = this.getBlockFromId(id);
+    block.contents.text = text;
+    block.contents.drawNew();
+    block.contents.changed();
+    block.layoutChanged();
 };
 
 SimpleCollaborator.prototype.onSetSelector = function(id, sel) {
