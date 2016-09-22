@@ -74,7 +74,7 @@ SimpleCollaborator.prototype.serializeBlock = function(block) {
     if (block.id) {
         return block.id;
     }
-    // TODO: Remove the 'script' tags
+
     return block.toXML(this.serializer)
         .replace(/^\<script\>/, '')
         .replace(/\<\/script\>$/, '');
@@ -99,25 +99,6 @@ SimpleCollaborator.prototype._setField = function(pId, connId, value) {
     this.fieldValues[pId][connId] = value;
 
     this.onFieldSet(pId, connId, value);
-};
-
-SimpleCollaborator.prototype._addBlock = function(id, type, ownerId, x, y) {
-    if (this.addedBlocks[id]) {
-        // TODO: Check if the block has a position. If not, then we should set
-        // it...
-        return logger.debug('Block "' + id + '" already added. skipping...');
-    }
-
-    // Create the unique id
-    logger.log('<<< adding block', id);
-
-    // Store in 2P Set (can only add once)
-    this.addedBlocks[id] = id;
-    if (!this.removedBlocks[id]) {
-        this.onBlockAdded.apply(this, arguments);
-    } else {
-        delete this.removedBlocks[id];
-    }
 };
 
 SimpleCollaborator.prototype._moveBlock = function(block, target) {
@@ -164,10 +145,10 @@ SimpleCollaborator.prototype._moveBlock = function(block, target) {
                 //conn: connId
             //};
         //}
-        //this.onBlockMoved(id, pId, connId);
+        //this.onMoveBlock(id, pId, connId);
         //// TODO: Update records appropriately if inserting node between others...
     //}
-    this.onBlockMoved(block, target);
+    this.onMoveBlock(block, target);
 };
 
 SimpleCollaborator.prototype._removeBlock = function(id) {
@@ -206,6 +187,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
 [
     'setSelector',
+    'addBlock',
     'addListInput',
     'removeListInput',
     'moveBlock',
@@ -237,103 +219,21 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     };
 });
 
-SimpleCollaborator.prototype.addBlock = function(/*blockType, ownerId, x, y*/) {
-    var args = Array.prototype.slice.apply(arguments),
-        msg;
-
-    args.unshift(this.newId());
-    msg = {
-        type: '_addBlock',
-        args: args
-    };
-
-    if (this.isLeader) {
-        this.acceptEvent(msg);
-    } else {
-        this.send(msg);
-    }
-};
-
-//SimpleCollaborator.prototype.moveBlock = function(block, target) {
-    ////var connId = target.loc + '/' + target.type;
-
-    //// If the block doesn't exist, create it
-    ////if (!this._blocks[block.id]) {
-        ////var scripts = block.parentThatIsA(ScriptsMorph);
-        ////this.addBlock(block, scripts.parent);
-    ////}
-
-    //// If connecting CommandBlockMorphs, make sure the blocks are in
-    //// the correct order
-    //// TODO: Should probably move some of this to Snap itself
-    ////if (target.loc === 'top') {  // switch!
-        ////var parent = block,
-            ////x,
-            ////y;
-
-        ////logger.info('Switching parent and block...');
-        ////connId = 'top';
-        ////block = this._blocks[pId];
-        ////pId = parent.id;
-
-        ////// Correct the position
-        ////offsetY = parent.bottomBlock().bottom() - parent.bottom();
-        ////bottom = block.top() + parent.corner - offsetY;
-        ////y = bottom - parent.height();
-        ////x = block.left();
-        ////this.setBlockPosition(parent.id, x, y);
-    ////}
-
-    //// What if I just serialize the target in a nice way? Then I can send it and replay
-    //// it easily - shouldn't need to do anything extra...
-    //// TODO
-
-    //var msg = {
-        //type: '_moveBlock',
-        //args: [block.id, pId, connId]
-    //};
-
-    //if (this.isLeader) {
-        //this.acceptEvent(msg);
-    //} else {
-        //this.send(msg);
-    //}
-//};
-
 /* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
-SimpleCollaborator.prototype.onBlockAdded = function(id, type, ownerId, x, y) {
+SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
     var block,
         owner = this._owners[ownerId],
         world = this.ide.parentThatIsA(WorldMorph),
         hand = world.hand;
 
-    // TODO: Should I serialize blocks rather than just storing the 'type'?
-    if (type.indexOf('reportGetVar') === 0) {
-        var name = type.split('/').slice(1).join('/');
-        block = new ReporterBlockMorph();
-        if (modules.objects !== undefined) {
-            block.color = SpriteMorph.prototype.blockColor.variables;
-            block.category = 'variables';
-        } else {
-            block.color = new Color(243, 118, 29);
-            block.category = null;
-        }
-        block.setSpec(name);
-        block.selector = 'reportGetVar';
-    } else {
-        block = SpriteMorph.prototype.blockForSelector(type, true);
-    }
+    block = this.deserializeBlock(type);
     block.isDraggable = true;
     block.isTemplate = false;
-    block.id = id;
+    block.id = this.newId();
     this._blocks[block.id] = block;
 
-    if (arguments.length === 5) {
-        this.positionOf[block.id] = [x, y];
-        block.setPosition(new Point(x, y));
-    } else {
-        // TODO: Connect to another block
-    }
+    this.positionOf[block.id] = [x, y];
+    block.setPosition(new Point(x, y));
 
     owner.scripts.add(block);
     block.changed();
@@ -352,7 +252,7 @@ SimpleCollaborator.prototype.getBlockFromId = function(id) {
     return block;
 };
 
-SimpleCollaborator.prototype.onBlockMoved = function(id, target) {
+SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
     // Convert the pId, connId back to the target...
     var block = this.deserializeBlock(id),
         isNewBlock = !block.id,
@@ -365,7 +265,7 @@ SimpleCollaborator.prototype.onBlockMoved = function(id, target) {
         target = this.getBlockFromId(target);
         scripts = target.parentThatIsA(ScriptsMorph);
     } else {
-        logger.error('Unsupported "onBlockMoved":', block);
+        logger.error('Unsupported "onMoveBlock":', block);
     }
 
     if (isNewBlock) {
