@@ -298,7 +298,7 @@ SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
     if (block instanceof CommandBlockMorph) {
         target.element = this.getBlockFromId(target.element);
         scripts = target.element.parentThatIsA(ScriptsMorph);
-    } else if (block instanceof ReporterBlockMorph) {  // target should be the input to replace
+    } else if (block instanceof ReporterBlockMorph || block instanceof CommentMorph) {
         target = this.getBlockFromId(target);
         scripts = target.parentThatIsA(ScriptsMorph);
     } else {
