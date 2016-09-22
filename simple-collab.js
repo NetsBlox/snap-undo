@@ -76,6 +76,19 @@ SimpleCollaborator.prototype.newId = function(index) {
     return id;
 };
 
+SimpleCollaborator.prototype.getId = function (block) {
+    var id = '';
+    while (!block.id) {
+        id = block.parent.children.indexOf(block) + '/' + id;
+        block = block.parent;
+        if (!block) {
+            throw Error('Cannot get id from element');
+        }
+    }
+    id = block.id + '/' +  id;
+    return id;
+};
+
 SimpleCollaborator.prototype.serializeBlock = function(block) {
     if (block.id) {
         return block.id;
@@ -196,6 +209,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'unringify',
     'setSelector',
     'addBlock',
+    'setBlockSpec',
     'addListInput',
     'removeListInput',
     'moveBlock',
@@ -315,6 +329,7 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     console.assert(block, 'Block "' + id + '" does not exist! Cannot set position');
 
     if (!(block.parent instanceof ScriptsMorph)) {
+        block.parent.reactToGrabOf(block);
         block.parent.revertToDefaultInput(block);
         block.parent.fixLayout();
         block.parent.changed();
@@ -349,6 +364,11 @@ SimpleCollaborator.prototype.onRemoveListInput = function(pId, id) {
         block = parent.children[id];
 
     block.removeInput();
+};
+
+SimpleCollaborator.prototype.onSetBlockSpec = function(id, spec) {
+    var block = this.getBlockFromId(id);
+    block.userSetSpec(spec);
 };
 
 SimpleCollaborator.prototype.onFieldSet = function(pId, connId, value) {

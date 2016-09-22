@@ -2480,7 +2480,10 @@ BlockMorph.prototype.developersMenu = function () {
 
         new DialogBoxMorph(
             this,
-            this.userSetSpec,
+            function(spec) {
+                var id = SnapCollaborator.getId(this);
+                SnapCollaborator.setBlockSpec(id, spec);
+            },
             this
         ).prompt(
             menu.title + '\nspec',
@@ -4669,7 +4672,10 @@ ReporterBlockMorph.prototype.mouseClickLeft = function (pos) {
         }
         new DialogBoxMorph(
             this,
-            this.userSetSpec,
+            function(spec) {
+                var id = SnapCollaborator.getId(this);
+                SnapCollaborator.setBlockSpec(id, spec);
+            },
             this
         ).prompt(
             label,
@@ -5802,33 +5808,20 @@ ScriptsMorph.prototype.addBlock = function (block) {
     block.destroy();
 };
 
-ScriptsMorph.prototype._getAnonElementId = function (target) {
-    var id = '';
-    while (!target.id) {
-        id = target.parent.children.indexOf(target) + '/' + id;
-        target = target.parent;
-        if (!target) {
-            throw Error('Cannot get id from element');
-        }
-    }
-    id = target.id + '/' +  id;
-    return id;
-};
-
 ScriptsMorph.prototype.moveBlock = function (block, target) {
     var blockId = SnapCollaborator.serializeBlock(block),
         isNewBlock = !block.id;
 
     if (block instanceof CommandBlockMorph) {
         if (!target.element.id) {
-            target.element = this._getAnonElementId(target.element);
+            target.element = SnapCollaborator.getId(target.element);
         } else {
             target.element = target.element.id;
         }
         SnapCollaborator.moveBlock(blockId, target);
     } else if (block instanceof ReporterBlockMorph) {
         // target is a block to replace...
-        target = this._getAnonElementId(target);
+        target = SnapCollaborator.getId(target);
         SnapCollaborator.moveBlock(blockId, target);
     } else {  // CommentMorph
         console.log('comment...');
@@ -7180,7 +7173,7 @@ InputSlotMorph.prototype.setContents = function (aStringOrFloat) {
 
 InputSlotMorph.prototype.setDropDownValue = function (value) {
     this.setContents(value);
-    this.accept();
+    this.updateFieldValue();
 };
 
 InputSlotMorph.prototype.dropDownMenu = function (enableKeyboard) {
@@ -7657,7 +7650,7 @@ InputSlotMorph.prototype.reactToKeystroke = function () {
     }
 };
 
-InputSlotMorph.prototype.reactToEdit = function () {
+InputSlotMorph.prototype.updateFieldValue = function () {
     var newValue = this.contents().text,
         field;
 
@@ -7669,6 +7662,10 @@ InputSlotMorph.prototype.reactToEdit = function () {
         console.error('Cannot set field text: no parent found!');
     }
 
+};
+
+InputSlotMorph.prototype.reactToEdit = function () {
+    this.updateFieldValue();
     this.contents().clearSelection();
 };
 
