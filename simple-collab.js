@@ -157,7 +157,7 @@ SimpleCollaborator.prototype._moveBlock = function(block, target) {
     this.onMoveBlock(block, target);
 };
 
-SimpleCollaborator.prototype._removeBlock = function(id) {
+SimpleCollaborator.prototype._removeBlock = function(id, userDestroy) {
     logger.log('<<< removeBlock', id);
     this.removedBlocks[id] = true;
     this.onBlockRemoved.apply(this, arguments);
@@ -297,9 +297,10 @@ SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
     block.snap(target);
 };
 
-SimpleCollaborator.prototype.onBlockRemoved = function(id) {
+SimpleCollaborator.prototype.onBlockRemoved = function(id, userDestroy) {
+    var method = userDestroy ? 'userDestroy' : 'destroy';
     if (this._blocks[id]) {
-        this._blocks[id].destroy();
+        this._blocks[id][method]();
         delete this._blocks[id];
     }
 };

@@ -2399,9 +2399,13 @@ BlockMorph.prototype.userMenu = function () {
         );
     }
     menu.addItem(
-        "delete",
-        'userDestroy'  // FIXME: Send this through the collaborator
-    );
+        "delete", function() {
+        if (this.id) {
+            SnapCollaborator.removeBlock(this.id, true);
+        } else {
+            this.userDestroy();
+        }
+    });
     menu.addItem(
         "script pic...",
         function () {
@@ -11807,14 +11811,19 @@ CommentMorph.prototype.userMenu = function () {
     menu.addItem(
         "duplicate",
         function () {
-            // FIXME: Create a new one
             var copy = myself.fullCopy();
             copy.id = null;
             copy.pickUp(myself.world());
         },
         'make a copy\nand pick it up'
     );
-    menu.addItem("delete", 'destroy');  // TODO: Send this through collaborator
+    menu.addItem("delete", function() {
+        if (this.id) {
+            SnapCollaborator.removeBlock(this.id);
+        } else {
+            this.destroy();
+        }
+    });
     menu.addItem(
         "comment pic...",
         function () {
