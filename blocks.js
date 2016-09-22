@@ -10487,19 +10487,20 @@ MultiArgMorph.prototype.mouseClickLeft = function (pos) {
         leftArrow = arrows.children[0],
         rightArrow = arrows.children[1],
         repetition = this.world().currentKey === 16 ? 3 : 1,
+        id = SnapCollaborator.getId(this),
         i;
 
     this.startLayout();
     if (rightArrow.bounds.containsPoint(pos)) {
         for (i = 0; i < repetition; i += 1) {
             if (rightArrow.isVisible) {
-                SnapCollaborator.addListInput(this.parent.id, this.parent.children.indexOf(this));
+                SnapCollaborator.addListInput(id);
             }
         }
     } else if (leftArrow.bounds.containsPoint(pos)) {
         for (i = 0; i < repetition; i += 1) {
             if (leftArrow.isVisible) {
-                SnapCollaborator.removeListInput(this.parent.id, this.parent.children.indexOf(this));
+                SnapCollaborator.removeListInput(id);
             }
         }
     } else {

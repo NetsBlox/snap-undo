@@ -352,17 +352,13 @@ SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
     scripts.add(block);
 };
 
-SimpleCollaborator.prototype.onAddListInput = function(pId, id) {
-    var parent = this._blocks[pId],
-        block = parent.children[id];
-
+SimpleCollaborator.prototype.onAddListInput = function(id) {
+    var block = this.getBlockFromId(id);
     block.addInput();
 };
 
-SimpleCollaborator.prototype.onRemoveListInput = function(pId, id) {
-    var parent = this._blocks[pId],
-        block = parent.children[id];
-
+SimpleCollaborator.prototype.onRemoveListInput = function(id) {
+    var block = this.getBlockFromId(id);
     block.removeInput();
 };
 
