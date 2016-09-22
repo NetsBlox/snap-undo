@@ -65,9 +65,15 @@ SimpleCollaborator.prototype.send = function(json) {
     this._ws.send(JSON.stringify(json));
 };
 
-SimpleCollaborator.prototype.newId = function() {
+SimpleCollaborator.prototype.newId = function(index) {
     // This is the same across devices since it uses the currently last seen value
-    return 'item_' + this.lastSeen;
+    var id = 'item_' + this.lastSeen;
+
+    if (index !== undefined) {
+        id += '_' + index;
+    }
+
+    return id;
 };
 
 SimpleCollaborator.prototype.serializeBlock = function(block) {
@@ -75,16 +81,16 @@ SimpleCollaborator.prototype.serializeBlock = function(block) {
         return block.id;
     }
 
-    return block.toXML(this.serializer)
-        .replace(/^\<script\>/, '')
-        .replace(/\<\/script\>$/, '');
+    return block.toScriptXML(this.serializer);
+        //.replace(/^\<script\>/, '')
+        //.replace(/\<\/script\>$/, '');
 };
 
 SimpleCollaborator.prototype.deserializeBlock = function(ser) {
     if (ser[0] !== '<') {
         return this._blocks[ser];
     } else {
-        return this.serializer.loadBlock(this.serializer.parse(ser));
+        return this.serializer.loadScript(this.serializer.parse(ser));
     }
 };
 
@@ -224,19 +230,28 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
     var block,
         owner = this._owners[ownerId],
         world = this.ide.parentThatIsA(WorldMorph),
-        hand = world.hand;
+        hand = world.hand,
+        i = 1,
+        firstBlock;
 
-    block = this.deserializeBlock(type);
-    block.isDraggable = true;
-    block.isTemplate = false;
-    block.id = this.newId();
-    this._blocks[block.id] = block;
+    firstBlock = this.deserializeBlock(type);
+    block = firstBlock;
 
-    this.positionOf[block.id] = [x, y];
-    block.setPosition(new Point(x, y));
+    while (block) {
+        block.isDraggable = true;
+        block.isTemplate = false;
+        block.id = this.newId(i);
+        this._blocks[block.id] = block;
 
-    owner.scripts.add(block);
-    block.changed();
+        block = block.nextBlock();
+        ++i;
+    }
+
+    this.positionOf[firstBlock.id] = [x, y];
+    firstBlock.setPosition(new Point(x, y));
+
+    owner.scripts.add(firstBlock);
+    firstBlock.changed();
 };
 
 SimpleCollaborator.prototype.getBlockFromId = function(id) {

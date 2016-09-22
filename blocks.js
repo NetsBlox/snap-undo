@@ -5781,21 +5781,11 @@ ScriptsMorph.prototype.reactToDropOf = function (droppedMorph, hand) {
     this.adjustBounds();
 };
 
-ScriptsMorph.prototype.addBlock = function (block, target) {
-    var position = block.position();
+ScriptsMorph.prototype.addBlock = function (block) {
+    var position = block.position(),
+        type = SnapCollaborator.serializeBlock(block);
 
-    // Check if the block is simply placed at a given position or connected to another
-    if (target) {
-        console.error('Dropping block directly to a connection is not yet supported.');
-        // TODO:
-    } else {
-        //var type = block.selector;
-        //if (type === 'reportGetVar') {
-            //type += '/' + block.blockSpec;
-        //}
-        var type = SnapCollaborator.serializeBlock(block);
-        SnapCollaborator.addBlock(type, this.owner.id, position.x, position.y);
-    }
+    SnapCollaborator.addBlock(type, this.owner.id, position.x, position.y);
 
     block.destroy();
 };

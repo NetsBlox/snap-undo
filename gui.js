@@ -982,7 +982,11 @@ IDE_Morph.prototype.createPalette = function (forSearching) {
             myself.currentSprite.wearCostume(null);
             droppedMorph.destroy();
         } else {
-            SnapCollaborator.removeBlock(droppedMorph.id);
+            if (droppedMorph.id) {
+                SnapCollaborator.removeBlock(droppedMorph.id);
+            } else {
+                droppedMorph.destroy();
+            }
         }
     };
 
