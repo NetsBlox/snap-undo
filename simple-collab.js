@@ -321,7 +321,8 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     block.setPosition(new Point(x, y));
 
     scripts.add(block);
-    // TODO: Fix the block size and inputs of the parent
+    block.fixBlockColor();
+    block.changed();
 };
 
 SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
