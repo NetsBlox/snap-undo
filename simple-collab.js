@@ -192,6 +192,8 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
 [
+    'ringify',
+    'unringify',
     'setSelector',
     'addBlock',
     'addListInput',
@@ -314,6 +316,8 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
 
     if (!(block.parent instanceof ScriptsMorph)) {
         block.parent.revertToDefaultInput(block);
+        block.parent.fixLayout();
+        block.parent.changed();
 
         scripts.drawNew();
         scripts.changed();
@@ -375,6 +379,22 @@ SimpleCollaborator.prototype.onAddVariable = function(name, ownerId) {
 SimpleCollaborator.prototype.onDeleteVariable = function(name, ownerId) {
     var owner = this._owners[ownerId];
     owner.deleteVariable(name)
+};
+
+SimpleCollaborator.prototype.onRingify = function(id) {
+    if (this._blocks[id]) {
+        var ring = this._blocks[id].ringify();
+        ring.id = this.newId();
+        this._blocks[ring.id] = ring;
+    }
+};
+
+SimpleCollaborator.prototype.onUnringify = function(id) {
+    if (this._blocks[id]) {
+        var ring = this._blocks[id].unringify();
+        ring.id = this.newId();
+        this._blocks[ring.id] = ring;
+    }
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */

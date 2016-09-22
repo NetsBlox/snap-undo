@@ -2439,8 +2439,12 @@ BlockMorph.prototype.userMenu = function () {
     }
     if (this.parentThatIsA(RingMorph)) {
         menu.addLine();
-        menu.addItem("unringify", 'unringify');
-        menu.addItem("ringify", 'ringify');
+        menu.addItem("unringify", function() {
+            SnapCollaborator.unringify(this.id);
+        });
+        menu.addItem("ringify", function() {
+            SnapCollaborator.ringify(this.id);
+        });
         return menu;
     }
     if (this.parent instanceof ReporterSlotMorph
@@ -2451,7 +2455,9 @@ BlockMorph.prototype.userMenu = function () {
         return menu;
     }
     menu.addLine();
-    menu.addItem("ringify", 'ringify');
+    menu.addItem("ringify", function() {
+        SnapCollaborator.ringify(this.id);
+    });
     if (StageMorph.prototype.enableCodeMapping) {
         menu.addLine();
         menu.addItem(
@@ -2585,7 +2591,7 @@ BlockMorph.prototype.ringify = function () {
     }
     this.fixBlockColor(null, true);
     top.fullChanged();
-
+    return ring;
 };
 
 BlockMorph.prototype.unringify = function () {
@@ -2617,6 +2623,7 @@ BlockMorph.prototype.unringify = function () {
     }
     this.fixBlockColor(null, true);
     top.fullChanged();
+    return ring;
 };
 
 BlockMorph.prototype.relabel = function (alternativeSelectors) {
