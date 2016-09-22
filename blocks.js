@@ -2387,6 +2387,7 @@ BlockMorph.prototype.userMenu = function () {
                     nb = cpy.nextBlock(),
                     ide = myself.parentThatIsA(IDE_Morph);
                 if (nb) {nb.destroy(); }
+                cpy.id = null;
                 cpy.pickUp(world);
                 if (ide) {
                     world.hand.grabOrigin = {
@@ -7141,14 +7142,12 @@ InputSlotMorph.prototype.accept = function () {
     var newValue = this.contents().text,
         field;
 
-    if (this.id) {  // ow, it's a template block
-        if (this.parent.id) {
-            field = this.parent.children.indexOf(this);
-            SnapCollaborator.setField(this.parent.id, field, newValue);
-            this.setContents(this.lastValue);  // set to original value in case it fails
-        } else {
-            console.error('Cannot set field text: no parent found!');
-        }
+    if (this.parent.id) {
+        field = this.parent.children.indexOf(this);
+        SnapCollaborator.setField(this.parent.id, field, newValue);
+        this.setContents(this.lastValue);  // set to original value in case it fails
+    } else if (this.id) {  // not template block - missing parent!
+        console.error('Cannot set field text: no parent found!');
     }
 };
 
