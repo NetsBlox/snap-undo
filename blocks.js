@@ -2437,7 +2437,7 @@ BlockMorph.prototype.userMenu = function () {
         }
         return menu;
     }
-    if (this.parentThatIsA(RingMorph)) {
+    if (this.parent.parentThatIsA(RingMorph)) {
         menu.addLine();
         menu.addItem("unringify", function() {
             SnapCollaborator.unringify(this.id);
@@ -2596,7 +2596,7 @@ BlockMorph.prototype.ringify = function () {
 
 BlockMorph.prototype.unringify = function () {
     // remove a Ring around me, if any
-    var ring = this.parentThatIsA(RingMorph),
+    var ring = this.parent.parentThatIsA(RingMorph),
         top = this.topBlock(),
         scripts = this.parentThatIsA(ScriptsMorph),
         block,
