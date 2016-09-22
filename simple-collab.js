@@ -94,16 +94,20 @@ SimpleCollaborator.prototype.serializeBlock = function(block) {
         return block.id;
     }
 
+    if (block instanceof CommentMorph) {
+        return block.toXML(this.serializer);
+    }
+
     return block.toScriptXML(this.serializer);
-        //.replace(/^\<script\>/, '')
-        //.replace(/\<\/script\>$/, '');
 };
 
 SimpleCollaborator.prototype.deserializeBlock = function(ser) {
     if (ser[0] !== '<') {
         return this._blocks[ser];
-    } else {
+    } else if (ser.indexOf('<script>') === 0) {
         return this.serializer.loadScript(this.serializer.parse(ser));
+    } else {  // Comment
+        return this.serializer.loadComment(this.serializer.parse(ser));
     }
 };
 
@@ -341,7 +345,9 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     block.setPosition(new Point(x, y));
 
     scripts.add(block);
-    block.fixBlockColor();
+    if (block.fixBlockColor) {  // not a comment
+        block.fixBlockColor();
+    }
     block.changed();
 };
 
