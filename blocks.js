@@ -5804,8 +5804,6 @@ ScriptsMorph.prototype._getAnonElementId = function (target) {
 };
 
 ScriptsMorph.prototype.moveBlock = function (block, target) {
-    // Get the target info
-    // TODO: Come up w/ a good way to represent these things...
     var blockId = SnapCollaborator.serializeBlock(block),
         isNewBlock = !block.id;
 
@@ -7139,13 +7137,14 @@ InputSlotMorph.prototype.accept = function () {
     var newValue = this.contents().text,
         field;
 
-    if (this.parent.id) {
-        field = this.parent.children.indexOf(this);
-        SnapCollaborator.setField(this.parent.id, field, newValue);
-        this.setContents(this.lastValue);  // set to original value in case it fails
-    } else {
-        console.error('Cannot set field text: no parent found!');
-        // FIXME
+    if (this.id) {  // ow, it's a template block
+        if (this.parent.id) {
+            field = this.parent.children.indexOf(this);
+            SnapCollaborator.setField(this.parent.id, field, newValue);
+            this.setContents(this.lastValue);  // set to original value in case it fails
+        } else {
+            console.error('Cannot set field text: no parent found!');
+        }
     }
 };
 

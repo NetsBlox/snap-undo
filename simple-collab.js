@@ -243,7 +243,7 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
         block.id = this.newId(i);
         this._blocks[block.id] = block;
 
-        block = block.nextBlock();
+        block = block.nextBlock ? block.nextBlock() : null;
         ++i;
     }
 
@@ -251,6 +251,7 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
     firstBlock.setPosition(new Point(x, y));
 
     owner.scripts.add(firstBlock);
+    owner.scripts.changed();
     firstBlock.changed();
 };
 
@@ -287,7 +288,12 @@ SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
         block.id = this.newId();
         this._blocks[block.id] = block;
         scripts.add(block);
+    } else {
+        if (block.parent && block.parent.reactToGrabOf) {
+            block.parent.reactToGrabOf(block);
+        }
     }
+
     block.snap(target);
 };
 
@@ -301,17 +307,19 @@ SimpleCollaborator.prototype.onBlockRemoved = function(id) {
 SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     // Disconnect from previous...
     var block = this._blocks[id],
-        scripts;
+        scripts = block.parentThatIsA(ScriptsMorph);
 
     console.assert(block, 'Block "' + id + '" does not exist! Cannot set position');
 
     if (!(block.parent instanceof ScriptsMorph)) {
         block.parent.revertToDefaultInput(block);
+
+        scripts.drawNew();
+        scripts.changed();
     }
 
     block.setPosition(new Point(x, y));
 
-    scripts = block.parentThatIsA(ScriptsMorph);
     scripts.add(block);
     // TODO: Fix the block size and inputs of the parent
 };
