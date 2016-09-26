@@ -7652,11 +7652,12 @@ InputSlotMorph.prototype.reactToKeystroke = function () {
 
 InputSlotMorph.prototype.updateFieldValue = function () {
     var newValue = this.contents().text,
+        parentId = SnapCollaborator.getId(this.parent),
         field;
 
-    if (this.parent.id) {
+    if (parentId) {
         field = this.parent.children.indexOf(this);
-        SnapCollaborator.setField(this.parent.id, field, newValue);
+        SnapCollaborator.setField(parentId, field, newValue);
         this.setContents(this.lastValue);  // set to original value in case it fails
     } else if (this.id) {  // not template block - missing parent!
         console.error('Cannot set field text: no parent found!');

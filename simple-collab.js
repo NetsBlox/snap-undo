@@ -79,6 +79,9 @@ SimpleCollaborator.prototype.newId = function(index) {
 SimpleCollaborator.prototype.getId = function (block) {
     var id = '';
     while (!block.id) {
+        if (block.parent === null) {  // template block
+            return null;
+        }
         id = block.parent.children.indexOf(block) + '/' + id;
         block = block.parent;
         if (!block) {
@@ -387,7 +390,7 @@ SimpleCollaborator.prototype.onSetBlockSpec = function(id, spec) {
 };
 
 SimpleCollaborator.prototype.onSetField = function(pId, connId, value) {
-    var parent = this._blocks[pId],
+    var parent = this.getBlockFromId(pId),
         block = parent.children[connId];
 
     console.assert(block instanceof InputSlotMorph,
