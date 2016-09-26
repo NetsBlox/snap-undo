@@ -316,6 +316,7 @@ SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
     }
 
     block.snap(target);
+    this.updateCommentsPositions(block);
 };
 
 SimpleCollaborator.prototype.onBlockRemoved = function(id, userDestroy) {
@@ -350,6 +351,17 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
         block.fixBlockColor();
     }
     block.changed();
+
+    this.updateCommentsPositions(block);
+};
+
+SimpleCollaborator.prototype.updateCommentsPositions = function(block) {
+    if (block.topBlock) {  // Update comment positions
+        var topBlock = block.topBlock();
+        topBlock.allComments().forEach(function (comment) {
+            comment.align(topBlock);
+        });
+    }
 };
 
 SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
