@@ -3058,6 +3058,7 @@ SpriteMorph.prototype.doStamp = function () {
     var stage = this.parent,
         context = stage.penTrails().getContext('2d'),
         isWarped = this.isWarped;
+
     if (isWarped) {
         this.endWarp();
     }

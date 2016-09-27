@@ -274,9 +274,16 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
     this.positionOf[firstBlock.id] = [x, y];
     firstBlock.setPosition(new Point(x, y));
 
+    if (firstBlock.snapSound) {
+        firstBlock.snapSound.play();
+    }
+
     owner.scripts.add(firstBlock);
     owner.scripts.changed();
     firstBlock.changed();
+
+    // Register generic hat blocks?
+    // TODO
 };
 
 SimpleCollaborator.prototype.getBlockFromId = function(id) {

@@ -12168,6 +12168,7 @@ ScriptFocusMorph.prototype.trigger = function () {
         return;
     }
     if (current instanceof BooleanSlotMorph) {
+        // FIXME: Use collaborator!
         current.toggleValue();
         return;
     }
@@ -12203,6 +12204,7 @@ ScriptFocusMorph.prototype.menu = function () {
 
 ScriptFocusMorph.prototype.deleteLastElement = function () {
     var current = this.element;
+    // TODO: Use the collaborator!
     if (current.parent instanceof ScriptsMorph) {
         if (this.atEnd || current instanceof ReporterBlockMorph) {
             current.destroy();
@@ -12242,10 +12244,13 @@ ScriptFocusMorph.prototype.insertBlock = function (block) {
     block.isTemplate = false;
     block.isDraggable = true;
 
-    if (block.snapSound) {
-        block.snapSound.play();
-    }
+    // TODO
+    //var scripts = this.parentThatIsA(ScriptsMorph),
+        //type = SnapCollaborator.serializeBlock(block);
 
+    //SnapCollaborator.addBlock(type, this.element.owner.id, this.left(), this.top());
+
+    // TODO: This is tricky bc this expects the 'addBlock' to be synchronous...
     if (this.element instanceof ScriptsMorph) {
         this.editor.add(block);
         this.element = block;
@@ -12302,20 +12307,20 @@ ScriptFocusMorph.prototype.insertBlock = function (block) {
     // block.scrollIntoView();
     this.fixLayout();
 
-    // register generic hat blocks
-    if (block.selector === 'receiveCondition') {
-        if (this.editor.owner) {
-            stage = this.editor.owner.parentThatIsA(StageMorph);
-            if (stage) {
-                stage.enableCustomHatBlocks = true;
-                stage.threads.pauseCustomHatBlocks = false;
-                ide = stage.parentThatIsA(IDE_Morph);
-                if (ide) {
-                    ide.controlBar.stopButton.refresh();
-                }
-            }
-        }
-    }
+    //// register generic hat blocks
+    //if (block.selector === 'receiveCondition') {
+        //if (this.editor.owner) {
+            //stage = this.editor.owner.parentThatIsA(StageMorph);
+            //if (stage) {
+                //stage.enableCustomHatBlocks = true;
+                //stage.threads.pauseCustomHatBlocks = false;
+                //ide = stage.parentThatIsA(IDE_Morph);
+                //if (ide) {
+                    //ide.controlBar.stopButton.refresh();
+                //}
+            //}
+        //}
+    //}
 };
 
 ScriptFocusMorph.prototype.insertVariableGetter = function () {
