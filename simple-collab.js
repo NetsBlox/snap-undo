@@ -285,24 +285,26 @@ SimpleCollaborator.prototype.onRemoveBlock = function(id, userDestroy) {
 SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     // Disconnect from previous...
     var block = this._blocks[id],
-        scripts = block.parentThatIsA(ScriptsMorph);
+        scripts = block.parentThatIsA(ScriptsMorph),
+        oldParent = block.parent;
 
     console.assert(block, 'Block "' + id + '" does not exist! Cannot set position');
 
-    if (!(block.parent instanceof ScriptsMorph)) {
-        // FIXME: Something needs to be updated here to fix the issue w/ the rings
-        // being expanded too far!!
-        block.parent.reactToGrabOf(block);
-        block.parent.revertToDefaultInput(block);
-        block.parent.fixLayout();
-        block.parent.changed();
+    scripts.add(block);
+    block.setPosition(new Point(x, y));
+
+    if (!(oldParent instanceof ScriptsMorph)) {
+        if (oldParent.reactToGrabOf) {
+            oldParent.reactToGrabOf(block);
+        }
+        oldParent.revertToDefaultInput(block);
+        oldParent.fixLayout();
+        oldParent.changed();
 
         scripts.drawNew();
         scripts.changed();
     }
 
-    scripts.add(block);
-    block.setPosition(new Point(x, y));
     if (block.fixBlockColor) {  // not a comment
         block.fixBlockColor();
     }
@@ -390,10 +392,10 @@ SimpleCollaborator.prototype.onRingify = function(id) {
 };
 
 SimpleCollaborator.prototype.onUnringify = function(id) {
-    if (this._blocks[id]) {
-        var ring = this._blocks[id].unringify();
-        ring.id = this.newId();
-        this._blocks[ring.id] = ring;
+    var block = this._blocks[id];
+    if (block) {
+        var ring = block.unringify();
+        delete this._blocks[ring.id];
     }
 };
 
