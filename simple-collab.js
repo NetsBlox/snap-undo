@@ -127,12 +127,6 @@ SimpleCollaborator.prototype._setField = function(pId, connId, value) {
     this.onSetField(pId, connId, value);
 };
 
-SimpleCollaborator.prototype._removeBlock = function(id, userDestroy) {
-    logger.log('<<< removeBlock', id);
-    this.removedBlocks[id] = true;
-    this.onBlockRemoved.apply(this, arguments);
-};
-
 SimpleCollaborator.prototype._setBlockPosition = function(id, x, y) {
     logger.log('<<< setting position of ', id, 'to', x, ',', y);
     this.positionOf[id] = [x, y];
@@ -280,7 +274,7 @@ SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
     this.updateCommentsPositions(block);
 };
 
-SimpleCollaborator.prototype.onBlockRemoved = function(id, userDestroy) {
+SimpleCollaborator.prototype.onRemoveBlock = function(id, userDestroy) {
     var method = userDestroy ? 'userDestroy' : 'destroy';
     if (this._blocks[id]) {
         this._blocks[id][method]();
@@ -296,6 +290,8 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     console.assert(block, 'Block "' + id + '" does not exist! Cannot set position');
 
     if (!(block.parent instanceof ScriptsMorph)) {
+        // FIXME: Something needs to be updated here to fix the issue w/ the rings
+        // being expanded too far!!
         block.parent.reactToGrabOf(block);
         block.parent.revertToDefaultInput(block);
         block.parent.fixLayout();
@@ -305,9 +301,8 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
         scripts.changed();
     }
 
-    block.setPosition(new Point(x, y));
-
     scripts.add(block);
+    block.setPosition(new Point(x, y));
     if (block.fixBlockColor) {  // not a comment
         block.fixBlockColor();
     }
@@ -329,6 +324,7 @@ SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
     var block = this._blocks[id],
         scripts = block.parentThatIsA(ScriptsMorph);
 
+    // TODO: This is not sizing the ring appropriately...
     scripts.add(block);
 };
 
@@ -401,9 +397,19 @@ SimpleCollaborator.prototype.onUnringify = function(id) {
     }
 };
 
-SimpleCollaborator.prototype.onToggleBoolean = function(id) {
-    var block = this.getBlockFromId(id);
-    block.toggleValue();
+SimpleCollaborator.prototype.onToggleBoolean = function(id, fromValue) {
+    var block = this.getBlockFromId(id),
+        iter = 0,
+        prev;
+
+    if (typeof fromValue !== 'boolean') {
+        fromValue = null;
+    }
+
+    while (prev !== fromValue) {
+        prev = block.value;
+        block.toggleValue();
+    }
     if (isNil(block.value)) {return; }
     block.reactToSliderEdit();
 };

@@ -12154,20 +12154,21 @@ ScriptFocusMorph.prototype.manifestExpression = function () {
 // ScriptFocusMorph editing
 
 ScriptFocusMorph.prototype.trigger = function () {
-    var current = this.element;
+    var current = this.element,
+        id = SnapCollaborator.getId(current);
+
     if (current instanceof MultiArgMorph) {
         if (current.arrows().children[1].isVisible) {
-            current.addInput();
-            this.fixLayout();
+            SnapCollaborator.addListInput(id);
         }
         return;
     }
     if (current.parent instanceof TemplateSlotMorph) {
+        // FIXME: Use the collaborator
         current.mouseClickLeft();
         return;
     }
     if (current instanceof BooleanSlotMorph) {
-        var id = SnapCollaborator.getId(current);
         SnapCollaborator.toggleBoolean(id, current.value);
         return;
     }
@@ -12202,34 +12203,39 @@ ScriptFocusMorph.prototype.menu = function () {
 };
 
 ScriptFocusMorph.prototype.deleteLastElement = function () {
-    var current = this.element;
-    // TODO: Use the collaborator!
+    var current = this.element,
+        id = SnapCollaborator.getId(current);
+
     if (current.parent instanceof ScriptsMorph) {
         if (this.atEnd || current instanceof ReporterBlockMorph) {
+            // TODO: Use the collaborator!
             current.destroy();
             this.element = this.editor;
             this.atEnd = false;
         }
     } else if (current instanceof MultiArgMorph) {
         if (current.arrows().children[0].isVisible) {
-            current.removeInput();
+            SnapCollaborator.removeListInput(id);
         }
     } else if (current instanceof BooleanSlotMorph) {
         if (!current.isStatic) {
-            current.setContents(null);
+            SnapCollaborator.toggleBoolean(id, false);
         }
     } else if (current instanceof ReporterBlockMorph) {
         if (!current.isTemplate) {
             this.lastElement();
             current.prepareToBeGrabbed();
+            // FIXME
             current.destroy();
         }
     } else if (current instanceof CommandBlockMorph) {
         if (this.atEnd) {
             this.element = current.parent;
+            // FIXME
             current.userDestroy();
         } else {
             if (current.parent instanceof CommandBlockMorph) {
+                // FIXME
                 current.parent.userDestroy();
             }
         }
