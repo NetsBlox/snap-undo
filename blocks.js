@@ -8208,9 +8208,8 @@ BooleanSlotMorph.prototype.toggleValue = function () {
 // BooleanSlotMorph events:
 
 BooleanSlotMorph.prototype.mouseClickLeft = function () {
-    this.toggleValue();
-    if (isNil(this.value)) {return; }
-    this.reactToSliderEdit();
+    var id = SnapCollaborator.getId(this);
+    SnapCollaborator.toggleBoolean(id, this.value);
 };
 
 BooleanSlotMorph.prototype.mouseEnter = function () {
@@ -12168,8 +12167,8 @@ ScriptFocusMorph.prototype.trigger = function () {
         return;
     }
     if (current instanceof BooleanSlotMorph) {
-        // FIXME: Use collaborator!
-        current.toggleValue();
+        var id = SnapCollaborator.getId(current);
+        SnapCollaborator.toggleBoolean(id, current.value);
         return;
     }
     if (current instanceof InputSlotMorph) {

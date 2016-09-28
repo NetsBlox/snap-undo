@@ -127,56 +127,6 @@ SimpleCollaborator.prototype._setField = function(pId, connId, value) {
     this.onSetField(pId, connId, value);
 };
 
-SimpleCollaborator.prototype._moveBlock = function(block, target) {
-    // TODO: Create the target region to snap to...
-    // This is tricky since getting the target region is related to the position...
-    // and we can't trust position...
-    //
-    // "target" contains: (CommandBlockMorph)
-    //   - loc (connId)
-    //   - type
-    //   - element (pId)
-    //
-    //      OR 
-    //
-    // "target" === "element" (ReporterBlockMorph | CommentMorph)
-    //   This is the element it is replacing...
-    //
-    // I could merge loc, type into a single connection id for the CBM...
-    // The second case is a little trickier... I should represent it the same way...
-    //   I need a good way to represent the connection areas... Spec?
-    logger.log('<<< moveBlock', block, 'to', target);
-    //console.assert(pId, 'No parent block defined!');
-    //if (!this.blockChildren[pId]) {
-        //this.blockChildren[pId] = {};
-    //}
-
-    //if (this.blockChildren[pId][connId]) {  // conflict!
-        //// If the block is a command, insert between
-        //// TODO
-        //logger.log('CONFLICT!', pId, connId, 'is already occupied!');
-    //} else {  // create connection
-        //if (!pId) {  // disconnect
-            //var oldParent = this.blockToParent[id] || null;
-
-            //delete this.blockToParent[id];
-            //if (oldParent) {
-                //delete this.blockChildren[oldParent.id][oldParent.conn];
-            //}
-            //this.onBlockDisconnected(id, oldParent.id, oldParent.conn);
-        //} else {
-            //this.blockChildren[pId][connId] = id;
-            //this.blockToParent[id] = {
-                //id: pId,
-                //conn: connId
-            //};
-        //}
-        //this.onMoveBlock(id, pId, connId);
-        //// TODO: Update records appropriately if inserting node between others...
-    //}
-    this.onMoveBlock(block, target);
-};
-
 SimpleCollaborator.prototype._removeBlock = function(id, userDestroy) {
     logger.log('<<< removeBlock', id);
     this.removedBlocks[id] = true;
@@ -212,6 +162,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
 [
+    'toggleBoolean',
     'ringify',
     'unringify',
     'setSelector',
@@ -448,6 +399,13 @@ SimpleCollaborator.prototype.onUnringify = function(id) {
         ring.id = this.newId();
         this._blocks[ring.id] = ring;
     }
+};
+
+SimpleCollaborator.prototype.onToggleBoolean = function(id) {
+    var block = this.getBlockFromId(id);
+    block.toggleValue();
+    if (isNil(block.value)) {return; }
+    block.reactToSliderEdit();
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
