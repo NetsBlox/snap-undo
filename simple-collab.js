@@ -290,6 +290,10 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
 
     console.assert(block, 'Block "' + id + '" does not exist! Cannot set position');
 
+    if (oldParent && oldParent.revertToDefaultInput) {
+        oldParent.revertToDefaultInput(block);
+    }
+
     scripts.add(block);
     block.setPosition(new Point(x, y));
 
@@ -297,7 +301,6 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
         if (oldParent.reactToGrabOf) {
             oldParent.reactToGrabOf(block);
         }
-        oldParent.revertToDefaultInput(block);
         oldParent.fixLayout();
         oldParent.changed();
 
