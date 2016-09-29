@@ -5801,9 +5801,15 @@ ScriptsMorph.prototype.reactToDropOf = function (droppedMorph, hand) {
 
 ScriptsMorph.prototype.addBlock = function (block) {
     var position = block.position(),
-        type = SnapCollaborator.serializeBlock(block);
+        type = SnapCollaborator.serializeBlock(block),
+        blockEditor = this.parentThatIsA(BlockEditorMorph),
+        ownerId = this.owner.id;
 
-    SnapCollaborator.addBlock(type, this.owner.id, position.x, position.y);
+    if (blockEditor) {
+        ownerId = blockEditor.definition.id;
+    }
+
+    SnapCollaborator.addBlock(type, ownerId, position.x, position.y);
 
     block.destroy();
 };

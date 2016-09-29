@@ -896,25 +896,7 @@ CustomCommandBlockMorph.prototype.deleteBlockDefinition = function () {
     new DialogBoxMorph(
         this,
         function () {
-            rcvr = myself.receiver();
-            rcvr.deleteAllBlockInstances(myself.definition);
-            if (myself.definition.isGlobal) {
-                stage = rcvr.parentThatIsA(StageMorph);
-                idx = stage.globalBlocks.indexOf(myself.definition);
-                if (idx !== -1) {
-                    stage.globalBlocks.splice(idx, 1);
-                }
-            } else {
-                idx = rcvr.customBlocks.indexOf(myself.definition);
-                if (idx !== -1) {
-                    rcvr.customBlocks.splice(idx, 1);
-                }
-            }
-            ide = rcvr.parentThatIsA(IDE_Morph);
-            if (ide) {
-                ide.flushPaletteCache();
-                ide.refreshPalette();
-            }
+            SnapCollaborator.deleteCustomBlock(myself.definition.id, myself.receiver().id);
         },
         this
     ).askYesNo(

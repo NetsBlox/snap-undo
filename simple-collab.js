@@ -13,8 +13,10 @@ function SimpleCollaborator() {
 
     // Helpers
     this._blocks = {};
-    this.spliceConnections = {'bottom/block': true};
+    this._customBlocks = {};
     this._owners = {};
+
+    this.spliceConnections = {'bottom/block': true};
     this.positionOf = {};  // Last writer, highest rank wins
 
     this.initialize();
@@ -156,6 +158,8 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
 [
+    'addCustomBlock',  // (definition)
+    'deleteCustomBlock',  // (definition)
     'toggleBoolean',
     'ringify',
     'unringify',
@@ -417,6 +421,75 @@ SimpleCollaborator.prototype.onToggleBoolean = function(id, fromValue) {
     }
     if (isNil(block.value)) {return; }
     block.reactToSliderEdit();
+};
+
+////////////////////////// Custom Blocks //////////////////////////
+SimpleCollaborator.prototype.onAddCustomBlock = function(id, ownerId, opts, creatorId) {
+    var def = new CustomBlockDefinition(opts.spec),
+        owner = this._owners[ownerId],
+        ide = owner.parentThatIsA(IDE_Morph),
+        stage = owner.parentThatIsA(StageMorph),
+        body;
+
+    // Create the CustomBlockDefinition
+    // Record the owner?
+    // TODO
+    def = new CustomBlockDefinition(opts.spec);
+    def.type = opts.blockType;
+    def.category = opts.category;
+    def.isGlobal = opts.isGlobal;
+    def.id = id;
+    if (def.type === 'reporter' || def.type === 'predicate') {
+        body = Process.prototype.reify.call(
+            null,
+            SpriteMorph.prototype.blockForSelector('doReport'),
+            new List(),
+            true // ignore empty slots for custom block reification
+        );
+        body.outerContext = null;
+        def.body = body;
+    }
+
+    // Update the palette
+    if (def.isGlobal) {
+        stage.globalBlocks.push(def);
+    } else {
+        owner.customBlocks.push(def);
+    }
+    ide.flushPaletteCache();
+    ide.refreshPalette();
+    this._customBlocks[id] = def;
+
+    if (creatorId === this.id) {
+        new BlockEditorMorph(def, owner).popUp();
+    }
+};
+
+SimpleCollaborator.prototype.onDeleteCustomBlock = function(id, ownerId) {
+    var definition = this._customBlocks[id],
+        rcvr = this._owners[ownerId],
+        stage,
+        ide,
+        idx;
+
+    rcvr.deleteAllBlockInstances(definition);
+    if (definition.isGlobal) {
+        stage = rcvr.parentThatIsA(StageMorph);
+        idx = stage.globalBlocks.indexOf(definition);
+        if (idx !== -1) {
+            stage.globalBlocks.splice(idx, 1);
+        }
+    } else {
+        idx = rcvr.customBlocks.indexOf(definition);
+        if (idx !== -1) {
+            rcvr.customBlocks.splice(idx, 1);
+        }
+    }
+    ide = rcvr.parentThatIsA(IDE_Morph);
+    if (ide) {
+        ide.flushPaletteCache();
+        ide.refreshPalette();
+    }
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
