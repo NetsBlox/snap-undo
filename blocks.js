@@ -5807,6 +5807,7 @@ ScriptsMorph.prototype.addBlock = function (block) {
 
     if (blockEditor) {
         ownerId = blockEditor.definition.id;
+        position = position.subtract(blockEditor.position());
     }
 
     SnapCollaborator.addBlock(type, ownerId, position.x, position.y);
@@ -5841,16 +5842,20 @@ ScriptsMorph.prototype.moveBlock = function (block, target) {
 
 ScriptsMorph.prototype.setBlockPosition = function (block) {
     var position = block.position(),
-        oldPos = SnapCollaborator.positionOf[block.id];
-        x = position.x,
-        y = position.y;
+        oldPos = SnapCollaborator.positionOf[block.id],
+        editor = block.parentThatIsA(BlockEditorMorph);
 
+    if (editor) {  // not a custom block
+        position = position.subtract(editor.position());
+    }
+
+    // Update the position if in a BlockEditorMorph
     // Move back to starting position in case it is not accepted
     // TODO: Latency makes this look bad :(
     if (oldPos) {
         block.setPosition(new Point(oldPos[0], oldPos[1]));
     }
-    SnapCollaborator.setBlockPosition(block.id, x, y);
+    SnapCollaborator.setBlockPosition(block.id, position.x, position.y);
 };
 
 // ScriptsMorph events

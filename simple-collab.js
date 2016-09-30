@@ -14,6 +14,7 @@ function SimpleCollaborator() {
     // Helpers
     this._blocks = {};
     this._customBlocks = {};
+    this._customBlockOwner = {};
     this._owners = {};
 
     this.spliceConnections = {'bottom/block': true};
@@ -204,6 +205,7 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
         owner = this._owners[ownerId],
         world = this.ide.parentThatIsA(WorldMorph),
         hand = world.hand,
+        position = new Point(x, y),
         i = 1,
         firstBlock;
 
@@ -221,18 +223,50 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
     }
 
     this.positionOf[firstBlock.id] = [x, y];
-    firstBlock.setPosition(new Point(x, y));
 
     if (firstBlock.snapSound) {
         firstBlock.snapSound.play();
     }
 
-    owner.scripts.add(firstBlock);
-    owner.scripts.changed();
-    firstBlock.changed();
+    // TODO: Check if it is added to a custom block definition
+    if (!this._customBlocks[ownerId]) {  // not a custom block
+        owner.scripts.add(firstBlock);
+        owner.scripts.changed();
+        firstBlock.changed();
+    } else {
+        // Create a BlockEditorMorph for the given block
+        // TODO
+        var def = this._customBlocks[ownerId],
+            owner = this._customBlockOwner[ownerId],
+            editor = this._getCustomBlockEditor(ownerId, owner),
+            scripts = editor.body.contents;
+
+        console.log('adding block to custom block def:', ownerId);
+        position = position.add(editor.position());
+        scripts.add(firstBlock);
+        editor.updateDefinition();
+    }
+
+    firstBlock.setPosition(position);
 
     // Register generic hat blocks?
     // TODO
+};
+
+SimpleCollaborator.prototype.world = function() {
+    var ownerId = Object.keys(this._owners)[0],
+        owner = this._owners[ownerId];
+
+    return owner ? owner.parentThatIsA(WorldMorph) : null;
+};
+
+SimpleCollaborator.prototype._getCustomBlockEditor = function(blockId, owner) {
+    // Check for the block editor in the world children for this definition
+    var children = this.world() ? this.world().children : [],
+        editor = detect(children, function(child) {
+        return child instanceof BlockEditorMorph && child.definition.id === blockId;
+    });
+    return editor || new BlockEditorMorph(this._customBlocks[blockId], owner);
 };
 
 SimpleCollaborator.prototype.getBlockFromId = function(id) {
@@ -290,7 +324,8 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     // Disconnect from previous...
     var block = this._blocks[id],
         scripts = block.parentThatIsA(ScriptsMorph),
-        oldParent = block.parent;
+        oldParent = block.parent,
+        position = new Point(x, y);
 
     console.assert(block, 'Block "' + id + '" does not exist! Cannot set position');
 
@@ -299,7 +334,12 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     }
 
     scripts.add(block);
-    block.setPosition(new Point(x, y));
+    // Check if editing a custom block
+    var editor = block.parentThatIsA(BlockEditorMorph);
+    if (editor) {  // not a custom block
+        position = position.add(editor.position());
+    }
+    block.setPosition(position);
 
     if (!(oldParent instanceof ScriptsMorph)) {
         if (oldParent.reactToGrabOf) {
@@ -459,6 +499,7 @@ SimpleCollaborator.prototype.onAddCustomBlock = function(id, ownerId, opts, crea
     ide.flushPaletteCache();
     ide.refreshPalette();
     this._customBlocks[id] = def;
+    this._customBlockOwner[id] = owner;
 
     if (creatorId === this.id) {
         new BlockEditorMorph(def, owner).popUp();
