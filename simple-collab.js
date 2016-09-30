@@ -310,13 +310,24 @@ SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
 
     block.snap(target);
     this.updateCommentsPositions(block);
+    this._updateBlockDefinitions(block);
 };
 
 SimpleCollaborator.prototype.onRemoveBlock = function(id, userDestroy) {
-    var method = userDestroy ? 'userDestroy' : 'destroy';
-    if (this._blocks[id]) {
-        this._blocks[id][method]();
+    var method = userDestroy ? 'userDestroy' : 'destroy',
+        block = this._blocks[id];
+
+    if (block) {
+        block[method]();
         delete this._blocks[id];
+        this._updateBlockDefinitions(block);
+    }
+};
+
+SimpleCollaborator.prototype._updateBlockDefinitions = function(block) {
+    var editor = block.parentThatIsA(BlockEditorMorph);
+    if (editor) {
+        editor.updateDefinition();
     }
 };
 
@@ -362,9 +373,7 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     this.updateCommentsPositions(block);
 
     // Save the block definition
-    if (editor) {
-        editor.updateDefinition();
-    }
+    this._updateBlockDefinitions(block);
 };
 
 SimpleCollaborator.prototype.updateCommentsPositions = function(block) {
@@ -387,16 +396,19 @@ SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
 SimpleCollaborator.prototype.onAddListInput = function(id) {
     var block = this.getBlockFromId(id);
     block.addInput();
+    this._updateBlockDefinitions(block);
 };
 
 SimpleCollaborator.prototype.onRemoveListInput = function(id) {
     var block = this.getBlockFromId(id);
     block.removeInput();
+    this._updateBlockDefinitions(block);
 };
 
 SimpleCollaborator.prototype.onSetBlockSpec = function(id, spec) {
     var block = this.getBlockFromId(id);
     block.userSetSpec(spec);
+    this._updateBlockDefinitions(block);
 };
 
 SimpleCollaborator.prototype.onSetField = function(pId, connId, value) {
@@ -406,6 +418,7 @@ SimpleCollaborator.prototype.onSetField = function(pId, connId, value) {
     console.assert(block instanceof InputSlotMorph,
         'Unexpected block type: ' + block.constructor);
     block.setContents(value);
+    this._updateBlockDefinitions(block);
 };
 
 SimpleCollaborator.prototype.onSetCommentText = function(id, text) {
@@ -414,11 +427,13 @@ SimpleCollaborator.prototype.onSetCommentText = function(id, text) {
     block.contents.drawNew();
     block.contents.changed();
     block.layoutChanged();
+    this._updateBlockDefinitions(block);
 };
 
 SimpleCollaborator.prototype.onSetSelector = function(id, sel) {
     var block = this._blocks[id];
     block.setSelector(sel);
+    this._updateBlockDefinitions(block);
 };
 
 SimpleCollaborator.prototype.onAddVariable = function(name, ownerId) {
@@ -443,6 +458,7 @@ SimpleCollaborator.prototype.onRingify = function(id) {
         ring.id = this.newId();
         this._blocks[ring.id] = ring;
     }
+    this._updateBlockDefinitions(block);
 };
 
 SimpleCollaborator.prototype.onUnringify = function(id) {
@@ -451,6 +467,7 @@ SimpleCollaborator.prototype.onUnringify = function(id) {
         var ring = block.unringify();
         delete this._blocks[ring.id];
     }
+    this._updateBlockDefinitions(block);
 };
 
 SimpleCollaborator.prototype.onToggleBoolean = function(id, fromValue) {
@@ -468,6 +485,7 @@ SimpleCollaborator.prototype.onToggleBoolean = function(id, fromValue) {
     }
     if (isNil(block.value)) {return; }
     block.reactToSliderEdit();
+    this._updateBlockDefinitions(block);
 };
 
 ////////////////////////// Custom Blocks //////////////////////////
