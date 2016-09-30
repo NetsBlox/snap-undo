@@ -333,12 +333,14 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
         oldParent.revertToDefaultInput(block);
     }
 
-    scripts.add(block);
     // Check if editing a custom block
     var editor = block.parentThatIsA(BlockEditorMorph);
     if (editor) {  // not a custom block
         position = position.add(editor.position());
+        scripts = editor.body.contents;
     }
+
+    scripts.add(block);
     block.setPosition(position);
 
     if (!(oldParent instanceof ScriptsMorph)) {
@@ -358,6 +360,11 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     block.changed();
 
     this.updateCommentsPositions(block);
+
+    // Save the block definition
+    if (editor) {
+        editor.updateDefinition();
+    }
 };
 
 SimpleCollaborator.prototype.updateCommentsPositions = function(block) {
