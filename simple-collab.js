@@ -39,6 +39,7 @@ SimpleCollaborator.prototype.initialize = function() {
     ws.onmessage = function(raw) {
         var msg = JSON.parse(raw.data);
 
+        logger.debug('received msg:', msg);
         if (msg.type === 'rank') {
             self.rank = msg.value;
             self.id = 'client_' + self.rank;
@@ -49,7 +50,6 @@ SimpleCollaborator.prototype.initialize = function() {
         } else {  // block action
             self.onMessage(msg);
         }
-        logger.debug('received msg:', msg);
     };
 
     this._ws = ws;
@@ -222,8 +222,6 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
         ++i;
     }
 
-    this.positionOf[firstBlock.id] = [x, y];
-
     if (firstBlock.snapSound) {
         firstBlock.snapSound.play();
     }
@@ -239,11 +237,13 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
             editor = this._getCustomBlockEditor(ownerId),
             scripts = editor.body.contents;
 
-        position = position.add(editor.body.contents.position());
+        position = position.add(editor.position());
         firstBlock.setPosition(position);
         scripts.add(firstBlock);
         editor.updateDefinition();
     }
+
+    this.positionOf[firstBlock.id] = [position.x, position.y];
 
     // Register generic hat blocks?
     // TODO
@@ -400,12 +400,13 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     // Check if editing a custom block
     var editor = block.parentThatIsA(BlockEditorMorph);
     if (editor) {  // not a custom block
-        position = position.add(editor.body.contents.position());
+        position = position.add(editor.position());
         scripts = editor.body.contents;
+        this.positionOf[id] = [position.x, position.y];
     }
 
-    scripts.add(block);
     block.setPosition(position);
+    scripts.add(block);
 
     if (!(oldParent instanceof ScriptsMorph)) {
         if (oldParent.reactToGrabOf) {
