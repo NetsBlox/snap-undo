@@ -2389,12 +2389,17 @@ BlockLabelFragmentMorph.prototype.mouseClickLeft = function () {
         null,
         function () {
             var defId = myself.parent.definition.id,
-                index = myself.parent.children.indexOf(myself),
-                type = frag.type,
-                value = frag.labelString;
+                index = myself.parent.children.indexOf(myself);
 
-            console.assert(index > -1, 'Cannot find the fragment!');
-            SnapCollaborator.updateBlockLabel(defId, index, type, value);
+            if (frag.isDeleted) {
+                SnapCollaborator.deleteBlockLabel(defId, index);
+            } else {
+                var type = frag.type,
+                    value = frag.labelString;
+
+                console.assert(index > -1, 'Cannot find the fragment!');
+                SnapCollaborator.updateBlockLabel(defId, index, type, value);
+            }
         },
         this,
         this.parent.definition.category
