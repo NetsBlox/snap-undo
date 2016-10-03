@@ -5807,7 +5807,7 @@ ScriptsMorph.prototype.addBlock = function (block) {
 
     if (blockEditor) {
         ownerId = blockEditor.definition.id;
-        position = position.subtract(blockEditor.position());
+        position = position.subtract(blockEditor.body.contents.position());
     }
 
     SnapCollaborator.addBlock(type, ownerId, position.x, position.y);
@@ -5851,7 +5851,7 @@ ScriptsMorph.prototype.setBlockPosition = function (block) {
         editor = block.parentThatIsA(BlockEditorMorph);
 
     if (editor) {  // not a custom block
-        position = position.subtract(editor.position());
+        position = position.subtract(editor.body.contents.position());
     }
 
     // Update the position if in a BlockEditorMorph

@@ -1800,9 +1800,9 @@ BlockEditorMorph.prototype.init = function (definition, target) {
     scripts.scrollFrame = scriptsFrame;
 
     this.addBody(scriptsFrame);
-    this.addButton('ok', 'OK');
-    this.addButton('updateDefinition', 'Apply');
-    this.addButton('cancel', 'Cancel');
+    this.addButton('ok', 'Done');
+    //this.addButton('updateDefinition', 'Apply');
+    //this.addButton('cancel', 'Cancel');
 
     this.setExtent(new Point(375, 300)); // normal initial extent
     this.fixLayout();

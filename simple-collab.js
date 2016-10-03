@@ -230,23 +230,20 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
 
     // TODO: Check if it is added to a custom block definition
     if (!this._customBlocks[ownerId]) {  // not a custom block
+        firstBlock.setPosition(position);
         owner.scripts.add(firstBlock);
         owner.scripts.changed();
         firstBlock.changed();
     } else {
-        // Create a BlockEditorMorph for the given block
-        // TODO
         var def = this._customBlocks[ownerId],
             editor = this._getCustomBlockEditor(ownerId),
             scripts = editor.body.contents;
 
-        console.log('adding block to custom block def:', ownerId);
-        position = position.add(editor.position());
+        position = position.add(editor.body.contents.position());
+        firstBlock.setPosition(position);
         scripts.add(firstBlock);
         editor.updateDefinition();
     }
-
-    firstBlock.setPosition(position);
 
     // Register generic hat blocks?
     // TODO
@@ -266,13 +263,60 @@ SimpleCollaborator.prototype._getCustomBlockEditor = function(blockId) {
         editor = detect(children, function(child) {
         return child instanceof BlockEditorMorph && child.definition.id === blockId;
     });
-    return editor || new BlockEditorMorph(this._customBlocks[blockId], owner);
+
+    if (!editor) {  // Create new editor dialog
+        editor = new BlockEditorMorph(this._customBlocks[blockId], owner);
+        editor.popUp();  // need to guarantee the correct pos
+        editor.setInitialDimensions();
+        editor.cancel();
+    }
+
+    return editor;
 };
 
 SimpleCollaborator.prototype.getBlockFromId = function(id) {
     var ids = id.split('/'),
         blockId = ids.shift(),
-        block = this._blocks[blockId];
+        block = this._blocks[blockId],
+        editor = block.parentThatIsA(BlockEditorMorph),
+        customBlockId;
+
+    // If the block is part of a custom block def, refresh it
+    if (editor) {
+        var customBlockId = editor.definition.id,
+            found = false,
+            current,
+            next;
+
+        currentEditor = this._getCustomBlockEditor(customBlockId);
+        if (editor !== currentEditor) {  // update the block record
+            editor = currentEditor;
+            current = editor.body.contents.children.slice();
+            // Search through the blocks for the given id...
+            while (!found && current.length) {
+                next = [];
+                for (var i = current.length; i--;) {
+                    // Check for the given id
+                    if (current[i].id === blockId) {
+                        this._blocks[blockId] = current[i];
+                        block = this._blocks[blockId];
+                        found = true;
+                        break;
+                    }
+
+                    // Get the next nodes
+                    if (current[i].inputs) {
+                        next = next.concat(current[i].inputs());
+                    }
+
+                    if (current[i].nextBlock) {
+                        next.push(current[i].nextBlock());
+                    }
+                }
+                current = next;
+            }
+        }
+    }
 
     for (var i = 0; i < ids.length; i++) {
         if (ids[i]) {
@@ -324,7 +368,7 @@ SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
 
 SimpleCollaborator.prototype.onRemoveBlock = function(id, userDestroy) {
     var method = userDestroy ? 'userDestroy' : 'destroy',
-        block = this._blocks[id];
+        block = this.getBlockFromId(id);
 
     if (block) {
         block[method]();
@@ -342,7 +386,7 @@ SimpleCollaborator.prototype._updateBlockDefinitions = function(block) {
 
 SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     // Disconnect from previous...
-    var block = this._blocks[id],
+    var block = this.getBlockFromId(id),
         scripts = block.parentThatIsA(ScriptsMorph),
         oldParent = block.parent,
         position = new Point(x, y);
@@ -356,7 +400,7 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     // Check if editing a custom block
     var editor = block.parentThatIsA(BlockEditorMorph);
     if (editor) {  // not a custom block
-        position = position.add(editor.position());
+        position = position.add(editor.body.contents.position());
         scripts = editor.body.contents;
     }
 
@@ -395,7 +439,7 @@ SimpleCollaborator.prototype.updateCommentsPositions = function(block) {
 };
 
 SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
-    var block = this._blocks[id],
+    var block = this.getBlockFromId(id),
         scripts = block.parentThatIsA(ScriptsMorph);
 
     // TODO: This is not sizing the ring appropriately...
@@ -440,7 +484,7 @@ SimpleCollaborator.prototype.onSetCommentText = function(id, text) {
 };
 
 SimpleCollaborator.prototype.onSetSelector = function(id, sel) {
-    var block = this._blocks[id];
+    var block = this.getBlockFromId(id);
     block.setSelector(sel);
     this._updateBlockDefinitions(block);
 };
@@ -462,8 +506,10 @@ SimpleCollaborator.prototype.onDeleteVariable = function(name, ownerId) {
 };
 
 SimpleCollaborator.prototype.onRingify = function(id) {
-    if (this._blocks[id]) {
-        var ring = this._blocks[id].ringify();
+    var block = this.getBlockFromId(id);
+
+    if (block) {
+        var ring = block.ringify();
         ring.id = this.newId();
         this._blocks[ring.id] = ring;
     }
@@ -471,7 +517,7 @@ SimpleCollaborator.prototype.onRingify = function(id) {
 };
 
 SimpleCollaborator.prototype.onUnringify = function(id) {
-    var block = this._blocks[id];
+    var block = this.getBlockFromId(id);
     if (block) {
         var ring = block.unringify();
         delete this._blocks[ring.id];
