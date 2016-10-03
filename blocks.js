@@ -5817,11 +5817,16 @@ ScriptsMorph.prototype.addBlock = function (block) {
 
 ScriptsMorph.prototype.moveBlock = function (block, target) {
     var blockId = SnapCollaborator.serializeBlock(block),
-        isNewBlock = !block.id;
+        isNewBlock = !block.id,
+        id;
 
     if (block instanceof CommandBlockMorph) {
         if (!target.element.id) {
-            target.element = SnapCollaborator.getId(target.element);
+            if (target.element instanceof PrototypeHatBlockMorph) {
+                target.element = target.element.definition.id;
+            } else {
+                target.element = SnapCollaborator.getId(target.element);
+            }
         } else {
             target.element = target.element.id;
         }

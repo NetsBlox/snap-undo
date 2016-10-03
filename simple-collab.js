@@ -237,8 +237,7 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
         // Create a BlockEditorMorph for the given block
         // TODO
         var def = this._customBlocks[ownerId],
-            owner = this._customBlockOwner[ownerId],
-            editor = this._getCustomBlockEditor(ownerId, owner),
+            editor = this._getCustomBlockEditor(ownerId),
             scripts = editor.body.contents;
 
         console.log('adding block to custom block def:', ownerId);
@@ -260,9 +259,10 @@ SimpleCollaborator.prototype.world = function() {
     return owner ? owner.parentThatIsA(WorldMorph) : null;
 };
 
-SimpleCollaborator.prototype._getCustomBlockEditor = function(blockId, owner) {
+SimpleCollaborator.prototype._getCustomBlockEditor = function(blockId) {
     // Check for the block editor in the world children for this definition
     var children = this.world() ? this.world().children : [],
+        owner = this._customBlockOwner[blockId],
         editor = detect(children, function(child) {
         return child instanceof BlockEditorMorph && child.definition.id === blockId;
     });
@@ -289,7 +289,16 @@ SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
         scripts;
 
     if (block instanceof CommandBlockMorph) {
-        target.element = this.getBlockFromId(target.element);
+        // Check if connecting to the beginning of a custom block definition
+        if (this._customBlocks[target.element]) {
+            target.element = this._getCustomBlockEditor(target.element)
+                .body.contents  // get ScriptsMorph of BlockEditorMorph
+                .children.find(function(child) {
+                    return child instanceof PrototypeHatBlockMorph
+                });
+        } else {  // basic connection for sprite/stage/etc
+            target.element = this.getBlockFromId(target.element);
+        }
         scripts = target.element.parentThatIsA(ScriptsMorph);
     } else if (block instanceof ReporterBlockMorph || block instanceof CommentMorph) {
         target = this.getBlockFromId(target);
