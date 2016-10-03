@@ -2387,7 +2387,15 @@ BlockLabelFragmentMorph.prototype.mouseClickLeft = function () {
     new InputSlotDialogMorph(
         frag,
         null,
-        function () {myself.updateBlockLabel(frag); },
+        function () {
+            var defId = myself.parent.definition.id,
+                index = myself.parent.children.indexOf(myself),
+                type = frag.type,
+                value = frag.labelString;
+
+            console.assert(index > -1, 'Cannot find the fragment!');
+            SnapCollaborator.updateBlockLabel(defId, index, type, value);
+        },
         this,
         this.parent.definition.category
     ).open(

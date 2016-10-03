@@ -162,6 +162,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'addCustomBlock',  // (definition)
     'deleteCustomBlock',  // (definition)
     'toggleBoolean',
+    'updateBlockLabel',
     'ringify',
     'unringify',
     'setSelector',
@@ -297,6 +298,8 @@ SimpleCollaborator.prototype.getBlockFromId = function(id) {
                 next = [];
                 for (var i = current.length; i--;) {
                     // Check for the given id
+                    if (!current[i]) continue;
+
                     if (current[i].id === blockId) {
                         this._blocks[blockId] = current[i];
                         block = this._blocks[blockId];
@@ -612,6 +615,22 @@ SimpleCollaborator.prototype.onDeleteCustomBlock = function(id, ownerId) {
         ide.flushPaletteCache();
         ide.refreshPalette();
     }
+};
+
+SimpleCollaborator.prototype.onUpdateBlockLabel = function(id, index, type, label) {
+    var editor = this._getCustomBlockEditor(id),
+        fragLabel = new BlockLabelFragment(label),
+        scripts = editor.body.contents,
+        hat = detect(scripts.children,
+            function(block) {return block instanceof PrototypeHatBlockMorph;}),
+        customBlock = hat.inputs()[0],
+        frag = customBlock.children[index];
+
+    console.assert(hat.inputs().length === 1);
+
+    fragLabel.type = type;
+    frag.updateBlockLabel(fragLabel);
+    editor.updateDefinition()
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
