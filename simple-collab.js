@@ -555,25 +555,28 @@ SimpleCollaborator.prototype.onAddCustomBlock = function(id, ownerId, opts, crea
         owner = this._owners[ownerId],
         ide = owner.parentThatIsA(IDE_Morph),
         stage = owner.parentThatIsA(StageMorph),
+        addedReporter = false,
+        editor,
         body;
 
     // Create the CustomBlockDefinition
-    // Record the owner?
-    // TODO
     def = new CustomBlockDefinition(opts.spec);
     def.type = opts.blockType;
     def.category = opts.category;
     def.isGlobal = opts.isGlobal;
     def.id = id;
     if (def.type === 'reporter' || def.type === 'predicate') {
+        var reporter = SpriteMorph.prototype.blockForSelector('doReport');
+        reporter.id = this.newId();
         body = Process.prototype.reify.call(
             null,
-            SpriteMorph.prototype.blockForSelector('doReport'),
+            reporter,
             new List(),
             true // ignore empty slots for custom block reification
         );
         body.outerContext = null;
         def.body = body;
+        addedReporter = true;
     }
 
     // Update the palette
@@ -587,8 +590,25 @@ SimpleCollaborator.prototype.onAddCustomBlock = function(id, ownerId, opts, crea
     this._customBlocks[id] = def;
     this._customBlockOwner[id] = owner;
 
+
+    if (addedReporter) {  // Add reporter to the _blocks dictionary
+        var scripts,
+            hat;
+
+        // Update the reporter to the one in the editor
+        editor = new BlockEditorMorph(def, owner);
+        scripts = editor.body.contents;
+        hat = scripts.children[0];
+        reporter = hat.nextBlock();
+
+        this._blocks[reporter.id] = reporter;
+    }
+
     if (creatorId === this.id) {
-        new BlockEditorMorph(def, owner).popUp();
+        if (!editor) {
+            editor = new BlockEditorMorph(def, owner);
+        }
+        editor.popUp();
     }
 };
 
