@@ -707,9 +707,7 @@ CustomCommandBlockMorph.prototype.edit = function () {
             null,
             function (definition) {
                 if (definition) { // temporarily update everything
-                    hat.blockCategory = definition.category;
-                    hat.type = definition.type;
-                    myself.refreshPrototype();
+                    SnapCollaborator.setCustomBlockType(myself.definition.id, definition.category, definition.type);
                 }
             },
             myself

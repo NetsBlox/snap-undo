@@ -164,6 +164,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'toggleBoolean',
     'updateBlockLabel',
     'deleteBlockLabel',
+    'setCustomBlockType',
     'ringify',
     'unringify',
     'setSelector',
@@ -618,15 +619,21 @@ SimpleCollaborator.prototype.onDeleteCustomBlock = function(id, ownerId) {
     }
 };
 
-SimpleCollaborator.prototype._getFragment = function(id, index) {
+SimpleCollaborator.prototype._getCustomCmdBlock = function(id) {
     var editor = this._getCustomBlockEditor(id),
         scripts = editor.body.contents,
         hat = detect(scripts.children,
             function(block) {return block instanceof PrototypeHatBlockMorph;}),
-        customBlock = hat.inputs()[0],
-        frag = customBlock.children[index];
+        customBlock = hat.inputs()[0];
 
     console.assert(hat.inputs().length === 1);
+
+    return customBlock;
+};
+
+SimpleCollaborator.prototype._getFragment = function(id, index) {
+    var customBlock = this._getCustomCmdBlock(id),
+        frag = customBlock.children[index];
 
     return frag;
 };
@@ -648,6 +655,19 @@ SimpleCollaborator.prototype.onDeleteBlockLabel = function(id, index) {
     fragment.fragment.isDeleted = true;
     fragment.updateBlockLabel(fragment.fragment);
     editor.updateDefinition();
+};
+
+SimpleCollaborator.prototype.onSetCustomBlockType = function(id, cat, type) {
+    var customBlock = this._getCustomCmdBlock(id),
+        hat = customBlock.parentThatIsA(PrototypeHatBlockMorph),
+        editor = customBlock.parentThatIsA(BlockEditorMorph),
+        definition = this._customBlocks[id];
+
+    // Update the block definition and the hat block
+    hat.blockCategory = definition.category = cat;
+    hat.type = definition.type = type;
+    editor.updateDefinition();
+    customBlock.refreshPrototype();
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
