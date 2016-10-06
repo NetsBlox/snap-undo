@@ -1994,7 +1994,7 @@ IDE_Morph.prototype.addNewSprite = function () {
         y: rnd.call(this, -160, 160)
     };
 
-    SnapCollaborator.addSprite(opts);
+    SnapCollaborator.addSprite(opts, SnapCollaborator.id);
 };
 
 IDE_Morph.prototype.paintNewSprite = function () {

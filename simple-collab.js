@@ -242,7 +242,7 @@ SimpleCollaborator.prototype.getAdjustedPosition = function(position, scripts) {
 SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
     var block,
         owner = this._owners[ownerId],
-        world = this.ide.parentThatIsA(WorldMorph),
+        world = this.ide().parentThatIsA(WorldMorph),
         hand = world.hand,
         position = new Point(x, y),
         i = 1,
@@ -798,14 +798,14 @@ SimpleCollaborator.prototype.onSetCustomBlockType = function(id, cat, type) {
 };
 
 ////////////////////////// Sprites //////////////////////////
-SimpleCollaborator.prototype.getIDE = function() {
+SimpleCollaborator.prototype.ide = function() {
     var ownerId = Object.keys(this._owners)[0];
 
     return this._owners[ownerId].parentThatIsA(IDE_Morph);
 };
 
-SimpleCollaborator.prototype.onAddSprite = function(opts) {
-    var ide = this.getIDE(),
+SimpleCollaborator.prototype.onAddSprite = function(opts, creatorId) {
+    var ide = this.ide(),
         sprite = new SpriteMorph(ide.globalVariables);
 
     sprite.name = opts.name;
@@ -818,12 +818,15 @@ SimpleCollaborator.prototype.onAddSprite = function(opts) {
     sprite.turn(opts.dir);
     sprite.setXPosition(opts.x);
     sprite.setYPosition(opts.y);
-    sprite.id = this.newId();
 
-    this._owners[sprite.id] = opts.id;
     ide.sprites.add(sprite);
     ide.corral.addSprite(sprite);
-    ide.selectSprite(sprite);
+
+    if (creatorId === this.id) {
+        ide.selectSprite(sprite);
+    }
+
+    this.registerOwner(sprite);
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
