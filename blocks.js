@@ -8228,7 +8228,11 @@ BooleanSlotMorph.prototype.toggleValue = function () {
 
 BooleanSlotMorph.prototype.mouseClickLeft = function () {
     var id = SnapCollaborator.getId(this);
-    SnapCollaborator.toggleBoolean(id, this.value);
+    if (id) {
+        SnapCollaborator.toggleBoolean(id, this.value);
+    } else {  // in the palette
+        this.toggleValue();
+    }
 };
 
 BooleanSlotMorph.prototype.mouseEnter = function () {
