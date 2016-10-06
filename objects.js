@@ -6138,14 +6138,15 @@ StageMorph.prototype.blockTemplates = function (category) {
                     null,
                     function (definition) {
                         if (definition.spec !== '') {
-                            if (definition.isGlobal) {
-                                myself.globalBlocks.push(definition);
-                            } else {
-                                myself.customBlocks.push(definition);
-                            }
-                            ide.flushPaletteCache();
-                            ide.refreshPalette();
-                            new BlockEditorMorph(definition, myself).popUp();
+                            var id = SnapCollaborator.newId(),
+                                opts = {
+                                    blockType: definition.type,
+                                    category: definition.category,
+                                    spec: definition.spec,
+                                    isGlobal: definition.isGlobal
+                                };
+
+                            SnapCollaborator.addCustomBlock(id, myself.id, opts, SnapCollaborator.id);
                         }
                     },
                     myself
