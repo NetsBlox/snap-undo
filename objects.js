@@ -1318,8 +1318,6 @@ function SpriteMorph(globals) {
 }
 
 SpriteMorph.prototype.init = function (globals) {
-    this.id = 'sprite';  // SnapCollaborator.newId();
-    SnapCollaborator._owners[this.id] = this;
     this.name = localize('Sprite');
     this.variables = new VariableFrame(globals || null, this);
     this.scripts = new ScriptsMorph(this);
@@ -5087,8 +5085,6 @@ function StageMorph(globals) {
 }
 
 StageMorph.prototype.init = function (globals) {
-    this.id = 'stage';  // SnapCollaborator.newId();
-    SnapCollaborator._owners[this.id] = this;
     this.name = localize('Stage');
     this.threads = new ThreadManager();
     this.variables = new VariableFrame(globals || null, this);

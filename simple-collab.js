@@ -131,6 +131,11 @@ SimpleCollaborator.prototype.deserializeBlock = function(ser) {
     }
 };
 
+SimpleCollaborator.prototype.registerOwner = function(owner) {
+    owner.id = this.newId();
+    this._owners[owner.id] = owner;
+};
+
 /* * * * * * * * * * * * Updating internal rep * * * * * * * * * * * */
 SimpleCollaborator.prototype._setField = function(pId, connId, value) {
     console.assert(!this.blockChildren[pId] || !this.blockChildren[pId][connId],'Connection occupied!');
@@ -173,6 +178,8 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
 [
+    'addSprite',
+
     'addCustomBlock',  // (definition)
     'deleteCustomBlock',  // (definition)
     'toggleBoolean',
@@ -788,6 +795,35 @@ SimpleCollaborator.prototype.onSetCustomBlockType = function(id, cat, type) {
     hat.type = definition.type = type;
     editor.updateDefinition();
     customBlock.refreshPrototype();
+};
+
+////////////////////////// Sprites //////////////////////////
+SimpleCollaborator.prototype.getIDE = function() {
+    var ownerId = Object.keys(this._owners)[0];
+
+    return this._owners[ownerId].parentThatIsA(IDE_Morph);
+};
+
+SimpleCollaborator.prototype.onAddSprite = function(opts) {
+    var ide = this.getIDE(),
+        sprite = new SpriteMorph(ide.globalVariables);
+
+    sprite.name = opts.name;
+    sprite.setCenter(ide.stage.center());
+    ide.stage.add(sprite);
+
+    // randomize sprite properties
+    sprite.setHue(opts.hue);
+    sprite.setBrightness(opts.brightness);
+    sprite.turn(opts.dir);
+    sprite.setXPosition(opts.x);
+    sprite.setYPosition(opts.y);
+    sprite.id = this.newId();
+
+    this._owners[sprite.id] = opts.id;
+    ide.sprites.add(sprite);
+    ide.corral.addSprite(sprite);
+    ide.selectSprite(sprite);
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */

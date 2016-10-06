@@ -214,10 +214,9 @@ IDE_Morph.prototype.init = function (isAutoFill) {
     this.cloudMsg = null;
     this.source = 'local';
     this.serializer = new SnapSerializer();
-    SnapCollaborator.ide = this;  // FIXME
-
     this.globalVariables = new VariableFrame();
     this.currentSprite = new SpriteMorph(this.globalVariables);
+    SnapCollaborator.registerOwner(this.currentSprite);
     this.sprites = new List([this.currentSprite]);
     this.currentCategory = 'motion';
     this.currentTab = 'scripts';
@@ -1007,6 +1006,7 @@ IDE_Morph.prototype.createStage = function () {
     if (this.stage) {this.stage.destroy(); }
     StageMorph.prototype.frameRate = 0;
     this.stage = new StageMorph(this.globalVariables);
+    SnapCollaborator.registerOwner(this.stage);
     this.stage.setExtent(this.stage.dimensions); // dimensions are fixed
     if (this.currentSprite instanceof SpriteMorph) {
         this.currentSprite.setPosition(
@@ -1982,23 +1982,19 @@ IDE_Morph.prototype.removeSetting = function (key) {
 // IDE_Morph sprite list access
 
 IDE_Morph.prototype.addNewSprite = function () {
-    var sprite = new SpriteMorph(this.globalVariables),
-        rnd = Process.prototype.reportRandom;
-
-    sprite.name = this.newSpriteName(sprite.name);
-    sprite.setCenter(this.stage.center());
-    this.stage.add(sprite);
+    var rnd = Process.prototype.reportRandom;
 
     // randomize sprite properties
-    sprite.setHue(rnd.call(this, 0, 100));
-    sprite.setBrightness(rnd.call(this, 50, 100));
-    sprite.turn(rnd.call(this, 1, 360));
-    sprite.setXPosition(rnd.call(this, -220, 220));
-    sprite.setYPosition(rnd.call(this, -160, 160));
+    var opts = {
+        hue: rnd.call(this, 0, 100),
+        brightness: rnd.call(this, 50, 100),
+        name: this.newSpriteName(new SpriteMorph(this.globalVariables).name),
+        dir: rnd.call(this, 1, 360),
+        x: rnd.call(this, -220, 220),
+        y: rnd.call(this, -160, 160)
+    };
 
-    this.sprites.add(sprite);
-    this.corral.addSprite(sprite);
-    this.selectSprite(sprite);
+    SnapCollaborator.addSprite(opts);
 };
 
 IDE_Morph.prototype.paintNewSprite = function () {
