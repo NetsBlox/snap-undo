@@ -6353,16 +6353,16 @@ SpriteIconMorph.prototype.reactToDropOf = function (morph, hand) {
 
 SpriteIconMorph.prototype.copyStack = function (block) {
     var dup = block.fullCopy(),
+        // FIXME: This positioning can be problematic...
         y = Math.max(this.object.scripts.children.map(function (stack) {
             return stack.fullBounds().bottom();
-        }).concat([this.object.scripts.top()]));
+        }).concat([this.object.scripts.top()])),
+        position = new Point(this.object.scripts.left() + 20, y + 20);
 
-    dup.setPosition(new Point(this.object.scripts.left() + 20, y + 20));
-    this.object.scripts.add(dup);
+    dup.setPosition(position);
     dup.allComments().forEach(function (comment) {
         comment.align(dup);
     });
-    this.object.scripts.adjustBounds();
 
     // delete all custom blocks pointing to local definitions
     // under construction...
@@ -6371,6 +6371,10 @@ SpriteIconMorph.prototype.copyStack = function (block) {
             morph.deleteBlock();
         }
     });
+
+    dup.id = null;
+    var blocks = SnapCollaborator.serializeBlock(dup);
+    SnapCollaborator.addBlock(blocks, this.object.id, position.x, position.y);
 };
 
 SpriteIconMorph.prototype.copyCostume = function (costume) {

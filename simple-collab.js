@@ -217,6 +217,21 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 });
 
 /* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
+SimpleCollaborator.prototype.getAdjustedPosition = function(position, scripts) {
+    // Adjust the position given the scroll value
+    var dy,
+        dx;
+
+    if (scripts.scrollFrame) {
+        //dy = scripts.top() - scripts.scrollFrame.top();
+        //dx = scripts.left() - scripts.scrollFrame.left();
+
+        return position.add(new Point(dx, dy));
+    } else {
+        return position;
+    }
+};
+
 SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
     var block,
         owner = this._owners[ownerId],
@@ -243,18 +258,21 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
         firstBlock.snapSound.play();
     }
 
-    // TODO: Check if it is added to a custom block definition
     if (!this._customBlocks[ownerId]) {  // not a custom block
+        position = this.getAdjustedPosition(position, owner.scripts);
+
         firstBlock.setPosition(position);
         owner.scripts.add(firstBlock);
         owner.scripts.changed();
         firstBlock.changed();
+        owner.scripts.adjustBounds();
     } else {
         var def = this._customBlocks[ownerId],
             editor = this._getCustomBlockEditor(ownerId),
             scripts = editor.body.contents;
 
         position = position.add(editor.position());
+        position = this.getAdjustedPosition(position, scripts);
         firstBlock.setPosition(position);
         scripts.add(firstBlock);
         editor.updateDefinition();
@@ -449,6 +467,7 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
         this.positionOf[id] = [position.x, position.y];
     }
 
+    position = this.getAdjustedPosition(position, scripts);
     block.setPosition(position);
     scripts.add(block);
 
@@ -623,7 +642,9 @@ SimpleCollaborator.prototype.onToggleBoolean = function(id, fromValue) {
         prev = block.value;
         block.toggleValue();
     }
-    if (isNil(block.value)) {return; }
+    if (isNil(block.value)) {
+        return;
+    }
     block.reactToSliderEdit();
     this._updateBlockDefinitions(block);
 };
