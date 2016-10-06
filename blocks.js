@@ -2333,7 +2333,10 @@ BlockMorph.prototype.userMenu = function () {
             function () {
                 new DialogBoxMorph(
                     myself,
-                    myself.setSpec,  // FIXME: this doesn't redraw appropriately
+                    function(spec) {
+                        var id = SnapCollaborator.getId(this);
+                        SnapCollaborator.setBlockSpec(id, spec);
+                    },
                     myself
                 ).prompt(
                     "Variable name",
