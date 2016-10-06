@@ -387,12 +387,24 @@ SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
 
 SimpleCollaborator.prototype.onRemoveBlock = function(id, userDestroy) {
     var method = userDestroy ? 'userDestroy' : 'destroy',
-        block = this.getBlockFromId(id);
+        block = this.getBlockFromId(id),
+        parent = block.parent;
 
+    // TODO: Check the parent and revert to default input
     if (block) {
+        if (parent && parent.revertToDefaultInput) {
+            parent.revertToDefaultInput(block);
+        }
+
         block[method]();
         delete this._blocks[id];
         this._updateBlockDefinitions(block);
+
+        if (parent.reactToGrabOf) {
+            parent.reactToGrabOf(block);
+        }
+        parent.fixLayout();
+        parent.changed();
     }
 };
 
