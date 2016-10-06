@@ -511,13 +511,23 @@ SimpleCollaborator.prototype.onSetSelector = function(id, sel) {
 
 SimpleCollaborator.prototype.onAddVariable = function(name, ownerId) {
     // Get the sprite or the stage
-    var owner;
-    if (ownerId !== true) {
+    var owner,
+        isGlobal = ownerId === true;
+
+    if (!isGlobal) {
         owner = this._owners[ownerId];
     } else {
         owner = this._owners[Object.keys(this._owners)[0]];
     }
-    owner.addVariable(name, ownerId === true)
+
+    owner.addVariable(name, isGlobal)
+    if (!owner.showingVariableWatcher(name, isGlobal)) {
+        owner.toggleVariableWatcher(name, isGlobal);
+    }
+
+    var ide = owner.parentThatIsA(IDE_Morph);
+    ide.flushBlocksCache('variables'); // b/c of inheritance
+    ide.refreshPalette();
 };
 
 SimpleCollaborator.prototype.onDeleteVariable = function(name, ownerId) {

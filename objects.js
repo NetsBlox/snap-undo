@@ -1743,14 +1743,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
             if (myself.isVariableNameInUse(pair[0], pair[1])) {
                 myself.inform('that name is already in use');
             } else {
-                ide = myself.parentThatIsA(IDE_Morph);
                 SnapCollaborator.addVariable(pair[0], pair[1] || myself.id);
-                //myself.addVariable(pair[0], pair[1]);
-                if (!myself.showingVariableWatcher(pair[0])) {
-                    myself.toggleVariableWatcher(pair[0], pair[1]);
-                }
-                ide.flushBlocksCache('variables'); // b/c of inheritance
-                ide.refreshPalette();
             }
         }
     }
@@ -5790,10 +5783,6 @@ StageMorph.prototype.blockTemplates = function (category) {
                 // TODO: Change this to use the SnapCollaborator
                 SnapCollaborator.addVariable(pair[0], pair[1] || myself.id);
                 //myself.addVariable(pair[0], pair[1]);
-                myself.toggleVariableWatcher(pair[0], pair[1]);
-                myself.blocksCache[cat] = null;
-                myself.paletteCache[cat] = null;
-                myself.parentThatIsA(IDE_Morph).refreshPalette();
             }
         }
     }
