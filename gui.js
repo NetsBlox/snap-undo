@@ -6224,7 +6224,9 @@ SpriteIconMorph.prototype.userMenu = function () {
     menu.addItem("show", 'showSpriteOnStage');
     menu.addLine();
     menu.addItem("duplicate", 'duplicateSprite');
-    menu.addItem("delete", 'removeSprite');
+    menu.addItem("delete", function() {
+        SnapCollaborator.removeSprite(this.object.id);
+    });
     menu.addLine();
     if (StageMorph.prototype.enableInheritance) {
         menu.addItem("parent...", 'chooseExemplar');
@@ -6249,13 +6251,6 @@ SpriteIconMorph.prototype.duplicateSprite = function () {
     var ide = this.parentThatIsA(IDE_Morph);
     if (ide) {
         ide.duplicateSprite(this.object);
-    }
-};
-
-SpriteIconMorph.prototype.removeSprite = function () {
-    var ide = this.parentThatIsA(IDE_Morph);
-    if (ide) {
-        ide.removeSprite(this.object);
     }
 };
 

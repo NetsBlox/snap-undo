@@ -179,6 +179,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
 [
     'addSprite',
+    'removeSprite',
 
     'addCustomBlock',  // (definition)
     'deleteCustomBlock',  // (definition)
@@ -827,6 +828,11 @@ SimpleCollaborator.prototype.onAddSprite = function(opts, creatorId) {
     }
 
     this.registerOwner(sprite);
+};
+
+SimpleCollaborator.prototype.onRemoveSprite = function(spriteId) {
+    var sprite = this._owners[spriteId];
+    this.ide().removeSprite(sprite);
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
