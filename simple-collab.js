@@ -39,7 +39,6 @@ SimpleCollaborator.prototype.initialize = function() {
     ws.onmessage = function(raw) {
         var msg = JSON.parse(raw.data);
 
-        logger.debug('received msg:', msg);
         if (msg.type === 'rank') {
             self.rank = msg.value;
             self.id = 'client_' + self.rank;
@@ -57,6 +56,7 @@ SimpleCollaborator.prototype.initialize = function() {
 };
 
 SimpleCollaborator.prototype.acceptEvent = function(msg) {
+    logger.debug('received event:', msg);
     msg.id = msg.id || this.lastSeen + 1;
     this.send(msg);
     this[msg.type].apply(this, msg.args);
@@ -366,6 +366,9 @@ SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
     } else if (block instanceof ReporterBlockMorph || block instanceof CommentMorph) {
         target = this.getBlockFromId(target);
         scripts = target.parentThatIsA(ScriptsMorph);
+
+        // Disconnect the given block
+        this.disconnectBlock(block, scripts);
     } else {
         logger.error('Unsupported "onMoveBlock":', block);
     }
@@ -388,23 +391,33 @@ SimpleCollaborator.prototype.onMoveBlock = function(id, target) {
 SimpleCollaborator.prototype.onRemoveBlock = function(id, userDestroy) {
     var method = userDestroy ? 'userDestroy' : 'destroy',
         block = this.getBlockFromId(id),
+        scripts = block.parentThatIsA(ScriptsMorph),
         parent = block.parent;
 
-    // TODO: Check the parent and revert to default input
     if (block) {
+        // Check the parent and revert to default input
         if (parent && parent.revertToDefaultInput) {
             parent.revertToDefaultInput(block);
         }
 
+        // Remove the block
         block[method]();
         delete this._blocks[id];
         this._updateBlockDefinitions(block);
 
-        if (parent.reactToGrabOf) {
-            parent.reactToGrabOf(block);
+        // Update parent block's UI
+        if (parent) {
+            if (parent.reactToGrabOf) {
+                parent.reactToGrabOf(block);
+            }
+            if (parent.fixLayout) parent.fixLayout();
+            parent.changed();
+
+            if (scripts) {
+                scripts.drawNew();
+                scripts.changed();
+            }
         }
-        parent.fixLayout();
-        parent.changed();
     }
 };
 
@@ -467,6 +480,36 @@ SimpleCollaborator.prototype.updateCommentsPositions = function(block) {
         topBlock.allComments().forEach(function (comment) {
             comment.align(topBlock);
         });
+    }
+};
+
+SimpleCollaborator.prototype.disconnectBlock = function(block, scripts) {
+    var oldParent = block.parent;
+
+    if (scripts) block.parent = scripts;
+
+    scripts = scripts || block.parentThatIsA(ScriptsMorph);
+    if (oldParent) {
+        if (oldParent.revertToDefaultInput) oldParent.revertToDefaultInput(block);
+
+        if (!(oldParent instanceof ScriptsMorph)) {
+            if (oldParent.reactToGrabOf) {
+                oldParent.reactToGrabOf(block);
+            }
+            if (oldParent.fixLayout) {
+                oldParent.fixLayout();
+            }
+            oldParent.changed();
+
+            if (scripts) {
+                scripts.drawNew();
+                scripts.changed();
+            }
+        }
+    }
+
+    if (block.fixBlockColor) {  // not a comment
+        block.fixBlockColor();
     }
 };
 
@@ -739,6 +782,7 @@ SimpleCollaborator.prototype.onMessage = function(msg) {
         }
     } else {
         if (this[method]) {
+            logger.debug('received event:', msg);
             this[method].apply(this, msg.args);
             this.lastSeen = msg.id;
         }
