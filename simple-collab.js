@@ -108,6 +108,20 @@ SimpleCollaborator.prototype.serializeBlock = function(block) {
 };
 
 SimpleCollaborator.prototype.deserializeBlock = function(ser) {
+    var ownerId = Object.keys(this._owners).pop(),
+        owner,
+        stage;
+
+    if (ownerId) {  // Update the stage for custom blocks
+        owner = this._owners[ownerId],
+        stage = owner.parentThatIsA(StageMorph);
+
+        this.serializer.project = {
+            stage: stage,
+            sprites: {}
+        };
+    }
+
     if (ser[0] !== '<') {
         return this._blocks[ser];
     } else if (ser.indexOf('<script>') === 0) {
