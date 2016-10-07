@@ -1142,8 +1142,7 @@ IDE_Morph.prototype.createSpriteBar = function () {
         'checkbox',
         null,
         function () {
-            myself.currentSprite.isDraggable =
-                !myself.currentSprite.isDraggable;
+            SnapCollaborator.toggleDraggable(myself.currentSprite.id, !myself.currentSprite.isDraggable);
         },
         localize('draggable'),
         function () {
@@ -1166,6 +1165,7 @@ IDE_Morph.prototype.createSpriteBar = function () {
     padlock.setPosition(nameField.bottomLeft().add(2));
     padlock.drawNew();
     this.spriteBar.add(padlock);
+    this.spriteBar.padlock = padlock;
     if (this.currentSprite instanceof StageMorph) {
         padlock.hide();
     }

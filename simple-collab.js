@@ -184,6 +184,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'addSprite',
     'removeSprite',
     'renameSprite',
+    'toggleDraggable',
     'duplicateSprite',
 
     'addCustomBlock',  // (definition)
@@ -861,6 +862,16 @@ SimpleCollaborator.prototype.onRenameSprite = function(spriteId, name) {
     // If current sprite is spriteId, update the spriteBar namefield
     if (ide.currentSprite === sprite) {
         ide.spriteBar.nameField.setContents(name);
+    }
+};
+
+SimpleCollaborator.prototype.onToggleDraggable = function(spriteId, draggable) {
+    var sprite = this._owners[spriteId],
+        ide = this.ide();
+
+    sprite.isDraggable = draggable;
+    if (ide.currentSprite === sprite) {
+        ide.spriteBar.padlock.refresh();
     }
 };
 
