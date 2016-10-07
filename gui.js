@@ -2003,22 +2003,27 @@ IDE_Morph.prototype.addNewSprite = function () {
 IDE_Morph.prototype.paintNewSprite = function () {
     var sprite = new SpriteMorph(this.globalVariables),
         cos = new Costume(),
-        myself = this;
+        position = this.stage.center(),
+        myself = this,
+        opts,
+        name;
 
-    sprite.name = this.newSpriteName(sprite.name);
-    sprite.setCenter(this.stage.center());
-    this.stage.add(sprite);
-    this.sprites.add(sprite);
-    this.corral.addSprite(sprite);
-    this.selectSprite(sprite);
+    name = this.newSpriteName(sprite.name);
+
     cos.edit(
         this.world(),
-        this,
+        null,
         true,
-        function () {myself.removeSprite(sprite); },
+        nop,  // No need to do anything special on cancel
         function () {
-            sprite.addCostume(cos);
-            sprite.wearCostume(cos);
+            cos.shrinkWrap();
+            opts = {
+                costume: cos.toXML(myself.serializer).replace('~', ''),
+                name: name,
+                x: position.x,
+                y: position.y
+            };
+            SnapCollaborator.addSprite(opts, SnapCollaborator.id);
         }
     );
 };

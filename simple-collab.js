@@ -818,16 +818,28 @@ SimpleCollaborator.prototype.onAddSprite = function(opts, creatorId) {
     sprite.name = opts.name;
     sprite.setCenter(ide.stage.center());
     ide.stage.add(sprite);
-
-    // randomize sprite properties
-    sprite.setHue(opts.hue);
-    sprite.setBrightness(opts.brightness);
-    sprite.turn(opts.dir);
-    sprite.setXPosition(opts.x);
-    sprite.setYPosition(opts.y);
-
     ide.sprites.add(sprite);
     ide.corral.addSprite(sprite);
+
+    // randomize sprite properties
+    if (!opts.costume) {
+        sprite.setHue(opts.hue);
+        sprite.setBrightness(opts.brightness);
+        sprite.turn(opts.dir);
+    } else {
+        var model = this.serializer.parse(opts.costume),
+            costume = this.serializer.loadValue(model);
+
+        sprite.addCostume(costume);
+        sprite.wearCostume(costume);
+        ide.hasChangedMedia = true;
+        // FIXME: The costume doesn't show up until clicked under the 'Costumes' tab...
+    }
+
+    if (opts.x !== undefined && opts.y !== undefined) {
+        sprite.setXPosition(opts.x);
+        sprite.setYPosition(opts.y);
+    }
 
     if (creatorId === this.id) {
         ide.selectSprite(sprite);
