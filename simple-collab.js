@@ -1,6 +1,7 @@
 // If not the leader, send operations to the leader for approval
 function SimpleCollaborator() {
     this.lastSeen = 0;
+    this.idCount = 0;
 
     this.id = null;
     this.rank = null;
@@ -61,6 +62,7 @@ SimpleCollaborator.prototype.acceptEvent = function(msg) {
     this.send(msg);
     this[msg.type].apply(this, msg.args);
     this.lastSeen = msg.id;
+    this.idCount = 0;
 };
 
 SimpleCollaborator.prototype.send = function(json) {
@@ -72,9 +74,10 @@ SimpleCollaborator.prototype.newId = function(index) {
     // This is the same across devices since it uses the currently last seen value
     var id = 'item_' + this.lastSeen;
 
-    if (index !== undefined) {
-        id += '_' + index;
+    if (this.idCount !== 0) {
+        id += '_' + this.idCount;
     }
+    this.idCount++;
 
     return id;
 };
@@ -180,6 +183,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 [
     'addSprite',
     'removeSprite',
+    'duplicateSprite',
 
     'addCustomBlock',  // (definition)
     'deleteCustomBlock',  // (definition)
@@ -255,7 +259,7 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
     while (block) {
         block.isDraggable = true;
         block.isTemplate = false;
-        block.id = this.newId(i);
+        block.id = this.newId();
         this._blocks[block.id] = block;
 
         block = block.nextBlock ? block.nextBlock() : null;
@@ -835,6 +839,19 @@ SimpleCollaborator.prototype.onRemoveSprite = function(spriteId) {
     this.ide().removeSprite(sprite);
 };
 
+SimpleCollaborator.prototype.onDuplicateSprite = function(spriteId, x, y, creatorId) {
+    var sprite = this._owners[spriteId],
+        ide = this.ide(),
+        dup = ide.duplicateSprite(sprite);
+
+    dup.setPosition(new Point(x, y));
+    dup.keepWithin(ide.stage);
+
+    if (creatorId === this.id) {
+        ide.selectSprite(dup);
+    }
+};
+
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
 SimpleCollaborator.prototype.onMessage = function(msg) {
     var method = msg.type,
@@ -851,6 +868,7 @@ SimpleCollaborator.prototype.onMessage = function(msg) {
             logger.debug('received event:', msg);
             this[method].apply(this, msg.args);
             this.lastSeen = msg.id;
+            this.idCount = 0;
         }
     }
 };

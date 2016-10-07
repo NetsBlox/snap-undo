@@ -2023,10 +2023,8 @@ IDE_Morph.prototype.paintNewSprite = function () {
 IDE_Morph.prototype.duplicateSprite = function (sprite) {
     var duplicate = sprite.fullCopy();
 
-    duplicate.setPosition(this.world().hand.position());
     duplicate.appearIn(this);
-    duplicate.keepWithin(this.stage);
-    this.selectSprite(duplicate);
+    return duplicate;
 };
 
 IDE_Morph.prototype.removeSprite = function (sprite) {
@@ -6223,7 +6221,16 @@ SpriteIconMorph.prototype.userMenu = function () {
     if (!(this.object instanceof SpriteMorph)) {return null; }
     menu.addItem("show", 'showSpriteOnStage');
     menu.addLine();
-    menu.addItem("duplicate", 'duplicateSprite');
+    menu.addItem("duplicate", function() {
+        var position = myself.world().hand.position();
+
+        SnapCollaborator.duplicateSprite(
+            myself.object.id,
+            position.x,
+            position.y,
+            SnapCollaborator.id
+        );
+    });
     menu.addItem("delete", function() {
         SnapCollaborator.removeSprite(this.object.id);
     });
@@ -6245,13 +6252,6 @@ SpriteIconMorph.prototype.userMenu = function () {
     }
     menu.addItem("export...", 'exportSprite');
     return menu;
-};
-
-SpriteIconMorph.prototype.duplicateSprite = function () {
-    var ide = this.parentThatIsA(IDE_Morph);
-    if (ide) {
-        ide.duplicateSprite(this.object);
-    }
 };
 
 SpriteIconMorph.prototype.exportSprite = function () {
