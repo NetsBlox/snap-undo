@@ -1126,12 +1126,15 @@ IDE_Morph.prototype.createSpriteBar = function () {
     this.spriteBar.add(nameField);
     nameField.drawNew();
     nameField.accept = function () {
-        var newName = nameField.getValue();
-        myself.currentSprite.setName(
-            myself.newSpriteName(newName, myself.currentSprite)
-        );
-        nameField.setContents(myself.currentSprite.name);
+        var newName = nameField.getValue(),
+            currentName = myself.currentSprite.name,
+            safeName = myself.newSpriteName(newName, myself.currentSprite);
+
+        if (safeName !== currentName) {
+            SnapCollaborator.renameSprite(myself.currentSprite.id, safeName);
+        }
     };
+    this.spriteBar.nameField = nameField;
     this.spriteBar.reactToEdit = nameField.accept;
 
     // padlock

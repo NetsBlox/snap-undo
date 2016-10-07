@@ -183,6 +183,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 [
     'addSprite',
     'removeSprite',
+    'renameSprite',
     'duplicateSprite',
 
     'addCustomBlock',  // (definition)
@@ -849,6 +850,17 @@ SimpleCollaborator.prototype.onDuplicateSprite = function(spriteId, x, y, creato
 
     if (creatorId === this.id) {
         ide.selectSprite(dup);
+    }
+};
+
+SimpleCollaborator.prototype.onRenameSprite = function(spriteId, name) {
+    var sprite = this._owners[spriteId],
+        ide = this.ide();
+
+    sprite.setName(name);
+    // If current sprite is spriteId, update the spriteBar namefield
+    if (ide.currentSprite === sprite) {
+        ide.spriteBar.nameField.setContents(name);
     }
 };
 
