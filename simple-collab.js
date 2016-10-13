@@ -828,12 +828,24 @@ SimpleCollaborator.prototype.onAddSprite = function(opts, creatorId) {
         sprite.turn(opts.dir);
     } else {
         var model = this.serializer.parse(opts.costume),
-            costume = this.serializer.loadValue(model);
+            costume = this.serializer.loadValue(model),
+            onLoad,
+            wearCostume = function() {
+                if (onLoad) {
+                    onLoad();
+                }
+                costume.loaded = true;
+                sprite.addCostume(costume);
+                sprite.wearCostume(costume);
+                ide.hasChangedMedia = true;
+            };
 
-        sprite.addCostume(costume);
-        sprite.wearCostume(costume);
-        ide.hasChangedMedia = true;
-        // FIXME: The costume doesn't show up until clicked under the 'Costumes' tab...
+        if (costume.loaded === true) {
+            wearCostume();
+        } else {
+            onLoad = costume.loaded;
+            costume.loaded = wearCostume;
+        }
     }
 
     if (opts.x !== undefined && opts.y !== undefined) {
