@@ -6562,15 +6562,12 @@ CostumeIconMorph.prototype.renameCostume = function () {
 CostumeIconMorph.prototype.duplicateCostume = function () {
     var wardrobe = this.parentThatIsA(WardrobeMorph),
         ide = this.parentThatIsA(IDE_Morph),
-        newcos = this.object.copy();
+        newcos = this.object.copy(),
+        serializedCostume;
 
-    // TODO: Use the collaborator
     newcos.name = wardrobe.sprite.newCostumeName(newcos.name);
-    wardrobe.sprite.addCostume(newcos);
-    wardrobe.updateList();
-    if (ide) {
-        ide.currentSprite.wearCostume(newcos);
-    }
+    serializedCostume = newcos.toXML(ide.serializer).replace('~', '');
+    SnapCollaborator.addCostume(newcos.name, serializedCostume, wardrobe.sprite.id);
 };
 
 CostumeIconMorph.prototype.removeCostume = function () {
