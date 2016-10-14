@@ -17,6 +17,7 @@ function SimpleCollaborator() {
     this._customBlocks = {};
     this._customBlockOwner = {};
     this._owners = {};
+    this._costumes = {};
 
     this.spliceConnections = {'bottom/block': true};
     this.positionOf = {};  // Last writer, highest rank wins
@@ -188,6 +189,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'duplicateSprite',
 
     'addCostume',
+    'renameCostume',
 
     'addCustomBlock',  // (definition)
     'deleteCustomBlock',  // (definition)
@@ -910,7 +912,8 @@ SimpleCollaborator.prototype.onToggleDraggable = function(spriteId, draggable) {
 SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId) {
     var ide = this.ide(),
         wardrobeMorph,
-        sprite = this._owners[ownerId];
+        sprite = this._owners[ownerId],
+        myself = this;
 
     // Get the wardrobe morph...
     this._loadCostume(savedCostume, function(cos) {
@@ -921,7 +924,19 @@ SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId
         if (ide) {
             ide.currentSprite.wearCostume(cos);
         }
+
+        cos.id = myself.newId();
+        myself._costumes[cos.id] = cos;
     });
+};
+
+SimpleCollaborator.prototype.onRenameCostume = function(id, newName) {
+    var costume = this._costumes[id],
+        ide = this.ide();
+
+    costume.name = newName;
+    costume.version = Date.now();
+    ide.hasChangedMedia = true;
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */

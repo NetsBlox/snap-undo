@@ -6545,12 +6545,11 @@ CostumeIconMorph.prototype.renameCostume = function () {
         null,
         function (answer) {
             if (answer && (answer !== costume.name)) {
-                costume.name = wardrobe.sprite.newCostumeName(
+                var newName = wardrobe.sprite.newCostumeName(
                     answer,
                     costume
                 );
-                costume.version = Date.now();
-                ide.hasChangedMedia = true;
+                SnapCollaborator.renameCostume(costume.id, newName);
             }
         }
     ).prompt(
