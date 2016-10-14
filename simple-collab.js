@@ -192,6 +192,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'addCostume',
     'renameCostume',
     'removeCostume',
+    'updateCostume',
 
     'addCustomBlock',  // (definition)
     'deleteCustomBlock',  // (definition)
@@ -931,6 +932,26 @@ SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId
         cos.id = myself.newId();
         myself._costumes[cos.id] = cos;
         myself._costumeToOwner[cos.id] = sprite;
+    });
+};
+
+SimpleCollaborator.prototype.onUpdateCostume = function(id, savedCostume) {
+    var ide = this.ide(),
+        sprite = this._costumeToOwner[id],
+        myself = this,
+        world = ide.parentThatIsA(WorldMorph);
+
+    this._loadCostume(savedCostume, function(cos) {
+        var oldCostume = myself._costumes[id];
+        oldCostume.rotationCenter = cos.rotationCenter;
+        oldCostume.contents = cos.contents;
+        oldCostume.version = Date.now();
+        world.changed();
+
+        if (ide.currentSprite === sprite) {
+            ide.currentSprite.wearCostume(oldCostume);
+        }
+        ide.hasChangedMedia = true;
     });
 };
 

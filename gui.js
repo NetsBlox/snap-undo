@@ -6520,13 +6520,24 @@ CostumeIconMorph.prototype.userMenu = function () {
 };
 
 CostumeIconMorph.prototype.editCostume = function () {
+    var myself = this,
+        updateCostume = function() {
+            var ide = myself.parentThatIsA(IDE_Morph),
+                serializedCostume = myself.object.toXML(ide.serializer).replace('~', '');
+
+            // Update the costume
+            SnapCollaborator.updateCostume(myself.object.id, serializedCostume);
+        };
+
     if (this.object instanceof SVG_Costume) {
-        this.object.editRotationPointOnly(this.world());
+        this.object.editRotationPointOnly(this.world(), updateCostume);
     } else {
         this.object.edit(
             this.world(),
             this.parentThatIsA(IDE_Morph),
-            false // not a new costume, retain existing rotation center
+            false, // not a new costume, retain existing rotation center
+            null,
+            updateCostume
         );
     }
 };
