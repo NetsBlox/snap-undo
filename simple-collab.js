@@ -601,6 +601,7 @@ SimpleCollaborator.prototype.onSetCommentText = function(id, text) {
 SimpleCollaborator.prototype.onSetSelector = function(id, sel) {
     var block = this.getBlockFromId(id);
     block.setSelector(sel);
+    block.changed();
     this._updateBlockDefinitions(block);
 };
 
