@@ -822,6 +822,7 @@ SimpleCollaborator.prototype._loadCostume = function(savedCostume, callback) {
         costume = this.serializer.loadValue(model),
         onLoad,
         wearCostume = function() {
+            costume.loaded = true;
             if (onLoad) {
                 onLoad();
             }
@@ -923,7 +924,7 @@ SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId
         if (ide.spriteEditor instanceof WardrobeMorph) {
             ide.spriteEditor.updateList();
         }
-        if (ide) {
+        if (ide && ide.currentSprite === sprite) {
             ide.currentSprite.wearCostume(cos);
         }
 
