@@ -6563,6 +6563,8 @@ CostumeIconMorph.prototype.duplicateCostume = function () {
     var wardrobe = this.parentThatIsA(WardrobeMorph),
         ide = this.parentThatIsA(IDE_Morph),
         newcos = this.object.copy();
+
+    // TODO: Use the collaborator
     newcos.name = wardrobe.sprite.newCostumeName(newcos.name);
     wardrobe.sprite.addCostume(newcos);
     wardrobe.updateList();
@@ -6572,13 +6574,7 @@ CostumeIconMorph.prototype.duplicateCostume = function () {
 };
 
 CostumeIconMorph.prototype.removeCostume = function () {
-    var wardrobe = this.parentThatIsA(WardrobeMorph),
-        idx = this.parent.children.indexOf(this),
-        ide = this.parentThatIsA(IDE_Morph);
-    wardrobe.removeCostumeAt(idx - 2);
-    if (ide.currentSprite.costume === this.object) {
-        ide.currentSprite.wearCostume(null);
-    }
+    SnapCollaborator.removeCostume(this.object.id);
 };
 
 CostumeIconMorph.prototype.exportCostume = function () {
@@ -6926,11 +6922,6 @@ WardrobeMorph.prototype.step = function () {
 };
 
 // Wardrobe ops
-
-WardrobeMorph.prototype.removeCostumeAt = function (idx) {
-    this.sprite.costumes.remove(idx);
-    this.updateList();
-};
 
 WardrobeMorph.prototype.paintNew = function () {
     var name = this.sprite.newCostumeName(localize('Untitled')),

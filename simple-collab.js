@@ -18,6 +18,7 @@ function SimpleCollaborator() {
     this._customBlockOwner = {};
     this._owners = {};
     this._costumes = {};
+    this._costumeToOwner = {};
 
     this.spliceConnections = {'bottom/block': true};
     this.positionOf = {};  // Last writer, highest rank wins
@@ -190,6 +191,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 
     'addCostume',
     'renameCostume',
+    'removeCostume',
 
     'addCustomBlock',  // (definition)
     'deleteCustomBlock',  // (definition)
@@ -927,7 +929,29 @@ SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId
 
         cos.id = myself.newId();
         myself._costumes[cos.id] = cos;
+        myself._costumeToOwner[cos.id] = sprite;
     });
+};
+
+SimpleCollaborator.prototype.onRemoveCostume = function(id) {
+    var costume = this._costumes[id],
+        sprite = this._costumeToOwner[id],
+        idx = sprite.costumes.asArray().indexOf(costume),
+        ide = this.ide(),
+        wardrobe;
+
+    sprite.costumes.remove(idx);
+
+    // Check for the wardrobe
+    if (ide.spriteEditor instanceof WardrobeMorph) {
+        ide.spriteEditor.updateList();
+    }
+
+    if (ide.currentSprite.costume === costume) {
+        ide.currentSprite.wearCostume(null);
+    }
+
+    delete this._costumes[id];
 };
 
 SimpleCollaborator.prototype.onRenameCostume = function(id, newName) {
@@ -937,6 +961,7 @@ SimpleCollaborator.prototype.onRenameCostume = function(id, newName) {
     costume.name = newName;
     costume.version = Date.now();
     ide.hasChangedMedia = true;
+    return costume;
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
