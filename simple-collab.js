@@ -933,7 +933,7 @@ SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId
         myself._costumes[cos.id] = cos;
         myself._costumeToOwner[cos.id] = sprite;
 
-        if (creatorId === this.id) {
+        if (creatorId === myself.id) {
             ide.spriteBar.tabBar.tabTo('costumes');
         }
     });
