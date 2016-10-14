@@ -1,9 +1,9 @@
 var logger = {
-    log: console.log,
-    debug: console.debug,
-    info: console.info,
-    warn: console.warn,
-    error: console.error
+    log: console.log.bind(console),
+    debug: console.debug.bind(console),
+    info: console.info.bind(console),
+    warn: console.warn.bind(console),
+    error: console.error.bind(console)
 };
 
 function Collaborator() {
