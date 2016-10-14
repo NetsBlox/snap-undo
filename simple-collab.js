@@ -187,6 +187,8 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'toggleDraggable',
     'duplicateSprite',
 
+    'addCostume',
+
     'addCustomBlock',  // (definition)
     'deleteCustomBlock',  // (definition)
     'toggleBoolean',
@@ -811,6 +813,25 @@ SimpleCollaborator.prototype.ide = function() {
     return this._owners[ownerId].parentThatIsA(IDE_Morph);
 };
 
+SimpleCollaborator.prototype._loadCostume = function(savedCostume, callback) {
+    var model = this.serializer.parse(savedCostume),
+        costume = this.serializer.loadValue(model),
+        onLoad,
+        wearCostume = function() {
+            if (onLoad) {
+                onLoad();
+            }
+            callback(costume);
+        };
+
+    if (costume.loaded === true) {
+        wearCostume();
+    } else {
+        onLoad = costume.loaded;
+        costume.loaded = wearCostume;
+    }
+};
+
 SimpleCollaborator.prototype.onAddSprite = function(opts, creatorId) {
     var ide = this.ide(),
         sprite = new SpriteMorph(ide.globalVariables);
@@ -827,25 +848,12 @@ SimpleCollaborator.prototype.onAddSprite = function(opts, creatorId) {
         sprite.setBrightness(opts.brightness);
         sprite.turn(opts.dir);
     } else {
-        var model = this.serializer.parse(opts.costume),
-            costume = this.serializer.loadValue(model),
-            onLoad,
-            wearCostume = function() {
-                if (onLoad) {
-                    onLoad();
-                }
-                costume.loaded = true;
-                sprite.addCostume(costume);
-                sprite.wearCostume(costume);
-                ide.hasChangedMedia = true;
-            };
-
-        if (costume.loaded === true) {
-            wearCostume();
-        } else {
-            onLoad = costume.loaded;
-            costume.loaded = wearCostume;
-        }
+        this._loadCostume(opts.costume, function(costume) {
+            costume.loaded = true;
+            sprite.addCostume(costume);
+            sprite.wearCostume(costume);
+            ide.hasChangedMedia = true;
+        });
     }
 
     if (opts.x !== undefined && opts.y !== undefined) {
@@ -897,6 +905,23 @@ SimpleCollaborator.prototype.onToggleDraggable = function(spriteId, draggable) {
     if (ide.currentSprite === sprite) {
         ide.spriteBar.padlock.refresh();
     }
+};
+
+SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId) {
+    var ide = this.ide(),
+        wardrobeMorph,
+        sprite = this._owners[ownerId];
+
+    // Get the wardrobe morph...
+    this._loadCostume(savedCostume, function(cos) {
+        sprite.addCostume(cos);
+        if (ide.spriteEditor instanceof WardrobeMorph) {
+            ide.spriteEditor.updateList();
+        }
+        if (ide) {
+            ide.currentSprite.wearCostume(cos);
+        }
+    });
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */

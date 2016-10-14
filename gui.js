@@ -6934,18 +6934,17 @@ WardrobeMorph.prototype.removeCostumeAt = function (idx) {
 };
 
 WardrobeMorph.prototype.paintNew = function () {
-    var cos = new Costume(
-            newCanvas(null, true),
-            this.sprite.newCostumeName(localize('Untitled'))
-        ),
+    var name = this.sprite.newCostumeName(localize('Untitled')),
         ide = this.parentThatIsA(IDE_Morph),
-        myself = this;
+        myself = this,
+        cos = new Costume(
+            newCanvas(null, true),
+            name
+        );
+
     cos.edit(this.world(), ide, true, null, function () {
-        myself.sprite.addCostume(cos);
-        myself.updateList();
-        if (ide) {
-            ide.currentSprite.wearCostume(cos);
-        }
+        var serializedCostume = cos.toXML(ide.serializer).replace('~', '');
+        SnapCollaborator.addCostume(name, serializedCostume, myself.sprite.id);
     });
 };
 
