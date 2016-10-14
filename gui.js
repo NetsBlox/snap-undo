@@ -1666,10 +1666,8 @@ IDE_Morph.prototype.droppedImage = function (aCanvas, name) {
         return;
     }
 
-    this.currentSprite.addCostume(costume);
-    this.currentSprite.wearCostume(costume);
-    this.spriteBar.tabBar.tabTo('costumes');
-    this.hasChangedMedia = true;
+    var serializedCostume = costume.toXML(this.serializer).replace('~', '');
+    SnapCollaborator.addCostume(costume.name, serializedCostume, this.currentSprite.id, SnapCollaborator.id);
 };
 
 IDE_Morph.prototype.droppedSVG = function (anImage, name) {

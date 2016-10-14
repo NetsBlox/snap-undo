@@ -913,7 +913,7 @@ SimpleCollaborator.prototype.onToggleDraggable = function(spriteId, draggable) {
     }
 };
 
-SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId) {
+SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId, creatorId) {
     var ide = this.ide(),
         wardrobeMorph,
         sprite = this._owners[ownerId],
@@ -932,6 +932,10 @@ SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId
         cos.id = myself.newId();
         myself._costumes[cos.id] = cos;
         myself._costumeToOwner[cos.id] = sprite;
+
+        if (creatorId === this.id) {
+            ide.spriteBar.tabBar.tabTo('costumes');
+        }
     });
 };
 
