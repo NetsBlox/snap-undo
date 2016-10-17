@@ -841,6 +841,7 @@ SimpleCollaborator.prototype._loadCostume = function(savedCostume, callback) {
 
 SimpleCollaborator.prototype.onAddSprite = function(opts, creatorId) {
     var ide = this.ide(),
+        myself = this,
         sprite = new SpriteMorph(ide.globalVariables);
 
     sprite.name = opts.name;
@@ -860,6 +861,7 @@ SimpleCollaborator.prototype.onAddSprite = function(opts, creatorId) {
             sprite.addCostume(costume);
             sprite.wearCostume(costume);
             ide.hasChangedMedia = true;
+            myself._registerCostume(costume, sprite);
         });
     }
 
@@ -914,6 +916,12 @@ SimpleCollaborator.prototype.onToggleDraggable = function(spriteId, draggable) {
     }
 };
 
+SimpleCollaborator.prototype._registerCostume = function(costume, sprite) {
+    costume.id = this.newId();
+    this._costumes[costume.id] = costume;
+    this._costumeToOwner[costume.id] = sprite;
+};
+
 SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId, creatorId) {
     var ide = this.ide(),
         wardrobeMorph,
@@ -930,9 +938,7 @@ SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId
             ide.currentSprite.wearCostume(cos);
         }
 
-        cos.id = myself.newId();
-        myself._costumes[cos.id] = cos;
-        myself._costumeToOwner[cos.id] = sprite;
+        myself._registerCostume(cos, sprite);
 
         if (creatorId === myself.id) {
             ide.spriteBar.tabBar.tabTo('costumes');
@@ -974,8 +980,8 @@ SimpleCollaborator.prototype.onRemoveCostume = function(id) {
         ide.spriteEditor.updateList();
     }
 
-    if (ide.currentSprite.costume === costume) {
-        ide.currentSprite.wearCostume(null);
+    if (sprite.costume === costume) {
+        sprite.wearCostume(null);
     }
 
     delete this._costumes[id];
