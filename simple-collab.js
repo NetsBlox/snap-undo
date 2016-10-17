@@ -189,6 +189,8 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'toggleDraggable',
     'duplicateSprite',
 
+    'addSound',
+
     'addCostume',
     'renameCostume',
     'removeCostume',
@@ -995,6 +997,24 @@ SimpleCollaborator.prototype.onRenameCostume = function(id, newName) {
     costume.version = Date.now();
     ide.hasChangedMedia = true;
     return costume;
+};
+
+SimpleCollaborator.prototype.onAddSound = function(serialized, ownerId, creatorId) {
+    var owner = this._owners[ownerId],
+        sound = this.serializer.loadValue(this.serializer.parse(serialized)),
+        ide = this.ide();
+
+    owner.addSound(sound);
+    ide.hasChangedMedia = true;
+
+    if (creatorId === this.id) {
+        ide.spriteBar.tabBar.tabTo('sounds');
+    }
+
+    if (ide.currentSprite === owner && ide.spriteEditor instanceof JukeboxMorph) {
+        // TODO: Should refresh after the audio is loaded...
+        ide.spriteEditor.updateList();
+    }
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */

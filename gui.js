@@ -1671,6 +1671,7 @@ IDE_Morph.prototype.droppedImage = function (aCanvas, name) {
 };
 
 IDE_Morph.prototype.droppedSVG = function (anImage, name) {
+    // TODO: Use the collaborator
     var costume = new SVG_Costume(anImage, name.split('.')[0]);
     this.currentSprite.addCostume(costume);
     this.currentSprite.wearCostume(costume);
@@ -1679,9 +1680,10 @@ IDE_Morph.prototype.droppedSVG = function (anImage, name) {
 };
 
 IDE_Morph.prototype.droppedAudio = function (anAudio, name) {
-    this.currentSprite.addSound(anAudio, name.split('.')[0]); // up to period
-    this.spriteBar.tabBar.tabTo('sounds');
-    this.hasChangedMedia = true;
+    var sound = new Sound(anAudio, name.split('.')[0]),  // up to period
+        serialized = sound.toXML(this.serializer).replace('~', '');
+
+    SnapCollaborator.addSound(serialized, this.currentSprite.id, SnapCollaborator.id);
 };
 
 IDE_Morph.prototype.droppedText = function (aString, name) {
@@ -1695,12 +1697,15 @@ IDE_Morph.prototype.droppedText = function (aString, name) {
         return this.openCloudDataString(aString);
     }
     if (aString.indexOf('<blocks') === 0) {
+        // TODO: Use the collaborator
         return this.openBlocksString(aString, lbl, true);
     }
     if (aString.indexOf('<sprites') === 0) {
+        // TODO: Use the collaborator
         return this.openSpritesString(aString);
     }
     if (aString.indexOf('<media') === 0) {
+        // TODO: Use the collaborator
         return this.openMediaString(aString);
     }
 };
@@ -2804,6 +2809,7 @@ IDE_Morph.prototype.projectMenu = function () {
             function loadSound(file, name) {
                 var url = myself.resourceURL('Sounds', file),
                     audio = new Audio();
+                // TODO: Use the collaborator!
                 audio.src = url;
                 audio.load();
                 myself.droppedAudio(audio, name);
@@ -6380,7 +6386,7 @@ SpriteIconMorph.prototype.copyCostume = function (costume) {
 
 SpriteIconMorph.prototype.copySound = function (sound) {
     var dup = sound.copy();
-    this.object.addSound(dup.audio, dup.name);
+    this.object.addSound(dup);
 };
 
 // CostumeIconMorph ////////////////////////////////////////////////////
