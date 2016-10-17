@@ -6378,6 +6378,7 @@ SpriteIconMorph.prototype.copyStack = function (block) {
 };
 
 SpriteIconMorph.prototype.copyCostume = function (costume) {
+    // TODO: Use the SnapCollaborator
     var dup = costume.copy();
     dup.name = this.object.newCostumeName(dup.name);
     this.object.addCostume(dup);
@@ -6385,8 +6386,8 @@ SpriteIconMorph.prototype.copyCostume = function (costume) {
 };
 
 SpriteIconMorph.prototype.copySound = function (sound) {
-    var dup = sound.copy();
-    this.object.addSound(dup);
+    var serialized = sound.toXML(SnapCollaborator.serializer).replace('~', '');
+    SnapCollaborator.addSound(serialized, this.object.id);
 };
 
 // CostumeIconMorph ////////////////////////////////////////////////////
