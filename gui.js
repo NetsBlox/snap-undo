@@ -6606,6 +6606,7 @@ CostumeIconMorph.prototype.createBackgrounds
 
 CostumeIconMorph.prototype.prepareToBeGrabbed = function () {
     this.mouseClickLeft(); // select me
+    // FIXME: This is weird...
     this.removeCostume();
 };
 
@@ -7147,11 +7148,8 @@ SoundIconMorph.prototype.renameSound = function () {
         null,
         function (answer) {
             if (answer && (answer !== sound.name)) {
-                sound.name = answer;
-                sound.version = Date.now();
-                myself.createLabel(); // can be omitted once I'm stepping
-                myself.fixLayout(); // can be omitted once I'm stepping
-                ide.hasChangedMedia = true;
+                // TODO: Use the collaborator
+                SnapCollaborator.renameSound(sound.id, answer);
             }
         }
     )).prompt(

@@ -20,6 +20,8 @@ function SimpleCollaborator() {
     this._costumes = {};
     this._costumeToOwner = {};
 
+    this._sounds = {};
+
     this.spliceConnections = {'bottom/block': true};
     this.positionOf = {};  // Last writer, highest rank wins
 
@@ -190,6 +192,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'duplicateSprite',
 
     'addSound',
+    'renameSound',
 
     'addCostume',
     'renameCostume',
@@ -1007,6 +1010,9 @@ SimpleCollaborator.prototype.onAddSound = function(serialized, ownerId, creatorI
     owner.addSound(sound);
     ide.hasChangedMedia = true;
 
+    sound.id = this.newId();
+    this._sounds[sound.id] = sound;
+
     if (creatorId === this.id) {
         ide.spriteBar.tabBar.tabTo('sounds');
     }
@@ -1015,6 +1021,21 @@ SimpleCollaborator.prototype.onAddSound = function(serialized, ownerId, creatorI
         // TODO: Should refresh after the audio is loaded...
         ide.spriteEditor.updateList();
     }
+};
+
+SimpleCollaborator.prototype.onRenameSound = function(id, name) {
+    var sound = this._sounds[id],
+        ide = this.ide();
+
+    sound.name = name;
+    sound.version = Date.now();
+
+    if (ide.spriteEditor instanceof JukeboxMorph) {
+        // TODO: Should refresh after the audio is loaded...
+        ide.spriteEditor.updateList();
+    }
+
+    ide.hasChangedMedia = true;
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
