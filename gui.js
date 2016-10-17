@@ -2001,7 +2001,6 @@ IDE_Morph.prototype.addNewSprite = function () {
 IDE_Morph.prototype.paintNewSprite = function () {
     var sprite = new SpriteMorph(this.globalVariables),
         cos = new Costume(),
-        position = this.stage.center(),
         myself = this,
         opts,
         name;
@@ -2017,9 +2016,7 @@ IDE_Morph.prototype.paintNewSprite = function () {
             cos.shrinkWrap();
             opts = {
                 costume: cos.toXML(myself.serializer).replace('~', ''),
-                name: name,
-                x: position.x,
-                y: position.y
+                name: name
             };
             SnapCollaborator.addSprite(opts, SnapCollaborator.id);
         }
