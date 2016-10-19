@@ -1704,8 +1704,7 @@ IDE_Morph.prototype.droppedText = function (aString, name) {
         return this.openBlocksString(aString, lbl, true);
     }
     if (aString.indexOf('<sprites') === 0) {
-        // TODO: Use the collaborator
-        return this.openSpritesString(aString);
+        return SnapCollaborator.importSprites(aString);
     }
     if (aString.indexOf('<media') === 0) {
         // TODO: Use the collaborator

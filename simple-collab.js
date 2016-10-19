@@ -193,6 +193,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'renameSprite',
     'toggleDraggable',
     'duplicateSprite',
+    'importSprites',
 
     'addSound',
     'renameSound',
@@ -1064,6 +1065,10 @@ SimpleCollaborator.prototype.onRemoveSound = function(id) {
 
     delete this._sounds[id];
     delete this._soundToOwner[id];
+};
+
+SimpleCollaborator.prototype.onImportSprites = function(xmlString) {
+    return this.ide().openSpritesString(xmlString);
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
