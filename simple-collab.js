@@ -62,10 +62,12 @@ SimpleCollaborator.prototype.initialize = function() {
 };
 
 SimpleCollaborator.prototype.acceptEvent = function(msg) {
+    var method = this._getMethodFor(msg.type);
+
     logger.debug('received event:', msg);
     msg.id = msg.id || this.lastSeen + 1;
     this.send(msg);
-    this[msg.type].apply(this, msg.args);
+    this[method].apply(this, msg.args);
     this.lastSeen = msg.id;
     this.idCount = 0;
 };
@@ -224,15 +226,10 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 ].forEach(function(method) {
     SimpleCollaborator.prototype[method] = function() {
         var args = Array.prototype.slice.apply(arguments),
-            fnName = '_' + method,
             msg;
 
-        if (!this[fnName]) {
-            fnName = 'on' + method.substring(0,1).toUpperCase() + method.substring(1);
-        }
-
         msg = {
-            type: fnName,
+            type: method,
             args: args
         };
 
@@ -243,6 +240,15 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
         }
     };
 });
+
+SimpleCollaborator.prototype._getMethodFor = function(action) {
+    var method = '_' + action;
+    if (!this[method]) {
+        method = 'on' + action.substring(0,1).toUpperCase() + action.substring(1);
+    }
+
+    return method;
+};
 
 /* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
 SimpleCollaborator.prototype.getAdjustedPosition = function(position, scripts) {
@@ -1012,16 +1018,19 @@ SimpleCollaborator.prototype.onAddSound = function(serialized, ownerId, creatorI
     owner.addSound(sound);
     ide.hasChangedMedia = true;
 
+    // register the sound
     sound.id = this.newId();
     this._sounds[sound.id] = sound;
     this._soundToOwner[sound.id] = owner;
 
+    // update the ui
     if (creatorId === this.id) {
         ide.spriteBar.tabBar.tabTo('sounds');
     }
 
     if (ide.currentSprite === owner && ide.spriteEditor instanceof JukeboxMorph) {
         // TODO: Should refresh after the audio is loaded...
+        // This is an issue in Snap!, too
         ide.spriteEditor.updateList();
     }
 };
@@ -1035,6 +1044,7 @@ SimpleCollaborator.prototype.onRenameSound = function(id, name) {
 
     if (ide.spriteEditor instanceof JukeboxMorph) {
         // TODO: Should refresh after the audio is loaded...
+        // This is an issue in Snap!, too
         ide.spriteEditor.updateList();
     }
 
@@ -1049,16 +1059,16 @@ SimpleCollaborator.prototype.onRemoveSound = function(id) {
     owner.sounds.remove(idx);
 
     if (ide.spriteEditor instanceof JukeboxMorph) {
-        // TODO: Should refresh after the audio is loaded...
         ide.spriteEditor.updateList();
     }
 
     delete this._sounds[id];
+    delete this._soundToOwner[id];
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
 SimpleCollaborator.prototype.onMessage = function(msg) {
-    var method = msg.type,
+    var method = this._getMethodFor(msg.type),
         accepted = true;
 
     if (this.isLeader) {
