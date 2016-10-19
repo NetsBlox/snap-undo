@@ -19,6 +19,7 @@ function SimpleCollaborator() {
     this._owners = {};
     this._costumes = {};
     this._costumeToOwner = {};
+    this._soundToOwner = {};
 
     this._sounds = {};
 
@@ -193,6 +194,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 
     'addSound',
     'renameSound',
+    'removeSound',
 
     'addCostume',
     'renameCostume',
@@ -1012,6 +1014,7 @@ SimpleCollaborator.prototype.onAddSound = function(serialized, ownerId, creatorI
 
     sound.id = this.newId();
     this._sounds[sound.id] = sound;
+    this._soundToOwner[sound.id] = owner;
 
     if (creatorId === this.id) {
         ide.spriteBar.tabBar.tabTo('sounds');
@@ -1036,6 +1039,21 @@ SimpleCollaborator.prototype.onRenameSound = function(id, name) {
     }
 
     ide.hasChangedMedia = true;
+};
+
+SimpleCollaborator.prototype.onRemoveSound = function(id) {
+    var owner = this._soundToOwner[id],
+        ide = this.ide(),
+        idx = owner.sounds.asArray().indexOf(this._sounds[id]);
+        
+    owner.sounds.remove(idx);
+
+    if (ide.spriteEditor instanceof JukeboxMorph) {
+        // TODO: Should refresh after the audio is loaded...
+        ide.spriteEditor.updateList();
+    }
+
+    delete this._sounds[id];
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */

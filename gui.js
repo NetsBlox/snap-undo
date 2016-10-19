@@ -7160,9 +7160,8 @@ SoundIconMorph.prototype.renameSound = function () {
 };
 
 SoundIconMorph.prototype.removeSound = function () {
-    var jukebox = this.parentThatIsA(JukeboxMorph),
-        idx = this.parent.children.indexOf(this);
-    jukebox.removeSound(idx);
+    // TODO: Use the collaborator
+    SnapCollaborator.removeSound(this.object.id);
 };
 
 SoundIconMorph.prototype.createBackgrounds
