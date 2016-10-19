@@ -969,16 +969,22 @@ IDE_Morph.prototype.createPalette = function (forSearching) {
     this.palette.acceptsDrops = true;
     this.palette.contents.acceptsDrops = false;
 
-    this.palette.reactToDropOf = function (droppedMorph) {
+    this.palette.reactToDropOf = function (droppedMorph, hand) {
+        // TODO: Use the collaborator!
         if (droppedMorph instanceof DialogBoxMorph) {
             myself.world().add(droppedMorph);
         } else if (droppedMorph instanceof SpriteMorph) {
-            myself.removeSprite(droppedMorph);
+            //myself.removeSprite(droppedMorph);
+            SnapCollaborator.removeSprite(droppedMorph.id);
         } else if (droppedMorph instanceof SpriteIconMorph) {
-            droppedMorph.destroy();
-            myself.removeSprite(droppedMorph.object);
+            //droppedMorph.destroy();
+            //myself.removeSprite(droppedMorph.object);
+            SnapCollaborator.removeSprite(droppedMorph.object.id);
         } else if (droppedMorph instanceof CostumeIconMorph) {
-            myself.currentSprite.wearCostume(null);
+            SnapCollaborator.removeCostume(droppedMorph.object.id);
+            droppedMorph.destroy();
+        } else if (droppedMorph instanceof SoundIconMorph) {
+            SnapCollaborator.removeSound(droppedMorph.object.id);
             droppedMorph.destroy();
         } else {
             if (droppedMorph.id) {
@@ -7177,8 +7183,13 @@ SoundIconMorph.prototype.renameSound = function () {
 };
 
 SoundIconMorph.prototype.removeSound = function () {
-    // TODO: Use the collaborator
     SnapCollaborator.removeSound(this.object.id);
+};
+
+SoundIconMorph.prototype.localRemoveSound = function () {
+    var jukebox = this.parentThatIsA(JukeboxMorph),
+        idx = this.parent.children.indexOf(this);
+    jukebox.removeSound(idx);
 };
 
 SoundIconMorph.prototype.createBackgrounds
@@ -7190,7 +7201,7 @@ SoundIconMorph.prototype.createLabel
 // SoundIconMorph drag & drop
 
 SoundIconMorph.prototype.prepareToBeGrabbed = function () {
-    this.removeSound();
+    this.localRemoveSound();
 };
 
 // JukeboxMorph /////////////////////////////////////////////////////
