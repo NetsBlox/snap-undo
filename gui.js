@@ -6607,8 +6607,19 @@ CostumeIconMorph.prototype.createBackgrounds
 
 CostumeIconMorph.prototype.prepareToBeGrabbed = function () {
     this.mouseClickLeft(); // select me
-    // FIXME: This is weird...
-    this.removeCostume();
+    this.localRemoveCostume();
+};
+
+CostumeIconMorph.prototype.localRemoveCostume = function () {
+    // Only remove the costume locally for the drag
+    var wardrobe = this.parentThatIsA(WardrobeMorph),
+        idx = this.parent.children.indexOf(this),
+        ide = this.parentThatIsA(IDE_Morph);
+
+    wardrobe.removeCostumeAt(idx - 2);
+    if (ide.currentSprite.costume === this.object) {
+        ide.currentSprite.wearCostume(null);
+    }
 };
 
 // TurtleIconMorph ////////////////////////////////////////////////////
@@ -6934,6 +6945,11 @@ WardrobeMorph.prototype.step = function () {
 };
 
 // Wardrobe ops
+
+WardrobeMorph.prototype.removeCostumeAt = function (idx) {
+    this.sprite.costumes.remove(idx);
+    this.updateList();
+};
 
 WardrobeMorph.prototype.paintNew = function () {
     var name = this.sprite.newCostumeName(localize('Untitled')),
