@@ -1700,15 +1700,13 @@ IDE_Morph.prototype.droppedText = function (aString, name) {
         return this.openCloudDataString(aString);
     }
     if (aString.indexOf('<blocks') === 0) {
-        // TODO: Use the collaborator
-        return this.openBlocksString(aString, lbl, true);
+        return SnapCollaborator.importBlocks(aString, lbl);
     }
     if (aString.indexOf('<sprites') === 0) {
         return SnapCollaborator.importSprites(aString);
     }
     if (aString.indexOf('<media') === 0) {
-        // TODO: Use the collaborator
-        return this.openMediaString(aString);
+        return SnapCollaborator.importMedia(aString);
     }
 };
 

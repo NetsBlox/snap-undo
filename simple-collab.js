@@ -203,18 +203,23 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'renameCostume',
     'removeCostume',
     'updateCostume',
+    'importMedia',
 
     'addCustomBlock',  // (definition)
     'deleteCustomBlock',  // (definition)
+
+    'addBlock',
+    'removeBlock',
+    'importBlocks',
+    'setSelector',
+    'setBlockSpec',
+
     'toggleBoolean',
     'updateBlockLabel',
     'deleteBlockLabel',
     'setCustomBlockType',
     'ringify',
     'unringify',
-    'setSelector',
-    'addBlock',
-    'setBlockSpec',
     'setCommentText',
     'addListInput',
     'removeListInput',
@@ -222,7 +227,6 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'addVariable',
     'deleteVariable',
     'setField',
-    'removeBlock',
     'setBlockPosition'
 ].forEach(function(method) {
     SimpleCollaborator.prototype[method] = function() {
@@ -1069,6 +1073,14 @@ SimpleCollaborator.prototype.onRemoveSound = function(id) {
 
 SimpleCollaborator.prototype.onImportSprites = function(xmlString) {
     return this.ide().openSpritesString(xmlString);
+};
+
+SimpleCollaborator.prototype.onImportBlocks = function(aString, lbl) {
+    return this.ide().openBlocksString(aString, lbl, true);
+};
+
+SimpleCollaborator.prototype.onImportMedia = function(aString) {
+    return this.ide().openMediaString(aString);
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
