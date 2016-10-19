@@ -970,15 +970,12 @@ IDE_Morph.prototype.createPalette = function (forSearching) {
     this.palette.contents.acceptsDrops = false;
 
     this.palette.reactToDropOf = function (droppedMorph, hand) {
-        // TODO: Use the collaborator!
         if (droppedMorph instanceof DialogBoxMorph) {
             myself.world().add(droppedMorph);
         } else if (droppedMorph instanceof SpriteMorph) {
-            //myself.removeSprite(droppedMorph);
             SnapCollaborator.removeSprite(droppedMorph.id);
         } else if (droppedMorph instanceof SpriteIconMorph) {
-            //droppedMorph.destroy();
-            //myself.removeSprite(droppedMorph.object);
+            droppedMorph.destroy();
             SnapCollaborator.removeSprite(droppedMorph.object.id);
         } else if (droppedMorph instanceof CostumeIconMorph) {
             SnapCollaborator.removeCostume(droppedMorph.object.id);
