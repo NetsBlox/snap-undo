@@ -911,6 +911,7 @@ SimpleCollaborator.prototype.onDuplicateSprite = function(spriteId, x, y, creato
     if (creatorId === this.id) {
         ide.selectSprite(dup);
     }
+    this.registerOwner(dup);
 };
 
 SimpleCollaborator.prototype.onRenameSprite = function(spriteId, name) {
