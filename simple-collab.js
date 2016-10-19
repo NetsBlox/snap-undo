@@ -935,7 +935,7 @@ SimpleCollaborator.prototype._registerCostume = function(costume, sprite) {
     this._costumeToOwner[costume.id] = sprite;
 };
 
-SimpleCollaborator.prototype.onAddCostume = function(name, savedCostume, ownerId, creatorId) {
+SimpleCollaborator.prototype.onAddCostume = function(savedCostume, ownerId, creatorId) {
     var ide = this.ide(),
         wardrobeMorph,
         sprite = this._owners[ownerId],
