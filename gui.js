@@ -3841,6 +3841,7 @@ IDE_Morph.prototype.rawOpenBlocksString = function (str, name, silently) {
     } else {
         new BlockImportDialogMorph(blocks, this.stage, name).popUp();
     }
+    return blocks;
 };
 
 IDE_Morph.prototype.openSpritesString = function (str) {

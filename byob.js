@@ -3694,15 +3694,16 @@ BlockRemovalDialogMorph.prototype.selectNone
 // BlockRemovalDialogMorph ops
 
 BlockRemovalDialogMorph.prototype.removeBlocks = function () {
-    var ide = this.target.parentThatIsA(IDE_Morph);
+    var ide = this.target.parentThatIsA(IDE_Morph),
+        ids;
+
     if (!ide) {return; }
     if (this.blocks.length > 0) {
-        this.blocks.forEach(function (def) {
-            var idx = ide.stage.globalBlocks.indexOf(def);
-            if (idx !== -1) {
-                ide.stage.globalBlocks.splice(idx, 1);
-            }
+        ids = this.blocks.map(function (def) {
+            return def.id;
         });
+        SnapCollaborator.deleteCustomBlocks(ids, ide.stage.id);
+
         ide.flushPaletteCache();
         ide.refreshPalette();
         ide.showMessage(

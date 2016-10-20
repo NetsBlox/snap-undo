@@ -207,6 +207,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 
     'addCustomBlock',  // (definition)
     'deleteCustomBlock',  // (definition)
+    'deleteCustomBlocks',  // (definition)
 
     'addBlock',
     'removeBlock',
@@ -752,6 +753,14 @@ SimpleCollaborator.prototype.onAddCustomBlock = function(id, ownerId, opts, crea
     }
 };
 
+SimpleCollaborator.prototype.onDeleteCustomBlocks = function(ids, ownerId) {
+    var collab = this;
+
+    return ids.map(function(id) {
+        collab.onDeleteCustomBlock(id, ownerId);
+    });
+};
+
 SimpleCollaborator.prototype.onDeleteCustomBlock = function(id, ownerId) {
     var definition = this._customBlocks[id],
         rcvr = this._owners[ownerId],
@@ -761,7 +770,7 @@ SimpleCollaborator.prototype.onDeleteCustomBlock = function(id, ownerId) {
 
     rcvr.deleteAllBlockInstances(definition);
     if (definition.isGlobal) {
-        stage = rcvr.parentThatIsA(StageMorph);
+        stage = this.ide().stage;
         idx = stage.globalBlocks.indexOf(definition);
         if (idx !== -1) {
             stage.globalBlocks.splice(idx, 1);
@@ -1073,14 +1082,19 @@ SimpleCollaborator.prototype.onRemoveSound = function(id) {
 };
 
 SimpleCollaborator.prototype.onImportSprites = function(xmlString) {
+    // TODO: Need to id the imported sprites and blocks...
     return this.ide().openSpritesString(xmlString);
 };
 
 SimpleCollaborator.prototype.onImportBlocks = function(aString, lbl) {
+    // TODO: Record the block definitions (id them)
+    // We should get the block ids first...
     return this.ide().openBlocksString(aString, lbl, true);
 };
 
 SimpleCollaborator.prototype.onImportMedia = function(aString) {
+    // TODO: Need to id these new items...
+    // Could I do the id-ing in the store.js file?
     return this.ide().openMediaString(aString);
 };
 
