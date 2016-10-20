@@ -5807,12 +5807,13 @@ ScriptsMorph.prototype.addBlock = function (block) {
         type = SnapCollaborator.serializeBlock(block),
         blockEditor = this.parentThatIsA(BlockEditorMorph),
         scripts = block.parentThatIsA(ScriptsMorph),
+        scale = SyntaxElementMorph.prototype.scale,
         ownerId = this.owner.id;
 
     if (blockEditor) {
         ownerId = blockEditor.definition.id;
     }
-    position = position.subtract(scripts.topLeft())
+    position = position.subtract(scripts.topLeft()).divideBy(scale);
 
     SnapCollaborator.addBlock(type, ownerId, position.x, position.y);
 
@@ -5853,9 +5854,10 @@ ScriptsMorph.prototype.setBlockPosition = function (block, hand) {
     var position = block.position(),
         editor = block.parentThatIsA(BlockEditorMorph),
         originPosition = hand.grabOrigin.position.add(hand.grabOrigin.origin.position()),
-        scripts = block.parentThatIsA(ScriptsMorph);
+        scripts = block.parentThatIsA(ScriptsMorph),
+        scale = SyntaxElementMorph.prototype.scale;
 
-    position = position.subtract(scripts.topLeft())
+    position = position.subtract(scripts.topLeft()).divideBy(scale);
     block.setPosition(originPosition);
     SnapCollaborator.setBlockPosition(block.id, position.x, position.y);
 };

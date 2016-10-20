@@ -260,7 +260,9 @@ SimpleCollaborator.prototype._getMethodFor = function(action) {
 
 /* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
 SimpleCollaborator.prototype.getAdjustedPosition = function(position, scripts) {
-    return position.add(scripts.topLeft());
+    var scale = SyntaxElementMorph.prototype.scale;
+    position = position.multiplyBy(scale).add(scripts.topLeft());
+    return position;
 };
 
 SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
