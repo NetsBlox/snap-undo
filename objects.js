@@ -5776,7 +5776,6 @@ StageMorph.prototype.blockTemplates = function (category) {
             if (myself.isVariableNameInUse(pair[0])) {
                 myself.inform('that name is already in use');
             } else {
-                // TODO: Change this to use the SnapCollaborator
                 SnapCollaborator.addVariable(pair[0], pair[1] || myself.id);
                 //myself.addVariable(pair[0], pair[1]);
             }

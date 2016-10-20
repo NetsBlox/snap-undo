@@ -260,18 +260,7 @@ SimpleCollaborator.prototype._getMethodFor = function(action) {
 
 /* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
 SimpleCollaborator.prototype.getAdjustedPosition = function(position, scripts) {
-    // Adjust the position given the scroll value
-    var dy,
-        dx;
-
-    if (scripts.scrollFrame) {
-        //dy = scripts.top() - scripts.scrollFrame.top();
-        //dx = scripts.left() - scripts.scrollFrame.left();
-
-        return position.add(new Point(dx, dy));
-    } else {
-        return position;
-    }
+    return position.add(scripts.topLeft());
 };
 
 SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
@@ -300,6 +289,8 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
         firstBlock.snapSound.play();
     }
 
+    this.positionOf[firstBlock.id] = [position.x, position.y];
+
     if (!this._customBlocks[ownerId]) {  // not a custom block
         position = this.getAdjustedPosition(position, owner.scripts);
 
@@ -313,14 +304,11 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
             editor = this._getCustomBlockEditor(ownerId),
             scripts = editor.body.contents;
 
-        position = position.add(editor.position());
         position = this.getAdjustedPosition(position, scripts);
         firstBlock.setPosition(position);
         scripts.add(firstBlock);
         editor.updateDefinition();
     }
-
-    this.positionOf[firstBlock.id] = [position.x, position.y];
 
     // Register generic hat blocks?
     // TODO
@@ -504,9 +492,7 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     // Check if editing a custom block
     var editor = block.parentThatIsA(BlockEditorMorph);
     if (editor) {  // not a custom block
-        position = position.add(editor.position());
         scripts = editor.body.contents;
-        this.positionOf[id] = [position.x, position.y];
     }
 
     position = this.getAdjustedPosition(position, scripts);

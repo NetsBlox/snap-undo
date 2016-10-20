@@ -7168,7 +7168,6 @@ SoundIconMorph.prototype.renameSound = function () {
         null,
         function (answer) {
             if (answer && (answer !== sound.name)) {
-                // TODO: Use the collaborator
                 SnapCollaborator.renameSound(sound.id, answer);
             }
         }

@@ -5796,7 +5796,7 @@ ScriptsMorph.prototype.reactToDropOf = function (droppedMorph, hand) {
         } else if (!droppedMorph.id) {  // addBlock
             this.addBlock(droppedMorph);
         } else {  // change position
-            this.setBlockPosition(droppedMorph);
+            this.setBlockPosition(droppedMorph, hand);
         }
     }
     this.adjustBounds();
@@ -5806,12 +5806,13 @@ ScriptsMorph.prototype.addBlock = function (block) {
     var position = block.position(),
         type = SnapCollaborator.serializeBlock(block),
         blockEditor = this.parentThatIsA(BlockEditorMorph),
+        scripts = block.parentThatIsA(ScriptsMorph),
         ownerId = this.owner.id;
 
     if (blockEditor) {
         ownerId = blockEditor.definition.id;
-        position = position.subtract(blockEditor.position());
     }
+    position = position.subtract(scripts.topLeft())
 
     SnapCollaborator.addBlock(type, ownerId, position.x, position.y);
 
@@ -5848,21 +5849,14 @@ ScriptsMorph.prototype.moveBlock = function (block, target) {
     }
 };
 
-ScriptsMorph.prototype.setBlockPosition = function (block) {
+ScriptsMorph.prototype.setBlockPosition = function (block, hand) {
     var position = block.position(),
-        oldPos = SnapCollaborator.positionOf[block.id],
-        editor = block.parentThatIsA(BlockEditorMorph);
+        editor = block.parentThatIsA(BlockEditorMorph),
+        originPosition = hand.grabOrigin.position.add(hand.grabOrigin.origin.position()),
+        scripts = block.parentThatIsA(ScriptsMorph);
 
-    if (editor) {  // not a custom block
-        position = position.subtract(editor.position());
-    }
-
-    // Update the position if in a BlockEditorMorph
-    // Move back to starting position in case it is not accepted
-    // TODO: Latency makes this look bad :(
-    if (oldPos) {
-        block.setPosition(new Point(oldPos[0], oldPos[1]));
-    }
+    position = position.subtract(scripts.topLeft())
+    block.setPosition(originPosition);
     SnapCollaborator.setBlockPosition(block.id, position.x, position.y);
 };
 
