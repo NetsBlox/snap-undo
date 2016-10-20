@@ -4560,7 +4560,9 @@ IDE_Morph.prototype.setBlocksScale = function (num) {
 IDE_Morph.prototype.userSetStageSize = function () {
     new DialogBoxMorph(
         this,
-        this.setStageExtent,
+        function(point) {
+            SnapCollaborator.setStageSize(point.x, point.y);
+        },
         this
     ).promptVector(
         "Stage size",

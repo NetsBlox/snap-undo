@@ -199,6 +199,8 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'renameSound',
     'removeSound',
 
+    'setStageSize',
+
     'addCostume',
     'renameCostume',
     'removeCostume',
@@ -1081,6 +1083,11 @@ SimpleCollaborator.prototype.onRemoveSound = function(id) {
     delete this._soundToOwner[id];
 };
 
+SimpleCollaborator.prototype.onSetStageSize = function(width, height) {
+    this.ide().setStageExtent(new Point(width, height));
+};
+
+//////////////////// Import ////////////////////
 SimpleCollaborator.prototype.onImportSprites = function(xmlString) {
     // TODO: Need to id the imported sprites and blocks...
     return this.ide().openSpritesString(xmlString);
