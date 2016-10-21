@@ -1097,14 +1097,44 @@ SimpleCollaborator.prototype.loadProject = function(ide, lastSeen) {
 
     // Load the owners
     this.registerOwner(ide.stage, ide.stage.id);
-    ide.sprites.asArray().forEach(sprite => this.registerOwner(sprite, sprite.id));
+    ide.sprites.asArray().forEach(sprite => this.loadOwner(sprite));
 
     // Load the blocks
-    //  - Traverse all blocks for every 
+    //  - Traverse all blocks for every owner
+    //  - Traverse all blocks in custom block definitions
 
     // Update the id counter
-    console.log('setting startIndex to', lastSeen);
     this.lastSeen = lastSeen || 0;
+};
+
+SimpleCollaborator.prototype.loadOwner = function(owner) {
+    var collab = this,
+        registerBlock = function(block) {
+            collab._blocks[block.id] = block;
+        };
+
+    this.registerOwner(owner, owner.id);
+
+    // Load the blocks
+    owner.scripts.children.forEach(block => this.traverse(block, registerBlock));
+};
+
+SimpleCollaborator.prototype.traverse = function(block, fn) {
+    var current = [block],
+        next;
+
+    while (current.length) {
+        next = [];
+        for (var i = current.length; i--;) {
+            block = current[i];
+            fn(block);
+            next = next.concat(block.inputs().filter(input => input instanceof ReporterBlockMorph));
+            if (block.nextBlock && block.nextBlock()) {
+                next.push(block.nextBlock());
+            }
+        }
+        current = next;
+    }
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
