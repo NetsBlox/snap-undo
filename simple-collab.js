@@ -6,8 +6,11 @@ function SimpleCollaborator() {
     this.id = null;
     this.rank = null;
     this.isLeader = false;
-    this.addedBlocks = {};
-    this.removedBlocks = {};
+    this.initializeRecords();
+    this.initialize();
+};
+
+SimpleCollaborator.prototype.initializeRecords = function() {
     this.blockChildren = {};
     this.blockToParent = {};
     this.fieldValues = {};
@@ -22,11 +25,6 @@ function SimpleCollaborator() {
     this._soundToOwner = {};
 
     this._sounds = {};
-
-    this.spliceConnections = {'bottom/block': true};
-    this.positionOf = {};  // Last writer, highest rank wins
-
-    this.initialize();
 };
 
 SimpleCollaborator.prototype.initialize = function() {
@@ -141,8 +139,8 @@ SimpleCollaborator.prototype.deserializeBlock = function(ser) {
     }
 };
 
-SimpleCollaborator.prototype.registerOwner = function(owner) {
-    owner.id = this.newId();
+SimpleCollaborator.prototype.registerOwner = function(owner, id) {
+    owner.id = id || this.newId();
     this._owners[owner.id] = owner;
 };
 
@@ -161,7 +159,6 @@ SimpleCollaborator.prototype._setField = function(pId, connId, value) {
 
 SimpleCollaborator.prototype._setBlockPosition = function(id, x, y) {
     logger.log('<<< setting position of ', id, 'to', x, ',', y);
-    this.positionOf[id] = [x, y];
 
     // Check if this is causing a disconnect
     var parent = this.blockToParent[id];
@@ -290,8 +287,6 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
     if (firstBlock.snapSound) {
         firstBlock.snapSound.play();
     }
-
-    this.positionOf[firstBlock.id] = [position.x, position.y];
 
     if (!this._customBlocks[ownerId]) {  // not a custom block
         position = this.getAdjustedPosition(position, owner.scripts);
@@ -506,6 +501,8 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
             oldParent.reactToGrabOf(block);
         }
         oldParent.fixLayout();
+        oldParent.drawNew();
+        console.log('oldParent bounds:', oldParent.fullBounds());
         oldParent.changed();
 
         scripts.drawNew();
@@ -1091,6 +1088,21 @@ SimpleCollaborator.prototype.onImportMedia = function(aString) {
     // TODO: Need to id these new items...
     // Could I do the id-ing in the store.js file?
     return this.ide().openMediaString(aString);
+};
+
+//////////////////// Loading Projects ////////////////////
+SimpleCollaborator.prototype.loadProject = function(ide) {
+    // Clear old info
+    this.initializeRecords();
+
+    // Load the owners
+    this.registerOwner(ide.stage, ide.stage.id);
+    ide.sprites.asArray().forEach(sprite => this.registerOwner(sprite, sprite.id));
+
+    // Load the blocks
+    //  - Traverse all blocks for every 
+
+    // TODO: Update the id counter
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */

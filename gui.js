@@ -216,7 +216,6 @@ IDE_Morph.prototype.init = function (isAutoFill) {
     this.serializer = new SnapSerializer();
     this.globalVariables = new VariableFrame();
     this.currentSprite = new SpriteMorph(this.globalVariables);
-    SnapCollaborator.registerOwner(this.currentSprite);
     this.sprites = new List([this.currentSprite]);
     this.currentCategory = 'motion';
     this.currentTab = 'scripts';
@@ -275,6 +274,7 @@ IDE_Morph.prototype.openIn = function (world) {
     }
 
     this.buildPanes();
+    SnapCollaborator.loadProject(this);
     world.add(this);
     world.userMenu = this.userMenu;
 
@@ -1009,7 +1009,6 @@ IDE_Morph.prototype.createStage = function () {
     if (this.stage) {this.stage.destroy(); }
     StageMorph.prototype.frameRate = 0;
     this.stage = new StageMorph(this.globalVariables);
-    SnapCollaborator.registerOwner(this.stage);
     this.stage.setExtent(this.stage.dimensions); // dimensions are fixed
     if (this.currentSprite instanceof SpriteMorph) {
         this.currentSprite.setPosition(
@@ -3215,13 +3214,12 @@ IDE_Morph.prototype.newProject = function () {
     Process.prototype.enableLiveCoding = false;
     this.setProjectName('');
     this.projectNotes = '';
-    this.collaborator = new Collaborator(this);
-    // FIXME
     this.createStage();
     this.add(this.stage);
     this.createCorral();
     this.selectSprite(this.stage.children[0]);
     this.fixLayout();
+    SnapCollaborator.loadProject(this);
 };
 
 IDE_Morph.prototype.save = function () {
