@@ -5853,12 +5853,17 @@ ScriptsMorph.prototype.moveBlock = function (block, target) {
 ScriptsMorph.prototype.setBlockPosition = function (block, hand) {
     var position = block.position(),
         editor = block.parentThatIsA(BlockEditorMorph),
-        originPosition = hand.grabOrigin.position.add(hand.grabOrigin.origin.position()),
         scripts = block.parentThatIsA(ScriptsMorph),
-        scale = SyntaxElementMorph.prototype.scale;
+        scale = SyntaxElementMorph.prototype.scale,
+        originPosition;
 
     position = position.subtract(scripts.topLeft()).divideBy(scale);
-    block.setPosition(originPosition);
+
+    if (hand) {
+        originPosition = hand.grabOrigin.position.add(hand.grabOrigin.origin.position());
+        block.setPosition(originPosition);
+    }
+
     SnapCollaborator.setBlockPosition(block.id, position.x, position.y);
 };
 
