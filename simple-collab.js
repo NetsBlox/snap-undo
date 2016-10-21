@@ -1091,7 +1091,7 @@ SimpleCollaborator.prototype.onImportMedia = function(aString) {
 };
 
 //////////////////// Loading Projects ////////////////////
-SimpleCollaborator.prototype.loadProject = function(ide) {
+SimpleCollaborator.prototype.loadProject = function(ide, lastSeen) {
     // Clear old info
     this.initializeRecords();
 
@@ -1102,7 +1102,9 @@ SimpleCollaborator.prototype.loadProject = function(ide) {
     // Load the blocks
     //  - Traverse all blocks for every 
 
-    // TODO: Update the id counter
+    // Update the id counter
+    console.log('setting startIndex to', lastSeen);
+    this.lastSeen = lastSeen || 0;
 };
 
 /* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */

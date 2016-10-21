@@ -367,6 +367,7 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
     }
     model.globalVariables = model.project.childNamed('variables');
     project.globalVariables = new VariableFrame();
+    project.collabStartIndex = +(model.project.attributes.collabStartIndex || 0);
 
     /* Stage */
 
@@ -1463,7 +1464,7 @@ SnapSerializer.prototype.openProject = function (project, ide) {
     //   - definitions
     //   - costumes
     //   - sounds
-    SnapCollaborator.loadProject(ide);
+    SnapCollaborator.loadProject(ide, project.collabStartIndex);
     ide.world().keyboardReceiver = project.stage;
 };
 
@@ -1512,7 +1513,7 @@ StageMorph.prototype.toXML = function (serializer) {
 
     this.removeAllClones();
     return serializer.format(
-        '<project collabLastSeen="@" name="@" app="@" version="@">' +
+        '<project collabStartIndex="@" name="@" app="@" version="@">' +
             '<notes>$</notes>' +
             '<thumbnail>$</thumbnail>' +
             '<stage name="@" width="@" height="@" collabId="@" ' +
