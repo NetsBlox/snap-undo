@@ -16,15 +16,17 @@ SimpleCollaborator.prototype.initializeRecords = function() {
     this.fieldValues = {};
 
     // Helpers
+    this._owners = {};
     this._blocks = {};
+
     this._customBlocks = {};
     this._customBlockOwner = {};
-    this._owners = {};
+
     this._costumes = {};
     this._costumeToOwner = {};
-    this._soundToOwner = {};
 
     this._sounds = {};
+    this._soundToOwner = {};
 };
 
 SimpleCollaborator.prototype.initialize = function() {
@@ -1096,11 +1098,8 @@ SimpleCollaborator.prototype.loadProject = function(ide, lastSeen) {
     this.initializeRecords();
 
     // Load the owners
-    this.registerOwner(ide.stage, ide.stage.id);
-    ide.sprites.asArray().forEach(sprite => this.loadOwner(sprite));
+    ide.sprites.asArray().concat(ide.stage).forEach(sprite => this.loadOwner(sprite));
 
-    // Load the blocks
-    //  - Traverse all blocks for every owner
     //  - Traverse all blocks in custom block definitions
 
     // Update the id counter
@@ -1110,13 +1109,45 @@ SimpleCollaborator.prototype.loadProject = function(ide, lastSeen) {
 SimpleCollaborator.prototype.loadOwner = function(owner) {
     var collab = this,
         registerBlock = function(block) {
-            collab._blocks[block.id] = block;
+            if (!(block instanceof PrototypeHatBlockMorph)) {
+                console.assert(block.id, `Cannot register block without id: ${block.id}`);
+                collab._blocks[block.id] = block;
+            }
         };
 
     this.registerOwner(owner, owner.id);
 
-    // Load the blocks
+    // Load the blocks from scripts
     owner.scripts.children.forEach(block => this.traverse(block, registerBlock));
+
+    // Load the blocks from custom block definitions
+    var customBlocks = owner.customBlocks,
+        editor,
+        scripts;
+
+    if (owner.globalBlocks) {
+        customBlocks = customBlocks.concat(owner.globalBlocks);
+    }
+
+    customBlocks.forEach(def => {
+        this._customBlocks[def.id] = def;
+        this._customBlockOwner[def.id] = owner;
+        editor = this._getCustomBlockEditor(def.id);
+        scripts = editor.body.contents;
+        scripts.children.forEach(block => this.traverse(block, registerBlock));
+    });
+
+    // Load the costumes
+    owner.costumes.asArray().forEach(costume => {
+        this._costumes[costume.id] = costume;
+        this._costumeToOwner[costume.id] = owner;
+    });
+
+    // Load the sounds
+    owner.sounds.asArray().forEach(sound => {
+        this._sounds[sound.id] = sound;
+        this._soundToOwner[sound.id] = owner;
+    });
 };
 
 SimpleCollaborator.prototype.traverse = function(block, fn) {

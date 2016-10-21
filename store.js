@@ -814,6 +814,7 @@ SnapSerializer.prototype.loadCustomBlocks = function (
         definition.category = child.attributes.category || 'other';
         definition.type = child.attributes.type || 'command';
         definition.isGlobal = (isGlobal === true);
+        definition.id = child.attributes.collabId;
         if (definition.isGlobal) {
             object.globalBlocks.push(definition);
         } else {
@@ -1387,6 +1388,7 @@ SnapSerializer.prototype.loadValue = function (model) {
             }
             image.src = model.attributes.image;
         }
+        v.id = model.attributes.collabId;
         record();
         return v;
     case 'sound':
@@ -1399,6 +1401,7 @@ SnapSerializer.prototype.loadValue = function (model) {
             )) {
             myself.mediaDict[model.attributes.mediaID] = v;
         }
+        v.id = model.attributes.collabId;
         return v;
     }
     return undefined;
@@ -1657,7 +1660,8 @@ Sound.prototype[XML_Serializer.prototype.mediaDetectionProperty] = true;
 
 Sound.prototype.toXML = function (serializer) {
     return serializer.format(
-        '<sound name="@" sound="@" ~/>',
+        '<sound collabId="@" name="@" sound="@" ~/>',
+        this.id,
         this.name,
         this.toDataURL()
     );
