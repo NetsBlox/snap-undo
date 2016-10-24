@@ -484,8 +484,8 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
 
     console.assert(block, 'Block "' + id + '" does not exist! Cannot set position');
 
-    if (oldParent && oldParent.revertToDefaultInput) {
-        oldParent.revertToDefaultInput(block);
+    if (block && block.prepareToBeGrabbed) {
+        block.prepareToBeGrabbed({world: this.ide().world()});
     }
 
     // Check if editing a custom block
@@ -499,12 +499,8 @@ SimpleCollaborator.prototype.onSetBlockPosition = function(id, x, y) {
     scripts.add(block);
 
     if (!(oldParent instanceof ScriptsMorph)) {
-        if (oldParent.reactToGrabOf) {
-            oldParent.reactToGrabOf(block);
-        }
         oldParent.fixLayout();
         oldParent.drawNew();
-        console.log('oldParent bounds:', oldParent.fullBounds());
         oldParent.changed();
 
         scripts.drawNew();
