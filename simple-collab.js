@@ -95,7 +95,7 @@ SimpleCollaborator.prototype.getId = function (block) {
         if (block.parent === null) {  // template block
             return null;
         }
-        id = block.parent.children.indexOf(block) + '/' + id;
+        id = block.parent.inputs().indexOf(block) + '/' + id;
         block = block.parent;
         if (!block) {
             throw Error('Cannot get id from element');
@@ -386,7 +386,7 @@ SimpleCollaborator.prototype.getBlockFromId = function(id) {
 
     for (var i = 0; i < ids.length; i++) {
         if (ids[i]) {
-            block = block.children[ids[i]];
+            block = block.inputs()[ids[i]];
         }
     }
     return block;
@@ -598,9 +598,8 @@ SimpleCollaborator.prototype.onSetBlockSpec = function(id, spec) {
     this._updateBlockDefinitions(block);
 };
 
-SimpleCollaborator.prototype.onSetField = function(pId, connId, value) {
-    var parent = this.getBlockFromId(pId),
-        block = parent.children[connId];
+SimpleCollaborator.prototype.onSetField = function(fieldId, value) {
+    var block = this.getBlockFromId(fieldId);
 
     console.assert(block instanceof InputSlotMorph,
         'Unexpected block type: ' + block.constructor);
