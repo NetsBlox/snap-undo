@@ -377,12 +377,12 @@ SpriteMorph.prototype.initBlocks = function () {
             spec: 'go back %n layers',
             defaults: [1]
         },
-        doScreenshot: {
-            type: 'command',
-            category: 'looks',
-            spec: 'save %imgsource as costume named %s',
-            defaults: [['pen trails'], localize('screenshot')]
-        },
+        //doScreenshot: {
+            //type: 'command',
+            //category: 'looks',
+            //spec: 'save %imgsource as costume named %s',
+            //defaults: [['pen trails'], localize('screenshot')]
+        //},
 
         // Looks - Debugging primitives for development mode
         reportCostumes: {
