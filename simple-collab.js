@@ -564,21 +564,29 @@ SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
     scripts.add(block);
 };
 
-SimpleCollaborator.prototype.onAddListInput = function(id) {
+SimpleCollaborator.prototype.onAddListInput = function(id, count) {
     var block = this.getBlockFromId(id),
         scripts = block.parentThatIsA(ScriptsMorph);
 
-    block.addInput();
+    count = count || 1;
+    for (var i = 0; i < count; i++) {
+        block.addInput();
+    }
+
     scripts.drawNew();
     scripts.changed();
     this._updateBlockDefinitions(block);
 };
 
-SimpleCollaborator.prototype.onRemoveListInput = function(id) {
+SimpleCollaborator.prototype.onRemoveListInput = function(id, count) {
     var block = this.getBlockFromId(id),
         scripts = block.parentThatIsA(ScriptsMorph);
 
-    block.removeInput();
+    count = count || 1;
+    for (var i = 0; i < count; i++) {
+        block.removeInput();
+    }
+
     block.changed()
     scripts.changed();
     this._updateBlockDefinitions(block);

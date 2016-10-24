@@ -10516,16 +10516,12 @@ MultiArgMorph.prototype.mouseClickLeft = function (pos) {
 
     this.startLayout();
     if (rightArrow.bounds.containsPoint(pos)) {
-        for (i = 0; i < repetition; i += 1) {
-            if (rightArrow.isVisible) {
-                SnapCollaborator.addListInput(id);
-            }
+        if (rightArrow.isVisible) {  // FIXME: Can I check how many will be allowed here?
+            SnapCollaborator.addListInput(id, repetition);
         }
     } else if (leftArrow.bounds.containsPoint(pos)) {
-        for (i = 0; i < repetition; i += 1) {
-            if (leftArrow.isVisible) {
-                SnapCollaborator.removeListInput(id);
-            }
+        if (leftArrow.isVisible) {  // FIXME: Can I check how many will be allowed here?
+            SnapCollaborator.removeListInput(id, repetition);
         }
     } else {
         this.escalateEvent('mouseClickLeft', pos);
