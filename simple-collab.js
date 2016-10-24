@@ -166,7 +166,7 @@ SimpleCollaborator.prototype._setBlockPosition = function(id, x, y) {
     var parent = this.blockToParent[id];
     if (parent) {
         delete this.blockChildren[parent.id][parent.conn];
-        this.onBlockDisconnected(id, parent.id, parent.conn);
+        //this.onBlockDisconnected(id, parent.id, parent.conn);
     }
 
     this.onSetBlockPosition(id, x, y);
@@ -561,7 +561,6 @@ SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
     var block = this.getBlockFromId(id),
         scripts = block.parentThatIsA(ScriptsMorph);
 
-    // TODO: This is not sizing the ring appropriately...
     scripts.add(block);
 };
 
