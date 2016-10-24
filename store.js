@@ -646,7 +646,6 @@ SnapSerializer.prototype.loadSprites = function (xmlString, ide) {
         }
         project.stage.add(sprite);
         ide.sprites.add(sprite);
-        SnapCollaborator.registerOwner(sprite, sprite.id);
         sprite.scale = parseFloat(model.attributes.scale || '1');
         sprite.rotationStyle = parseFloat(
             model.attributes.rotation || '1'
@@ -657,6 +656,8 @@ SnapSerializer.prototype.loadSprites = function (xmlString, ide) {
         sprite.drawNew();
         sprite.gotoXY(+model.attributes.x || 0, +model.attributes.y || 0);
         myself.loadObject(sprite, model);
+
+        SnapCollaborator.loadOwner(sprite);
     });
 
     // restore inheritance and nesting associations
