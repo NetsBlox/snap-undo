@@ -1699,12 +1699,19 @@ IDE_Morph.prototype.droppedText = function (aString, name) {
         return this.openCloudDataString(aString);
     }
     if (aString.indexOf('<blocks') === 0) {
-        return SnapCollaborator.importBlocks(aString, lbl);
+        // TODO: Could we id these blocks first?
+        this.uniqueIdForImport(aString, lbl, function(blocks) {
+            return SnapCollaborator.importBlocks(blocks, lbl);
+        });
     }
     if (aString.indexOf('<sprites') === 0) {
-        return SnapCollaborator.importSprites(aString);
+        // TODO: Could we id these blocks first?
+        this.uniqueIdForImport(aString, lbl, function(str) {
+            return SnapCollaborator.importSprites(str);
+        });
     }
     if (aString.indexOf('<media') === 0) {
+        // TODO: Could we id these blocks first?
         return SnapCollaborator.importMedia(aString);
     }
 };
@@ -3792,6 +3799,28 @@ IDE_Morph.prototype.rawOpenCloudDataString = function (str) {
         );
     }
     this.stopFastTracking();
+};
+
+IDE_Morph.prototype.uniqueIdForImport = function (str, name, callback) {
+    var msg,
+        myself = this;
+
+    this.nextSteps([
+        function () { nop(); }, // yield (bug in Chrome)
+        function () {
+            var model = myself.serializer.parse(str),
+                children = model.allChildren();
+
+            for (var i = children.length; i--;) {
+                if (children[i].attributes) {
+                    children[i].attributes.collabId = SnapCollaborator.newId();
+                }
+            }
+
+            callback(model.toString());
+
+        }
+    ]);
 };
 
 IDE_Morph.prototype.openBlocksString = function (str, name, silently) {

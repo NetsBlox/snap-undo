@@ -77,7 +77,7 @@ SimpleCollaborator.prototype.send = function(json) {
     this._ws.send(JSON.stringify(json));
 };
 
-SimpleCollaborator.prototype.newId = function(index) {
+SimpleCollaborator.prototype.newId = function() {
     // This is the same across devices since it uses the currently last seen value
     var id = 'item_' + this.lastSeen;
 

@@ -642,11 +642,11 @@ SnapSerializer.prototype.loadSprites = function (xmlString, ide) {
             sprite.penPoint = model.attributes.pen;
         }
         if (model.attributes.collabId) {
-            console.log('setting sprite id to', model.attributes.collabId);
             sprite.id = model.attributes.collabId;
         }
         project.stage.add(sprite);
         ide.sprites.add(sprite);
+        SnapCollaborator.registerOwner(sprite, sprite.id);
         sprite.scale = parseFloat(model.attributes.scale || '1');
         sprite.rotationStyle = parseFloat(
             model.attributes.rotation || '1'
