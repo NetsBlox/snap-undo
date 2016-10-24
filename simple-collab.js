@@ -572,8 +572,12 @@ SimpleCollaborator.prototype.onAddListInput = function(id) {
 };
 
 SimpleCollaborator.prototype.onRemoveListInput = function(id) {
-    var block = this.getBlockFromId(id);
+    var block = this.getBlockFromId(id),
+        scripts = block.parentThatIsA(ScriptsMorph);
+
     block.removeInput();
+    block.changed()
+    scripts.changed();
     this._updateBlockDefinitions(block);
 };
 
