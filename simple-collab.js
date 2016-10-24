@@ -565,8 +565,12 @@ SimpleCollaborator.prototype.onBlockDisconnected = function(id, pId, conn) {
 };
 
 SimpleCollaborator.prototype.onAddListInput = function(id) {
-    var block = this.getBlockFromId(id);
+    var block = this.getBlockFromId(id),
+        scripts = block.parentThatIsA(ScriptsMorph);
+
     block.addInput();
+    scripts.drawNew();
+    scripts.changed();
     this._updateBlockDefinitions(block);
 };
 
