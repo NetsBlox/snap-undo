@@ -204,7 +204,6 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'renameCostume',
     'removeCostume',
     'updateCostume',
-    'importMedia',
 
     'addCustomBlock',  // (definition)
     'deleteCustomBlock',  // (definition)
@@ -1091,12 +1090,6 @@ SimpleCollaborator.prototype.onImportSprites = function(xmlString) {
 
 SimpleCollaborator.prototype.onImportBlocks = function(aString, lbl) {
     return this.ide().openBlocksString(aString, lbl, true);
-};
-
-SimpleCollaborator.prototype.onImportMedia = function(aString) {
-    // TODO: Need to id these new items...
-    // Could I do the id-ing in the store.js file?
-    return this.ide().openMediaString(aString);
 };
 
 //////////////////// Loading Projects ////////////////////

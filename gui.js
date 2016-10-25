@@ -1699,7 +1699,6 @@ IDE_Morph.prototype.droppedText = function (aString, name) {
         return this.openCloudDataString(aString);
     }
     if (aString.indexOf('<blocks') === 0) {
-        // TODO: Could we id these blocks first?
         this.uniqueIdForImport(aString, lbl, function(blocks) {
             return SnapCollaborator.importBlocks(blocks, lbl);
         });
@@ -1710,8 +1709,7 @@ IDE_Morph.prototype.droppedText = function (aString, name) {
         });
     }
     if (aString.indexOf('<media') === 0) {
-        // TODO: Could we id these blocks first?
-        return SnapCollaborator.importMedia(aString);
+        return this.openMediaString(aString);
     }
 };
 
