@@ -1115,7 +1115,7 @@ SimpleCollaborator.prototype.loadProject = function(ide, lastSeen) {
 
 SimpleCollaborator.prototype._registerBlock = function(block) {
     if (!(block instanceof PrototypeHatBlockMorph)) {
-        console.assert(block.id, `Cannot register block without id: ${block.id}`);
+        console.assert(block.id, `Cannot register block without id: ${block.id} (${block.blockSpec})`);
         this._blocks[block.id] = block;
     }
 };

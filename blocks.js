@@ -3310,8 +3310,13 @@ BlockMorph.prototype.hasLabels = function () {
 
 // BlockMorph copying
 
+BlockMorph.prototype.copy = function () {
+    var ans = BlockMorph.uber.copy.call(this);
+    ans.id = this.id;
+    return ans;
+};
+
 BlockMorph.prototype.fullCopy = function (forClone) {
-    if (this instanceof CustomReporterBlockMorph) debugger; // FIXME: REMOVE
     if (forClone) {
         if (this.hasBlockVars()) {
             forClone = false;
@@ -3320,7 +3325,6 @@ BlockMorph.prototype.fullCopy = function (forClone) {
         }
     }
     var ans = BlockMorph.uber.fullCopy.call(this);
-    ans.id = this.id;
     ans.removeHighlight();
     ans.isDraggable = true;
     if (this.instantiationSpec) {
