@@ -193,6 +193,7 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'toggleDraggable',
     'duplicateSprite',
     'importSprites',
+    'setRotationStyle',
 
     'addSound',
     'renameSound',
@@ -1083,6 +1084,18 @@ SimpleCollaborator.prototype.onSetStageSize = function(width, height) {
     this.ide().setStageExtent(new Point(width, height));
 };
 
+SimpleCollaborator.prototype.onSetRotationStyle = function(id, rotationStyle) {
+    var sprite = this._owners[id];
+
+    sprite.rotationStyle = rotationStyle;
+    sprite.changed();
+    sprite.drawNew();
+    sprite.changed();
+
+    this.ide().rotationStyleButtons.forEach(function (each) {
+        each.refresh();
+    });
+};
 //////////////////// Import ////////////////////
 SimpleCollaborator.prototype.onImportSprites = function(xmlString) {
     return this.ide().openSpritesString(xmlString);

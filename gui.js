@@ -1060,14 +1060,8 @@ IDE_Morph.prototype.createSpriteBar = function () {
             myself, // the IDE is the target
             function () {
                 if (myself.currentSprite instanceof SpriteMorph) {
-                    myself.currentSprite.rotationStyle = rotationStyle;
-                    myself.currentSprite.changed();
-                    myself.currentSprite.drawNew();
-                    myself.currentSprite.changed();
+                    SnapCollaborator.setRotationStyle(myself.currentSprite.id, rotationStyle);
                 }
-                rotationStyleButtons.forEach(function (each) {
-                    each.refresh();
-                });
             },
             symbols[rotationStyle], // label
             function () {  // query
