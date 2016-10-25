@@ -6534,8 +6534,7 @@ SpriteIconMorph.prototype.copyStack = function (block) {
     });
 
     dup.id = null;
-    var blocks = SnapCollaborator.serializeBlock(dup);
-    SnapCollaborator.addBlock(blocks, this.object.id, position.x, position.y);
+    SnapCollaborator.addBlock(dup, this.object.scripts, position);
 };
 
 SpriteIconMorph.prototype.copyCostume = function (costume) {

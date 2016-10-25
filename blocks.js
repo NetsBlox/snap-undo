@@ -5648,22 +5648,31 @@ ScriptsMorph.prototype.userMenu = function () {
 ScriptsMorph.prototype.cleanUp = function () {
     var origin = this.topLeft(),
         y = this.cleanUpMargin,
-        myself = this;
+        myself = this,
+        positions,
+        point,
+        ids;
+
     this.children.sort(function (a, b) {
         // make sure the prototype hat block always stays on top
         return a instanceof PrototypeHatBlockMorph ? 0 : a.top() - b.top();
-    }).forEach(function (child) {
+    });
+
+    ids = this.children.map(function(child) {
+        return child.id;
+    });
+
+    positions = this.children.map(function (child) {
         if (child instanceof CommentMorph && child.block) {
             return; // skip anchored comments
         }
-        child.setPosition(origin.add(new Point(myself.cleanUpMargin, y)));
-        if (child instanceof BlockMorph) {
-            child.allComments().forEach(function (comment) {
-                comment.align(child, true); // ignore layer
-            });
-        }
+
+        point = origin.add(new Point(myself.cleanUpMargin, y));
         y += child.stackHeight() + myself.cleanUpSpacing;
+        return point;
     });
+
+    SnapCollaborator.setBlocksPositions(ids, positions);
     if (this.parent) {
         this.setPosition(this.parent.topLeft());
     }
@@ -5824,18 +5833,15 @@ ScriptsMorph.prototype.reactToDropOf = function (droppedMorph, hand) {
 
 ScriptsMorph.prototype.addBlock = function (block) {
     var position = block.position(),
-        type = SnapCollaborator.serializeBlock(block),
         blockEditor = this.parentThatIsA(BlockEditorMorph),
         scripts = block.parentThatIsA(ScriptsMorph),
-        scale = SyntaxElementMorph.prototype.scale,
         ownerId = this.owner.id;
 
     if (blockEditor) {
         ownerId = blockEditor.definition.id;
     }
-    position = position.subtract(scripts.topLeft()).divideBy(scale);
 
-    SnapCollaborator.addBlock(type, ownerId, position.x, position.y);
+    SnapCollaborator.addBlock(block, scripts, position, ownerId);
 
     block.destroy();
 };
@@ -5872,19 +5878,14 @@ ScriptsMorph.prototype.moveBlock = function (block, target) {
 
 ScriptsMorph.prototype.setBlockPosition = function (block, hand) {
     var position = block.position(),
-        editor = block.parentThatIsA(BlockEditorMorph),
-        scripts = block.parentThatIsA(ScriptsMorph),
-        scale = SyntaxElementMorph.prototype.scale,
         originPosition;
-
-    position = position.subtract(scripts.topLeft()).divideBy(scale);
 
     if (hand) {
         originPosition = hand.grabOrigin.position.add(hand.grabOrigin.origin.position());
         block.setPosition(originPosition);
     }
 
-    SnapCollaborator.setBlockPosition(block.id, position.x, position.y);
+    SnapCollaborator.setBlockPosition(block.id, position);
 };
 
 // ScriptsMorph events

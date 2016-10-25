@@ -154,8 +154,44 @@ SimpleCollaborator.prototype.registerOwner = function(owner, id) {
     this._owners[owner.id] = owner;
 };
 
+/* * * * * * * * * * * * Preprocess args (before action is accepted) * * * * * * * * * * * */
+SimpleCollaborator.prototype.getStandardPosition = function(scripts, position) {
+    var scale = SyntaxElementMorph.prototype.scale;
+    position = position.subtract(scripts.topLeft()).divideBy(scale);
+    return position;
+};
+
+SimpleCollaborator.prototype._addBlock = function(block, scripts, position, ownerId) {
+    var serialized = SnapCollaborator.serializeBlock(block),
+        stdPosition = this.getStandardPosition(scripts, position);
+
+    return [
+        serialized,
+        ownerId || scripts.owner.id,
+        stdPosition.x,
+        stdPosition.y
+    ];
+};
+
+SimpleCollaborator.prototype._setBlockPosition = function(id, position) {
+    var block = this.getBlockFromId(id),
+        scripts = block.parentThatIsA(ScriptsMorph),
+        standardPosition = this.getStandardPosition(scripts, position);
+
+    return [id, standardPosition.x, standardPosition.y];
+};
+
+SimpleCollaborator.prototype._setBlocksPositions = function(ids, positions) {
+    var block = this.getBlockFromId(ids[0]),
+        scripts = block.parentThatIsA(ScriptsMorph);
+
+    return [ids, positions.map(function(pos) {
+        return this.getStandardPosition(scripts, pos);
+    }, this)];
+};
+
 /* * * * * * * * * * * * Updating internal rep * * * * * * * * * * * */
-SimpleCollaborator.prototype._setField = function(pId, connId, value) {
+SimpleCollaborator.prototype._onSetField = function(pId, connId, value) {
     console.assert(!this.blockChildren[pId] || !this.blockChildren[pId][connId],'Connection occupied!');
 
     if (!this.fieldValues[pId]) {
@@ -167,7 +203,7 @@ SimpleCollaborator.prototype._setField = function(pId, connId, value) {
     this.onSetField(pId, connId, value);
 };
 
-SimpleCollaborator.prototype._setBlockPosition = function(id, x, y) {
+SimpleCollaborator.prototype._onSetBlockPosition = function(id, x, y) {
     logger.log('<<< setting position of ', id, 'to', x, ',', y);
 
     // Check if this is causing a disconnect
@@ -180,16 +216,16 @@ SimpleCollaborator.prototype._setBlockPosition = function(id, x, y) {
     this.onSetBlockPosition(id, x, y);
 };
 
-SimpleCollaborator.prototype._setSelector = function(id, selector) {
+SimpleCollaborator.prototype._onSetSelector = function(id, selector) {
     this.onSetSelector(id, selector);
 };
 
 // / / / / / / / / / / / Variables / / / / / / / / / / / //
-SimpleCollaborator.prototype._addVariable = function(name, ownerId) {
+SimpleCollaborator.prototype._onAddVariable = function(name, ownerId) {
     this.onAddVariable(name, ownerId);
 };
 
-SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
+SimpleCollaborator.prototype._onDeleteVariable = function(name, ownerId) {
     this.onDeleteVariable(name, ownerId);
 };
 
@@ -233,7 +269,8 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     // Block manipulation
     'addBlock',
     'removeBlock',
-    'setBlockPosition'
+    'setBlockPosition',
+    'setBlocksPositions',
     'moveBlock',
     'importBlocks',
 
@@ -253,7 +290,13 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 ].forEach(function(method) {
     SimpleCollaborator.prototype[method] = function() {
         var args = Array.prototype.slice.apply(arguments),
+            fn = '_' + method,
+            result,
             msg;
+
+        if (this[fn]) {
+            args = this[fn].apply(this, args) || args;
+        }
 
         msg = {
             type: method,
@@ -269,9 +312,10 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 });
 
 SimpleCollaborator.prototype._getMethodFor = function(action) {
-    var method = '_' + action;
+    var method = '_on' + action.substring(0,1).toUpperCase() + action.substring(1);
+
     if (!this[method]) {
-        method = 'on' + action.substring(0,1).toUpperCase() + action.substring(1);
+        method = method.substring(1);
     }
 
     return method;
@@ -492,6 +536,12 @@ SimpleCollaborator.prototype._updateBlockDefinitions = function(block) {
     var editor = block.parentThatIsA(BlockEditorMorph);
     if (editor) {
         editor.updateDefinition();
+    }
+};
+
+SimpleCollaborator.prototype.onSetBlocksPositions = function(ids, positions) {
+    for (var i = ids.length; i--;) {
+        this.onSetBlockPosition(ids[i], positions[i].x, positions[i].y);
     }
 };
 
