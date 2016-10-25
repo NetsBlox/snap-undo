@@ -2164,6 +2164,13 @@ IDE_Morph.prototype.cloudMenu = function () {
             'Reset Password...',
             'resetCloudPassword'
         );
+        /*
+        menu.addLine();
+        menu.addItem(
+            'Collaborate...',
+            'promptCollaboration'
+        );
+        */
     } else {
         menu.addItem(
             localize('Logout') + ' ' + SnapCloud.username,
@@ -2494,6 +2501,7 @@ IDE_Morph.prototype.settingsMenu = function () {
         'check to enable support\n for first-class sprite',
         true
     );
+    /* Disabled for now - not supported yet w/ collaboration
     addPreference(
         'Keyboard Editing',
         function () {
@@ -2510,6 +2518,7 @@ IDE_Morph.prototype.settingsMenu = function () {
         'check to enable\nkeyboard editing support',
         false
     );
+    */
     addPreference(
         'Table support',
         function () {
@@ -4746,6 +4755,59 @@ IDE_Morph.prototype.createCloudAccount = function () {
         myself.cloudIcon(),
         myself.cloudMsg
     );
+};
+
+IDE_Morph.prototype.promptCollaboration = function () {
+    // Provide a key for collaborating
+    // TODO
+    // Or enter a key to join an existing session
+    // TODO
+    var dialog = new DialogBoxMorph().withKey('promptCollab'),
+        frame = new AlignmentMorph('column', 10),
+        fieldLabel = new TextMorph(localize('Enter a passcode to join an existing project:')),
+        passcodeLabel = new TextMorph(localize('Or share the following passcode with users that \nyou\'d like to join you on this project:')),
+        defaultPasscodeContent = localize('enter passcode here...'),
+        passcodeField = new InputFieldMorph(defaultPasscodeContent),
+        shareCode = localize('EXAMPLE_PASSCODE'),
+        ok = dialog.ok,
+        myself = this,
+        size = 250,
+        world = this.world();
+
+    fieldLabel.setPosition(frame.topLeft().add(frame.padding));
+    passcodeField.setWidth(200);
+
+    frame.add(fieldLabel);
+    frame.add(passcodeField);
+    frame.add(passcodeLabel);
+    frame.add(new TextMorph(shareCode));
+
+    fieldLabel.drawNew();
+    passcodeField.drawNew();
+
+    dialog.ok = function () {
+        var passcode = passcodeField.contents().text.text;
+
+        // If the passcode is set, try to join the given group
+        if (passcode && passcode !== defaultPasscodeContent) {
+            // TODO: Try to join the given group
+            console.log('trying to join group:', passcode);
+        }
+        ok.call(this);
+    };
+
+    // TODO: 'enter' should trigger the 'ok' command
+    dialog.labelString = 'Collaboration';
+    dialog.createLabel();
+
+    dialog.addBody(frame);
+    frame.drawNew();
+    dialog.addButton('ok', 'OK');
+    dialog.addButton('cancel', 'Cancel');
+    dialog.fixLayout();
+    dialog.drawNew();
+    dialog.popUp(world);
+    dialog.setCenter(world.center());
 };
 
 IDE_Morph.prototype.resetCloudPassword = function () {
