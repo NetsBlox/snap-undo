@@ -108,7 +108,7 @@ WatcherMorph, Variable*/
 
 // Global stuff ////////////////////////////////////////////////////////
 
-modules.byob = '2016-July-14';
+modules.byob = '2016-September-24';
 
 // Declarations
 
@@ -150,6 +150,7 @@ function CustomBlockDefinition(spec, receiver) {
     // don't serialize (not needed for functionality):
     this.receiver = receiver || null; // for serialization only (pointer)
     this.editorDimensions = null; // a rectangle, last bounds of the editor
+    this.cachedIsRecursive = null; // for automatic yielding
 }
 
 // CustomBlockDefinition instantiating blocks
@@ -341,6 +342,26 @@ CustomBlockDefinition.prototype.parseSpec = function (spec) {
     }
     parts.push(word);
     return parts;
+};
+
+CustomBlockDefinition.prototype.isDirectlyRecursive = function () {
+    var myspec;
+    if (this.cachedIsRecursive !== null) {
+        return this.cachedIsRecursive;
+    }
+    if (!this.body) {
+        this.cachedIsRecursive = false;
+    } else {
+        myspec = this.spec;
+        this.cachedIsRecursive = this.body.expression.anyChild(
+            function (morph) {
+                return morph instanceof BlockMorph &&
+                    morph.definition &&
+                    morph.definition.spec === myspec;
+            }
+        );
+    }
+    return this.cachedIsRecursive;
 };
 
 // CustomBlockDefinition picturing
@@ -767,7 +788,7 @@ CustomCommandBlockMorph.prototype.attachTargets = function () {
 };
 
 CustomCommandBlockMorph.prototype.isInUse = function () {
-    // anser true if an instance of my definition is found
+    // answer true if an instance of my definition is found
     // in any of my receiver's scripts or block definitions
     var def = this.definition,
         ide = this.receiver().parentThatIsA(IDE_Morph);
@@ -1538,7 +1559,7 @@ BlockDialogMorph.prototype.createScopeButtons = function () {
     var myself = this;
 
     this.addScopeButton(
-        function () {myself.setScope('gobal'); },
+        function () {myself.setScope('global'); },
         "for all sprites",
         function () {return myself.isGlobal; }
     );
@@ -1571,7 +1592,7 @@ BlockDialogMorph.prototype.addScopeButton = function (action, label, query) {
 
 
 BlockDialogMorph.prototype.setScope = function (varType) {
-    this.isGlobal = (varType === 'gobal');
+    this.isGlobal = (varType === 'global');
     this.scopes.children.forEach(function (c) {
         c.refresh();
     });
@@ -1734,7 +1755,9 @@ function BlockEditorMorph(definition, target) {
 }
 
 BlockEditorMorph.prototype.init = function (definition, target) {
-    var scripts, proto, scriptsFrame, block, comment, myself = this;
+    var scripts, proto, scriptsFrame, block, comment, myself = this,
+        isLive = Process.prototype.enableLiveCoding ||
+            Process.prototype.enableSingleStepping;
 
     // additional properties:
     this.definition = definition;
@@ -1769,7 +1792,9 @@ BlockEditorMorph.prototype.init = function (definition, target) {
         comment.block = proto;
     }
     if (definition.body !== null) {
-        proto.nextBlock(definition.body.expression.fullCopy());
+        proto.nextBlock(isLive ? definition.body.expression
+                : definition.body.expression.fullCopy()
+        );
     }
     scripts.add(proto);
     proto.fixBlockColor(null, true);
@@ -1940,6 +1965,7 @@ BlockEditorMorph.prototype.updateDefinition = function () {
     this.definition.variableNames = this.variableNames();
     this.definition.scripts = [];
     this.definition.editorDimensions = this.bounds.copy();
+    this.definition.cachedIsRecursive = null; // flush the cache, don't update
 
     this.body.contents.children.forEach(function (morph) {
         if (morph instanceof PrototypeHatBlockMorph) {
@@ -3273,7 +3299,7 @@ VariableDialogMorph.prototype.createTypeButtons = function () {
     var myself = this;
 
     this.addTypeButton(
-        function () {myself.setType('gobal'); },
+        function () {myself.setType('global'); },
         "for all sprites",
         function () {return myself.isGlobal; }
     );
@@ -3288,7 +3314,7 @@ VariableDialogMorph.prototype.addTypeButton
     = BlockDialogMorph.prototype.addTypeButton;
 
 VariableDialogMorph.prototype.setType = function (varType) {
-    this.isGlobal = (varType === 'gobal');
+    this.isGlobal = (varType === 'global');
     this.types.children.forEach(function (c) {
         c.refresh();
     });
