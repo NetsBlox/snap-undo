@@ -3605,17 +3605,7 @@ BlockImportDialogMorph.prototype.importBlocks = function (name) {
     var ide = this.target.parentThatIsA(IDE_Morph);
     if (!ide) {return; }
     if (this.blocks.length > 0) {
-        this.blocks.forEach(function (def) {
-            def.receiver = ide.stage;
-            ide.stage.globalBlocks.push(def);
-            ide.stage.replaceDoubleDefinitionsFor(def);
-        });
-        ide.flushPaletteCache();
-        ide.refreshPalette();
-        ide.showMessage(
-            'Imported Blocks Module' + (name ? ': ' + name : '') + '.',
-            2
-        );
+        ide.importCustomBlocks(this.blocks);
     } else {
         new DialogBoxMorph().inform(
             'Import blocks',

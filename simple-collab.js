@@ -1086,13 +1086,10 @@ SimpleCollaborator.prototype.onSetStageSize = function(width, height) {
 
 //////////////////// Import ////////////////////
 SimpleCollaborator.prototype.onImportSprites = function(xmlString) {
-    // TODO: Need to id the imported sprites and blocks...
     return this.ide().openSpritesString(xmlString);
 };
 
 SimpleCollaborator.prototype.onImportBlocks = function(aString, lbl) {
-    // TODO: Record the block definitions (id them)
-    // We should get the block ids first...
     return this.ide().openBlocksString(aString, lbl, true);
 };
 
@@ -1116,19 +1113,20 @@ SimpleCollaborator.prototype.loadProject = function(ide, lastSeen) {
     this.lastSeen = lastSeen || 0;
 };
 
+SimpleCollaborator.prototype._registerBlock = function(block) {
+    if (!(block instanceof PrototypeHatBlockMorph)) {
+        console.assert(block.id, `Cannot register block without id: ${block.id}`);
+        this._blocks[block.id] = block;
+    }
+};
+
 SimpleCollaborator.prototype.loadOwner = function(owner) {
-    var collab = this,
-        registerBlock = function(block) {
-            if (!(block instanceof PrototypeHatBlockMorph)) {
-                console.assert(block.id, `Cannot register block without id: ${block.id}`);
-                collab._blocks[block.id] = block;
-            }
-        };
+    var collab = this;
 
     this.registerOwner(owner, owner.id);
 
     // Load the blocks from scripts
-    owner.scripts.children.forEach(block => this.traverse(block, registerBlock));
+    owner.scripts.children.forEach(block => this.traverse(block, this._registerBlock.bind(this)));
 
     // Load the blocks from custom block definitions
     var customBlocks = owner.customBlocks,
@@ -1139,13 +1137,7 @@ SimpleCollaborator.prototype.loadOwner = function(owner) {
         customBlocks = customBlocks.concat(owner.globalBlocks);
     }
 
-    customBlocks.forEach(def => {
-        this._customBlocks[def.id] = def;
-        this._customBlockOwner[def.id] = owner;
-        editor = this._getCustomBlockEditor(def.id);
-        scripts = editor.body.contents;
-        scripts.children.forEach(block => this.traverse(block, registerBlock));
-    });
+    this.loadCustomBlocks(customBlocks, owner);
 
     // Load the costumes
     owner.costumes.asArray().forEach(costume => {
@@ -1160,6 +1152,20 @@ SimpleCollaborator.prototype.loadOwner = function(owner) {
     });
 };
 
+SimpleCollaborator.prototype.loadCustomBlocks = function(blocks, owner) {
+    var editor,
+        scripts;
+
+    owner = owner || this.ide().stage;
+    blocks.forEach(def => {
+        this._customBlocks[def.id] = def;
+        this._customBlockOwner[def.id] = owner;
+        editor = this._getCustomBlockEditor(def.id);
+        scripts = editor.body.contents;
+        scripts.children.forEach(block => this.traverse(block, this._registerBlock.bind(this)));
+    });
+};
+
 SimpleCollaborator.prototype.traverse = function(block, fn) {
     var current = [block],
         next;
@@ -1169,8 +1175,12 @@ SimpleCollaborator.prototype.traverse = function(block, fn) {
         for (var i = current.length; i--;) {
             block = current[i];
             fn(block);
-            next = next.concat(block.inputs().filter(input => input instanceof ReporterBlockMorph));
-            if (block.nextBlock && block.nextBlock()) {
+
+            if (block.inputs) {  // Add nested blocks
+                next = next.concat(block.inputs().filter(input => input instanceof ReporterBlockMorph));
+            }
+
+            if (block.nextBlock && block.nextBlock()) {  // add following blocks
                 next.push(block.nextBlock());
             }
         }

@@ -1705,7 +1705,6 @@ IDE_Morph.prototype.droppedText = function (aString, name) {
         });
     }
     if (aString.indexOf('<sprites') === 0) {
-        // TODO: Could we id these blocks first?
         this.uniqueIdForImport(aString, lbl, function(str) {
             return SnapCollaborator.importSprites(str);
         });
@@ -3811,6 +3810,7 @@ IDE_Morph.prototype.uniqueIdForImport = function (str, name, callback) {
             var model = myself.serializer.parse(str),
                 children = model.allChildren();
 
+            // Just add an id to everything... not the most efficient but effective for now
             for (var i = children.length; i--;) {
                 if (children[i].attributes) {
                     children[i].attributes.collabId = SnapCollaborator.newId();
@@ -3854,21 +3854,28 @@ IDE_Morph.prototype.rawOpenBlocksString = function (str, name, silently) {
         blocks = this.serializer.loadBlocks(str, myself.stage);
     }
     if (silently) {
-        blocks.forEach(function (def) {
-            def.receiver = myself.stage;
-            myself.stage.globalBlocks.push(def);
-            myself.stage.replaceDoubleDefinitionsFor(def);
-        });
-        this.flushPaletteCache();
-        this.refreshPalette();
-        this.showMessage(
-            'Imported Blocks Module' + (name ? ': ' + name : '') + '.',
-            2
-        );
+        this.importCustomBlocks(blocks);
     } else {
         new BlockImportDialogMorph(blocks, this.stage, name).popUp();
     }
     return blocks;
+};
+
+IDE_Morph.prototype.importCustomBlocks = function (blocks) {
+    var myself = this;
+
+    blocks.forEach(function (def) {
+        def.receiver = myself.stage;
+        myself.stage.globalBlocks.push(def);
+        myself.stage.replaceDoubleDefinitionsFor(def);
+    });
+    this.flushPaletteCache();
+    this.refreshPalette();
+    this.showMessage(
+        'Imported Blocks Module' + (name ? ': ' + name : '') + '.',
+        2
+    );
+    SnapCollaborator.loadCustomBlocks(blocks);
 };
 
 IDE_Morph.prototype.openSpritesString = function (str) {

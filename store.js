@@ -1008,6 +1008,7 @@ SnapSerializer.prototype.loadComment = function (model) {
         scale = SyntaxElementMorph.prototype.scale;
     comment.isCollapsed = (model.attributes.collapsed === 'true');
     comment.setTextWidth(+model.attributes.w * scale);
+    comment.id = model.attributes.collabId;
     return comment;
 };
 
@@ -1082,6 +1083,7 @@ SnapSerializer.prototype.loadBlock = function (model, isReporter) {
     }
     block.isDraggable = true;
     block.id = model.attributes.collabId;
+    console.assert(block.id, 'Loaded block w/o collabId!');  // TODO: REMOVE
     inputs = block.inputs();
     model.children.forEach(function (child, i) {
         if (child.tag === 'variables') {

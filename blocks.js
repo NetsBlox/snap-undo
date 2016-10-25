@@ -3311,6 +3311,7 @@ BlockMorph.prototype.hasLabels = function () {
 // BlockMorph copying
 
 BlockMorph.prototype.fullCopy = function (forClone) {
+    if (this instanceof CustomReporterBlockMorph) debugger; // FIXME: REMOVE
     if (forClone) {
         if (this.hasBlockVars()) {
             forClone = false;
@@ -11735,6 +11736,7 @@ CommentMorph.prototype.fullCopy = function () {
     var cpy = new CommentMorph(this.contents.text);
     cpy.isCollapsed = this.isCollapsed;
     cpy.setTextWidth(this.textWidth());
+    cpy.id = this.id;
     return cpy;
 };
 
