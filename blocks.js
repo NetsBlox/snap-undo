@@ -10518,13 +10518,14 @@ MultiArgMorph.prototype.mouseClickLeft = function (pos) {
         id = SnapCollaborator.getId(this),
         i;
 
+    repetition = Math.min(repetition, this.inputs().length - this.minInputs);
     this.startLayout();
     if (rightArrow.bounds.containsPoint(pos)) {
-        if (rightArrow.isVisible) {  // FIXME: Can I check how many will be allowed here?
+        if (rightArrow.isVisible) {
             SnapCollaborator.addListInput(id, repetition);
         }
     } else if (leftArrow.bounds.containsPoint(pos)) {
-        if (leftArrow.isVisible) {  // FIXME: Can I check how many will be allowed here?
+        if (leftArrow.isVisible) {
             SnapCollaborator.removeListInput(id, repetition);
         }
     } else {
