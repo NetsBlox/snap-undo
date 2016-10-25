@@ -1083,7 +1083,6 @@ SnapSerializer.prototype.loadBlock = function (model, isReporter) {
     }
     block.isDraggable = true;
     block.id = model.attributes.collabId;
-    console.assert(block.id, 'Loaded block w/o collabId!');  // TODO: REMOVE
     inputs = block.inputs();
     model.children.forEach(function (child, i) {
         if (child.tag === 'variables') {
@@ -1252,7 +1251,6 @@ SnapSerializer.prototype.loadValue = function (model) {
             v.penPoint = model.attributes.pen;
         }
         if (model.attributes.collabId) {
-            console.log('setting sprite id to', model.attributes.collabId);
             v.id = model.attributes.collabId;
         }
         myself.project.stage.add(v);

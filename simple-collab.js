@@ -279,7 +279,7 @@ SimpleCollaborator.prototype.onAddBlock = function(type, ownerId, x, y) {
     while (block) {
         block.isDraggable = true;
         block.isTemplate = false;
-        block.id = this.newId();
+        block.id = this.newId();  // TODO: ID the blocks before sending them...
         this._blocks[block.id] = block;
 
         block = block.nextBlock ? block.nextBlock() : null;
@@ -1114,7 +1114,7 @@ SimpleCollaborator.prototype.loadProject = function(ide, lastSeen) {
 };
 
 SimpleCollaborator.prototype._registerBlock = function(block) {
-    if (!(block instanceof PrototypeHatBlockMorph)) {
+    if (!(block instanceof PrototypeHatBlockMorph || block.isPrototype)) {
         console.assert(block.id, `Cannot register block without id: ${block.id} (${block.blockSpec})`);
         this._blocks[block.id] = block;
     }
