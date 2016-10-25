@@ -195,6 +195,9 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
 
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
 [
+    'setStageSize',
+
+    // Sprites
     'addSprite',
     'removeSprite',
     'renameSprite',
@@ -203,41 +206,50 @@ SimpleCollaborator.prototype._deleteVariable = function(name, ownerId) {
     'importSprites',
     'setRotationStyle',
 
+    // Sounds
     'addSound',
     'renameSound',
     'removeSound',
 
-    'setStageSize',
-
+    // Costumes
     'addCostume',
     'renameCostume',
     'removeCostume',
     'updateCostume',
 
-    'addCustomBlock',  // (definition)
-    'deleteCustomBlock',  // (definition)
-    'deleteCustomBlocks',  // (definition)
+    // Variables
+    'addVariable',
+    'deleteVariable',
 
+    // Custom blocks
+    'addCustomBlock',
+    'deleteCustomBlock',
+    'deleteCustomBlocks',
+
+    'setCustomBlockType',
+    'updateBlockLabel',
+    'deleteBlockLabel',
+
+    // Block manipulation
     'addBlock',
     'removeBlock',
+    'setBlockPosition'
+    'moveBlock',
     'importBlocks',
+
+    'setCommentText',
+
     'setSelector',
     'setBlockSpec',
 
-    'toggleBoolean',
-    'updateBlockLabel',
-    'deleteBlockLabel',
-    'setCustomBlockType',
-    'ringify',
-    'unringify',
-    'setCommentText',
     'addListInput',
     'removeListInput',
-    'moveBlock',
-    'addVariable',
-    'deleteVariable',
+
+    'ringify',
+    'unringify',
+
+    'toggleBoolean',
     'setField',
-    'setBlockPosition'
 ].forEach(function(method) {
     SimpleCollaborator.prototype[method] = function() {
         var args = Array.prototype.slice.apply(arguments),
