@@ -21,6 +21,14 @@ ActionManager.prototype.addActions = function() {
     var actions = Array.prototype.slice.call(arguments),
         myself = this;
 
+    // Every event/action supported by the action manager has the same life-cycle:
+    //  - eventName
+    //    - public API
+    //  - _eventName
+    //    - Convert public API args to serializable, easy form
+    //    - Add any args needed for undo
+    //  - onEventName
+    //    - Update the Snap environment
     actions.forEach(function(method) {
         myself[method] = function() {
             var args = Array.prototype.slice.apply(arguments),
@@ -38,22 +46,72 @@ ActionManager.prototype.addActions = function() {
             };
 
             this.applyEvent(msg);
+            // TODO: Return an object w/ 'accept' and 'reject' methods
         };
     });
 };
 
 ActionManager.prototype.initializeEventMethods = function() {
-    // Every event/action supported by the action manager has the same life-cycle:
-    //  - eventName
-    //    - public API
-    //  - _eventName
-    //    - Convert public API args to serializable, easy form
-    //    - Add any args needed for undo
-    //  - _onEventName
-    //    - Preprocessing for an accepted event
-    //  - onEventName
-    //    - Update the Snap environment
-    this.addActions.apply(this, this.EVENTS);
+    this.addActions(
+        'setStageSize',
+
+        // Sprites
+        'addSprite',
+        'removeSprite',
+        'removeSprites',  // (used for undo)
+        'renameSprite',
+        'toggleDraggable',
+        'duplicateSprite',
+        'importSprites',
+        'setRotationStyle',
+
+        // Sounds
+        'addSound',
+        'renameSound',
+        'removeSound',
+
+        // Costumes
+        'addCostume',
+        'renameCostume',
+        'removeCostume',
+        'updateCostume',
+
+        // Variables
+        'addVariable',
+        'deleteVariable',
+
+        // Custom blocks
+        'addCustomBlock',
+        'deleteCustomBlock',
+        'deleteCustomBlocks',
+
+        'setCustomBlockType',
+        'updateBlockLabel',
+        'deleteBlockLabel',
+
+        // Block manipulation
+        'addBlock',
+        'removeBlock',
+        'removeBlocks',
+        'setBlockPosition',
+        'setBlocksPositions',
+        'moveBlock',
+        'importBlocks',
+
+        'setCommentText',
+
+        'setSelector',
+        'setBlockSpec',
+
+        'addListInput',
+        'removeListInput',
+
+        'ringify',
+        'unringify',
+
+        'toggleBoolean',
+        'setField'
+    );
 };
 
 ActionManager.prototype.initializeRecords = function() {
@@ -713,69 +771,10 @@ ActionManager.prototype._onSetField = function(fieldId, value) {
 };
 
 /* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
-ActionManager.prototype.EVENTS = [
-    'setStageSize',
-
-    // Sprites
-    'addSprite',
-    'removeSprite',
-    'removeSprites',  // (used for undo)
-    'renameSprite',
-    'toggleDraggable',
-    'duplicateSprite',
-    'importSprites',
-    'setRotationStyle',
-
-    // Sounds
-    'addSound',
-    'renameSound',
-    'removeSound',
-
-    // Costumes
-    'addCostume',
-    'renameCostume',
-    'removeCostume',
-    'updateCostume',
-
-    // Variables
-    'addVariable',
-    'deleteVariable',
-
-    // Custom blocks
-    'addCustomBlock',
-    'deleteCustomBlock',
-    'deleteCustomBlocks',
-
-    'setCustomBlockType',
-    'updateBlockLabel',
-    'deleteBlockLabel',
-
-    // Block manipulation
-    'addBlock',
-    'removeBlock',
-    'removeBlocks',
-    'setBlockPosition',
-    'setBlocksPositions',
-    'moveBlock',
-    'importBlocks',
-
-    'setCommentText',
-
-    'setSelector',
-    'setBlockSpec',
-
-    'addListInput',
-    'removeListInput',
-
-    'ringify',
-    'unringify',
-
-    'toggleBoolean',
-    'setField'
-];
 
 ActionManager.prototype.applyEvent = function(event) {
     if (this.isLeader) {
+        // TODO: This should probably be async to be consistent
         this.acceptEvent(event);
     } else {
         this.send(event);
