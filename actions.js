@@ -14,6 +14,8 @@ function ActionManager() {
     this.id = null;
     this.rank = null;
     this.isLeader = false;
+    this._onAccept = {};
+    this._onReject = {};
     this.initialize();
 };
 
@@ -45,8 +47,7 @@ ActionManager.prototype.addActions = function() {
                 args: args
             };
 
-            this.applyEvent(msg);
-            // TODO: Return an object w/ 'accept' and 'reject' methods
+            return this.applyEvent(msg);
         };
     });
 };
@@ -172,24 +173,77 @@ ActionManager.prototype.initialize = function() {
     this.serializer = new SnapSerializer();
 };
 
+function Action(manager, event) {
+    this._manager = manager;
+    this.id = event.id;
+};
+
+Action.prototype.accept = function(fn) {
+    this._manager._onAccept[this.id] = fn;
+    return this;
+};
+
+Action.prototype.reject = function(fn) {
+    this._manager._onReject[this.id] = fn;
+    return this;
+};
+
+ActionManager.prototype.applyEvent = function(event) {
+    if (this.isLeader) {
+        this.acceptEvent(event);
+    } else {
+        this.send(event);
+    }
+    return new Action(this, event);
+};
+
+ActionManager.prototype._getMethodFor = function(action) {
+    var method = '_on' + action.substring(0,1).toUpperCase() + action.substring(1);
+
+    if (!this[method]) {
+        method = method.substring(1);
+    }
+
+    return method;
+};
+
 ActionManager.prototype.acceptEvent = function(msg) {
     msg.id = msg.id || this.lastSeen + 1;
+    msg.user = this.id;
     this.send(msg);
-    this._applyEvent(msg);
+    setTimeout(this._applyEvent.bind(this), 0, msg);
 };
 
 ActionManager.prototype._applyEvent = function(msg) {
-    var method = this._getMethodFor(msg.type);
+    var method = this._getMethodFor(msg.type),
+        result;
 
     logger.debug('received event:', msg);
-    this[method].apply(this, msg.args);
+    result = this[method].apply(this, msg.args);
     this.lastSeen = msg.id;
     this.idCount = 0;
     SnapUndo.record(msg);
+
+    // Call 'success' or 'reject', if relevant
+    if (msg.user === this.id) {
+        if (this._onAccept[msg.id]) {
+            this._onAccept[msg.id](result);
+            delete this._onAccept[msg.id];
+        }
+
+        // We can call reject for any ids less than the given id...
+        for (var i = msg.id; i--;) {
+            if (this._onReject[msg.id]) {
+                this._onReject[msg.id](result);
+                delete this._onReject[msg.id];
+            }
+        }
+    }
 };
 
 ActionManager.prototype.send = function(json) {
     json.id = json.id || this.lastSeen + 1;
+    json.user = this.id;
     this._ws.send(JSON.stringify(json));
 };
 
@@ -768,27 +822,6 @@ ActionManager.prototype._onSetField = function(fieldId, value) {
     this.fieldValues[fieldId] = value;
 
     this.onSetField(fieldId, value);
-};
-
-/* * * * * * * * * * * * On UI Events * * * * * * * * * * * */
-
-ActionManager.prototype.applyEvent = function(event) {
-    if (this.isLeader) {
-        // TODO: This should probably be async to be consistent
-        this.acceptEvent(event);
-    } else {
-        this.send(event);
-    }
-};
-
-ActionManager.prototype._getMethodFor = function(action) {
-    var method = '_on' + action.substring(0,1).toUpperCase() + action.substring(1);
-
-    if (!this[method]) {
-        method = method.substring(1);
-    }
-
-    return method;
 };
 
 /* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
