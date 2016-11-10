@@ -2736,7 +2736,7 @@ IDE_Morph.prototype.projectMenu = function () {
             localize('Download replay events'),
             function() {
                 myself.saveFileAs(
-                    JSON.stringify(SnapUndo.eventHistory, null, 2),
+                    JSON.stringify(SnapUndo.allEvents, null, 2),
                     'text/json;charset=utf-8,',
                     'replay-actions'
                 );
