@@ -214,12 +214,25 @@ ActionManager.prototype.acceptEvent = function(msg) {
     setTimeout(this._applyEvent.bind(this), 0, msg);
 };
 
+ActionManager.prototype._isBatchEvent = function(msg) {
+    return msg.type === 'batch';
+};
+
 ActionManager.prototype._applyEvent = function(msg) {
-    var method = this._getMethodFor(msg.type),
+    var myself = this,
         result;
 
     logger.debug('received event:', msg);
-    result = this[method].apply(this, msg.args);
+
+    // If it is a batch, it may need to call multiple...
+    if (this._isBatchEvent(msg)) {
+        result = msg.args.map(function(event) {
+            myself._rawApplyEvent(event);
+        });
+    } else {
+        result = this._rawApplyEvent(msg);
+    }
+
     this.lastSeen = msg.id;
     this.idCount = 0;
     SnapUndo.record(msg);
@@ -239,6 +252,12 @@ ActionManager.prototype._applyEvent = function(msg) {
             }
         }
     }
+};
+
+ActionManager.prototype._rawApplyEvent = function(msg) {
+    var method = this._getMethodFor(msg.type);
+
+    return this[method].apply(this, msg.args);
 };
 
 ActionManager.prototype.send = function(json) {
@@ -373,15 +392,18 @@ ActionManager.prototype._removeBlock = function(block, userDestroy) {
 };
 
 ActionManager.prototype._getBlockState = function(id) {
-    var state = {};
+    var state;
 
     if (this._targetOf[id]) {
-        return [this._targetOf[id]];
+        state = [this._targetOf[id]];
     } else if (this._positionOf[id]) {
-        return [this._positionOf[id].x, this._positionOf[id].y];
+        state = [this._positionOf[id].x, this._positionOf[id].y];
     } else {  // newly created
-        return [null];
+        state = [];
     }
+
+    state.unshift(id);
+    return state;
 };
 
 ActionManager.prototype._setBlockPosition = function(id, position) {
@@ -390,7 +412,7 @@ ActionManager.prototype._setBlockPosition = function(id, position) {
         standardPosition = this.getStandardPosition(scripts, position),
         oldState = this._getBlockState(id);
 
-    return [id, standardPosition.x, standardPosition.y].concat(oldState);
+    return [id, standardPosition.x, standardPosition.y, oldState];
 };
 
 ActionManager.prototype._setBlocksPositions = function(ids, positions) {
@@ -518,13 +540,16 @@ ActionManager.prototype._moveBlock = function(block, target) {
         serialized,
         ids,
         id,
+        oldState,
+        displacedTarget,
         args;
 
     // If the target is a ReporterBlockMorph, then we are replacing that block.
     // Undo should place that block back into it's current place
-    // TODO
+    if (target instanceof ReporterBlockMorph) {  // displacing a block
+        displacedTarget = [target.id, this._getCurrentTarget(target)];
+    }
 
-    // Serialize the target
     target = this._serializeMoveTarget(block, target);
     if (isNewBlock) {
         this._idBlocks(block);
@@ -532,10 +557,7 @@ ActionManager.prototype._moveBlock = function(block, target) {
     id = block.id;
     serialized = this.serializeBlock(block, isNewBlock);
 
-    // If there is no target, get the current position
-
-    var oldState = this._getBlockState(id);  // target, pos (2), or null
-
+    oldState = this._getBlockState(id);
     args = [serialized, target];
     if (isNewBlock) {
         ids = this._getStatementIds(block);
@@ -543,7 +565,12 @@ ActionManager.prototype._moveBlock = function(block, target) {
         block.destroy();
     }
 
-    return args.concat(oldState);
+    args.push(oldState);
+
+    if (displacedTarget) {
+        args.push(displacedTarget);
+    }
+    return args;
 };
 
 ActionManager.prototype._setField = function(field, value) {
@@ -1012,6 +1039,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
     }
 
     block.snap(target);
+    scripts.drawNew();
 
     if (isNewBlock) {
         this.registerBlocks(block);
