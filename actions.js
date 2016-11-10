@@ -357,14 +357,13 @@ ActionManager.prototype._addBlock = function(block, scripts, position, ownerId) 
     ];
 };
 
-ActionManager.prototype._removeBlock = function(id, userDestroy) {
-    var block = this._blocks[id],
-        serialized = this.serializeBlock(block, true),
+ActionManager.prototype._removeBlock = function(block, userDestroy) {
+    var serialized = this.serializeBlock(block, true),
         position = this._positionOf[block.id],
-        ownerId = this._blockToOwnerId[id];
+        ownerId = this._blockToOwnerId[block.id];
         
     return [
-        id,
+        block.id,
         userDestroy,
         position.y,
         position.x,
