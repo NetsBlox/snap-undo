@@ -274,10 +274,14 @@ ActionManager.prototype._applyEvent = function(msg) {
     }
 };
 
-ActionManager.prototype._rawApplyEvent = function(msg) {
-    var method = this._getMethodFor(msg.type);
+ActionManager.prototype._rawApplyEvent = function(event) {
+    var method = this._getMethodFor(event.type),
+        result;
 
-    return this[method].apply(this, msg.args);
+    this.currentEvent = event;
+    result = this[method].apply(this, event.args);
+    this.currentEvent = null;
+    return result;
 };
 
 ActionManager.prototype.send = function(json) {
@@ -972,11 +976,24 @@ ActionManager.prototype.onAddBlock = function(block, ownerId, x, y) {
     if (!this._customBlocks[ownerId]) {  // not a custom block
         position = this.getAdjustedPosition(position, owner.scripts);
 
-        firstBlock.setPosition(position);
-        owner.scripts.add(firstBlock);
-        owner.scripts.changed();
-        firstBlock.changed();
-        owner.scripts.adjustBounds();
+        if (this.currentEvent.replayType || this.currentEvent.user !== this.id) {
+            var palette = ide.palette;
+            
+            firstBlock.setPosition(palette.position()
+                .add(new Point(palette.left() - firstBlock.width(), palette.height()/4)));
+
+            ide.palette.add(firstBlock);
+            firstBlock.slideBackTo({
+                origin: owner.scripts,
+                position: position.subtract(owner.scripts.position())
+            });
+        } else {
+            firstBlock.setPosition(position);
+            owner.scripts.add(firstBlock);
+            owner.scripts.changed();
+            firstBlock.changed();
+            owner.scripts.adjustBounds();
+        }
     } else {
         var def = this._customBlocks[ownerId],  // ownerId?!?!?
             editor = this._getCustomBlockEditor(ownerId),  // ownerId?!?!?
@@ -998,6 +1015,7 @@ ActionManager.prototype.onAddBlock = function(block, ownerId, x, y) {
             ide.controlBar.stopButton.refresh();
         }
     }
+
     return firstBlock;
 };
 
@@ -1154,7 +1172,20 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
         }
 
         // Remove the block
-        block[method]();
+        // If undo-ing, slide to the palette
+        if (this.currentEvent.replayType || this.currentEvent.user !== this.id) {
+            // Animate the block deletion
+            var palette = this.ide().palette;
+
+            delete block.id;
+            block.slideBackTo({
+                origin: palette,
+                position: new Point(0, palette.height()/4)
+            });
+        } else {
+            block[method]();
+        }
+
         delete this._blocks[id];
         delete this._positionOf[id];
         delete this._blockToOwnerId[id];

@@ -5840,7 +5840,7 @@ ScriptsMorph.prototype.reactToDropOf = function (droppedMorph, hand) {
             SnapActions.moveBlock(droppedMorph, target);
         } else if (!droppedMorph.id) {  // addBlock
             this.addBlock(droppedMorph);
-        } else {  // change position
+        } else if (hand) {  // change position
             this.setBlockPosition(droppedMorph, hand);
         }
     }
