@@ -928,7 +928,7 @@ ActionManager.prototype._getScriptsFor = function(blockId) {
     return editor.body.contents;
 };
 
-ActionManager.prototype.registerBlocks = function(firstBlock, owner, needId) {
+ActionManager.prototype.registerBlocks = function(firstBlock, owner) {
     var block = firstBlock,
         target,
         prevBlock;
