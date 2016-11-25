@@ -2221,13 +2221,13 @@ IDE_Morph.prototype.cloudMenu = function () {
             'Reset Password...',
             'resetCloudPassword'
         );
-        /*
-        menu.addLine();
-        menu.addItem(
-            'Collaborate...',
-            'promptCollaboration'
-        );
-        */
+        if (this.enableCollaboration) {
+            menu.addLine();
+            menu.addItem(
+                'Collaborate...',
+                'promptCollaboration'
+            );
+        }
     } else {
         menu.addItem(
             localize('Logout') + ' ' + SnapCloud.username,
@@ -2625,6 +2625,16 @@ IDE_Morph.prototype.settingsMenu = function () {
         Process.prototype.enableSingleStepping,
         'uncheck to turn off\nvisible stepping',
         'check to turn on\n visible stepping (slow)',
+        false
+    );
+    addPreference(
+        'Collaborative editing',
+        function() {
+            myself.enableCollaboration = !myself.enableCollaboration;
+        },
+        myself.enableCollaboration,
+        'uncheck to disable Google Docs-style collaboration',
+        'check to enable Google Docs-style collaboration',
         false
     );
     menu.addLine(); // everything below this line is stored in the project
@@ -4944,6 +4954,10 @@ IDE_Morph.prototype.promptCollaboration = function () {
     dialog.drawNew();
     dialog.popUp(world);
     dialog.setCenter(world.center());
+    // TODO: Request a passcode...
+    // The passcode will allow users to collaborate w/ this websocket
+    // connection. If they log in, then these collaborators can be
+    // remembered as 'friends'
 };
 
 IDE_Morph.prototype.resetCloudPassword = function () {
