@@ -168,6 +168,9 @@ ActionManager.prototype.collaborate = function() {
         } else if (msg.type === 'uuid') {
             self.id = msg.value;
             logger.info('assigned id of', self.id);
+            if (self.onconnect) {
+                self.onconnect();
+            }
         } else {  // block action
             self.onMessage(msg);
         }
@@ -211,6 +214,12 @@ ActionManager.prototype.getSessionId = function(callback, error) {
 };
 
 ActionManager.prototype.joinSession = function(sessionId, error) {
+    if (!SnapActions.id) {
+        this.onconnect = this._joinSession.bind(this, sessionId, error);
+    }
+};
+
+ActionManager.prototype._joinSession = function(sessionId, error) {
     var request = new XMLHttpRequest();
     request.open(
         'POST',
@@ -228,10 +237,11 @@ ActionManager.prototype.joinSession = function(sessionId, error) {
                 callback(request.responseText);
             }
         } else {
-            return error('Collaborate', localize('could not join session:') + ' ' + sessionId);
+            return error(localize('could not join session:') + ' ' + sessionId);
         }
     };
     request.send();
+    this.onconnect = null;
 };
 
 function Action(manager, event) {

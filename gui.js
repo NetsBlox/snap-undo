@@ -461,6 +461,10 @@ IDE_Morph.prototype.openIn = function (world) {
             this.loadNewProject = true;
         } else if (location.hash.substr(0, 7) === '#signup') {
             this.createCloudAccount();
+        } else if (location.hash.substr(0, 12) === '#collaborate') {
+            var sessionId = location.hash.substr(13);
+            // Get the session id and join it!
+            SnapActions.joinSession(sessionId, this.cloudError());
         }
     }
 
@@ -4904,16 +4908,9 @@ IDE_Morph.prototype.createCloudAccount = function () {
 };
 
 IDE_Morph.prototype.promptCollaboration = function () {
-    // Provide a key for collaborating
-    // TODO
-    // Or enter a key to join an existing session
-    // TODO
     var dialog = new DialogBoxMorph().withKey('promptCollab'),
         frame = new AlignmentMorph('column', 10),
-        fieldLabel = new TextMorph(localize('Share the following url with any collaborators:')),
         passcodeLabel = new TextMorph(localize('Share the following url with any collaborators:')),
-        defaultPasscodeContent = localize('enter passcode here...'),
-        passcodeField = new InputFieldMorph(defaultPasscodeContent),
         hash,
         ok = dialog.ok,
         myself = this,
@@ -4925,7 +4922,6 @@ IDE_Morph.prototype.promptCollaboration = function () {
         ok.call(this);
     };
 
-    // TODO: 'enter' should trigger the 'ok' command
     // Request a passcode...
     SnapActions.getSessionId(
         function(passCode) {
@@ -4934,9 +4930,6 @@ IDE_Morph.prototype.promptCollaboration = function () {
 
             frame.add(passcodeLabel);
             frame.add(new TextMorph(shareCode));
-
-            fieldLabel.drawNew();
-            passcodeField.drawNew();
 
             dialog.labelString = 'Collaboration';
             dialog.createLabel();
