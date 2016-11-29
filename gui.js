@@ -4910,54 +4910,48 @@ IDE_Morph.prototype.promptCollaboration = function () {
     // TODO
     var dialog = new DialogBoxMorph().withKey('promptCollab'),
         frame = new AlignmentMorph('column', 10),
-        fieldLabel = new TextMorph(localize('Enter a passcode to join an existing project:')),
-        passcodeLabel = new TextMorph(localize('Or share the following passcode with users that \nyou\'d like to join you on this project:')),
+        fieldLabel = new TextMorph(localize('Share the following url with any collaborators:')),
+        passcodeLabel = new TextMorph(localize('Share the following url with any collaborators:')),
         defaultPasscodeContent = localize('enter passcode here...'),
         passcodeField = new InputFieldMorph(defaultPasscodeContent),
-        shareCode = localize('EXAMPLE_PASSCODE'),
+        hash,
         ok = dialog.ok,
         myself = this,
         size = 250,
         world = this.world();
 
-    fieldLabel.setPosition(frame.topLeft().add(frame.padding));
-    passcodeField.setWidth(200);
-
-    frame.add(fieldLabel);
-    frame.add(passcodeField);
-    frame.add(passcodeLabel);
-    frame.add(new TextMorph(shareCode));
-
-    fieldLabel.drawNew();
-    passcodeField.drawNew();
-
     dialog.ok = function () {
-        var passcode = passcodeField.contents().text.text;
-
-        // If the passcode is set, try to join the given group
-        if (passcode && passcode !== defaultPasscodeContent) {
-            // TODO: Try to join the given group
-            console.log('trying to join group:', passcode);
-        }
+        location.hash = hash;
         ok.call(this);
     };
 
     // TODO: 'enter' should trigger the 'ok' command
-    dialog.labelString = 'Collaboration';
-    dialog.createLabel();
+    // Request a passcode...
+    SnapActions.getSessionId(
+        function(passCode) {
+            hash = 'collaborate=' + passCode;
+            shareCode = window.location.origin + '#' + hash,
 
-    dialog.addBody(frame);
-    frame.drawNew();
-    dialog.addButton('ok', 'OK');
-    dialog.addButton('cancel', 'Cancel');
-    dialog.fixLayout();
-    dialog.drawNew();
-    dialog.popUp(world);
-    dialog.setCenter(world.center());
-    // TODO: Request a passcode...
-    // The passcode will allow users to collaborate w/ this websocket
-    // connection. If they log in, then these collaborators can be
-    // remembered as 'friends'
+            frame.add(passcodeLabel);
+            frame.add(new TextMorph(shareCode));
+
+            fieldLabel.drawNew();
+            passcodeField.drawNew();
+
+            dialog.labelString = 'Collaboration';
+            dialog.createLabel();
+
+            dialog.addBody(frame);
+            frame.drawNew();
+            dialog.addButton('ok', 'OK');
+            dialog.addButton('cancel', 'Cancel');
+            dialog.fixLayout();
+            dialog.drawNew();
+            dialog.popUp(world);
+            dialog.setCenter(world.center());
+        },
+        this.cloudError()
+    );
 };
 
 IDE_Morph.prototype.resetCloudPassword = function () {

@@ -161,11 +161,13 @@ ActionManager.prototype.collaborate = function() {
 
         if (msg.type === 'rank') {
             self.rank = msg.value;
-            self.id = 'client_' + self.rank;
             logger.info('assigned rank of', self.rank);
         } else if (msg.type === 'leader-appoint') {
             self.isLeader = true;
             logger.info('Appointed leader!');
+        } else if (msg.type === 'uuid') {
+            self.id = msg.value;
+            logger.info('assigned id of', self.id);
         } else {  // block action
             self.onMessage(msg);
         }
@@ -181,6 +183,55 @@ ActionManager.prototype.initialize = function() {
     this.initializeRecords();
     this.initializeEventMethods();
     this.collaborate();
+};
+
+ActionManager.prototype.getSessionId = function(callback, error) {
+    var request = new XMLHttpRequest();
+    request.open(
+        'GET',
+        window.location.origin + '/collaboration/session'
+            + '?id=' + encodeURIComponent(SnapActions.id),
+        true
+    );
+    request.withCredentials = true;
+    request.onreadystatechange = function () {
+        if (request.readyState === 4) {
+            if (!request.responseText) {
+                return error('Collaborate', localize('could not connect to:'));
+            }
+
+            if (request.responseText.indexOf('ERROR') === 0) {
+                return error(request.responseText, 'Collaborate');
+            } else {
+                return callback(request.responseText);
+            }
+        }
+    };
+    request.send();
+};
+
+ActionManager.prototype.joinSession = function(sessionId, error) {
+    var request = new XMLHttpRequest();
+    request.open(
+        'POST',
+        window.location.origin + '/collaboration/join'
+            + '?id=' + encodeURIComponent(SnapActions.id)
+            + '&sessionId=' + encodeURIComponent(sessionId),
+        true
+    );
+    request.withCredentials = true;
+    request.onreadystatechange = function () {
+        if (request.readyState === 4) {
+            if (request.responseText.indexOf('ERROR') === 0) {
+                return error(request.responseText, 'Collaborate');
+            } else {
+                callback(request.responseText);
+            }
+        } else {
+            return error('Collaborate', localize('could not join session:') + ' ' + sessionId);
+        }
+    };
+    request.send();
 };
 
 function Action(manager, event) {
