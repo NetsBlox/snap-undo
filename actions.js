@@ -171,6 +171,14 @@ ActionManager.prototype.collaborate = function() {
             if (self.onconnect) {
                 self.onconnect();
             }
+        } else if (msg.type === 'session-project-request') {
+            // Return the serialized project
+            var str = self.serializer.serialize(self.ide().stage);
+            msg.project = str;
+            ws.send(JSON.stringify(msg));
+        } else if (msg.type === 'session-project') {
+            // Load the given project
+            self.ide().openProjectString(msg.project);
         } else {  // block action
             self.onMessage(msg);
         }
@@ -199,10 +207,6 @@ ActionManager.prototype.getSessionId = function(callback, error) {
     request.withCredentials = true;
     request.onreadystatechange = function () {
         if (request.readyState === 4) {
-            if (!request.responseText) {
-                return error('Collaborate', localize('could not connect to:'));
-            }
-
             if (request.responseText.indexOf('ERROR') === 0) {
                 return error(request.responseText, 'Collaborate');
             } else {
@@ -236,8 +240,6 @@ ActionManager.prototype._joinSession = function(sessionId, error) {
             } else {
                 callback(request.responseText);
             }
-        } else {
-            return error(localize('could not join session:') + ' ' + sessionId);
         }
     };
     request.send();
