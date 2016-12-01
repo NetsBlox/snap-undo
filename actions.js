@@ -524,7 +524,7 @@ ActionManager.prototype._getBlockState = function(id) {
     if (target && !(target.loc === 'top' && position)) {
         state = [this._targetOf[id]];
     } else if (position) {
-        state = [this._positionOf[id].x, this._positionOf[id].y];
+        state = [position.x, position.y];
     } else {  // newly created
         state = [];
     }
