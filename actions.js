@@ -561,7 +561,7 @@ ActionManager.prototype._setBlocksPositions = function(ids, positions) {
 
     stdPositions = positions.map(function(pos) {
         return myself.getStandardPosition(scripts, pos);
-    }, this)
+    });
 
     return [ids, stdPositions, oldPositions];
 };
@@ -1927,13 +1927,15 @@ ActionManager.prototype.onImportBlocks = function(aString, lbl) {
 
 //////////////////// Loading Projects ////////////////////
 ActionManager.prototype.loadProject = function(ide, lastSeen) {
+    var myself = this;
+
     // Clear old info
     this.initializeRecords();
 
     // Load the owners
     ide.sprites.asArray().concat(ide.stage).forEach(function(sprite) {
-        return this.loadOwner(sprite);
-    }, this);
+        return myself.loadOwner(sprite);
+    });
 
     //  - Traverse all blocks in custom block definitions
 
