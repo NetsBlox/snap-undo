@@ -2174,10 +2174,13 @@ ActionManager.OwnerFor.addCustomBlock = function(ownerId) {
     return ownerId;
 };
 
-// Actions where owner is second arg:
 ActionManager.OwnerFor.addVariable =
-ActionManager.OwnerFor.deleteVariable =
+ActionManager.OwnerFor.deleteVariable = function() {
+    // Can I do this for everything?
+    return this.ide().currentSprite.id;
+};
 
+// Actions where owner is second arg:
 ActionManager.OwnerFor.addSound =
 ActionManager.OwnerFor.addCostume =
 
@@ -2230,6 +2233,11 @@ ActionManager.OwnerFor.importSprites =
 ActionManager.OwnerFor.duplicateSprites =
 ActionManager.OwnerFor.addSprite = function() {
     return null;
+};
+
+// Corral events
+ActionManager.OwnerFor.removeSprite = function() {
+    return 'corral';
 };
 
 SnapActions = new ActionManager();

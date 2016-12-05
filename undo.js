@@ -44,17 +44,20 @@ UndoManager.prototype.record = function(event) {
 };
 
 UndoManager.prototype.canUndo = function(owner) {
-    return this.eventHistory[owner.id] &&
-        this.eventHistory[owner.id].length > this.undoCount[owner.id];
+    var ownerId = owner.id || owner;
+    return this.eventHistory[ownerId] &&
+        this.eventHistory[ownerId].length > this.undoCount[ownerId];
 };
 
 UndoManager.prototype.canRedo = function(owner) {
-    return this.eventHistory[owner.id] && this.undoCount[owner.id] > 0;
+    var ownerId = owner.id || owner;
+    return this.eventHistory[ownerId] && this.undoCount[ownerId] > 0;
 };
 
 UndoManager.prototype.undo = function(owner) {
-    var eventHistory = this.eventHistory[owner.id] || [],
-        index = eventHistory.length - this.undoCount[owner.id] - 1,
+    var ownerId = owner.id || owner,
+        eventHistory = this.eventHistory[ownerId] || [],
+        index = eventHistory.length - this.undoCount[ownerId] - 1,
         origEvent = eventHistory[index],
         event;
 
@@ -72,8 +75,9 @@ UndoManager.prototype.undo = function(owner) {
 };
 
 UndoManager.prototype.redo = function(owner) {
-    var eventHistory = this.eventHistory[owner.id] || [],
-        index = eventHistory.length - this.undoCount[owner.id],
+    var ownerId = owner.id || owner,
+        eventHistory = this.eventHistory[ownerId] || [],
+        index = eventHistory.length - this.undoCount[ownerId],
         origEvent = eventHistory[index],
         event;
 

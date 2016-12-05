@@ -5602,13 +5602,6 @@ ScriptsMorph.prototype.userMenu = function () {
     }
     menu.addItem('clean up', 'cleanUp', 'arrange scripts\nvertically');
     menu.addItem('add comment', 'addComment');
-    //if (this.lastDroppedBlock) {
-        //menu.addItem(
-            //'undrop',
-            //'undrop',
-            //'undo the last\nblock drop\nin this pane'
-        //);
-    //}
     if (SnapUndo.canUndo(obj)) {
         menu.addItem(
             'undo',
