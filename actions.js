@@ -2141,42 +2141,86 @@ ActionManager.prototype.onMessage = function(msg) {
 /* * * * * * * * * * * * OwnerFor * * * * * * * * * * * */
 ActionManager.OwnerFor = {};
 
+ActionManager.OwnerFor.toggleBoolean =
+ActionManager.OwnerFor.setColorField =
+ActionManager.OwnerFor.setField =
+
+ActionManager.OwnerFor.addListInput =
+ActionManager.OwnerFor.unringify =
+
+ActionManager.OwnerFor.ringify =
+ActionManager.OwnerFor.unringify =
+
+ActionManager.OwnerFor.setCommentText =
+ActionManager.OwnerFor.setSelector =
+ActionManager.OwnerFor.setBlockSpec =
+
+ActionManager.OwnerFor.removeBlock =
+ActionManager.OwnerFor.setBlockPosition = function(blockOrInputId) {
+    var blockId = blockOrInputId.split('/').shift();
+    return this._blockToOwnerId[blockId];
+};
+
+ActionManager.OwnerFor.replaceBlock = function(block) {
+    block = this.deserializeBlock(block);
+    return this._blockToOwnerId[block.id];
+};
+
+// Actions where owner is first arg:
+ActionManager.OwnerFor.renameSprite =
+ActionManager.OwnerFor.toggleDraggable =
+ActionManager.OwnerFor.setRotationStyle =
+ActionManager.OwnerFor.addCustomBlock = function(ownerId) {
+    return ownerId;
+};
+
+// Actions where owner is second arg:
+ActionManager.OwnerFor.addVariable =
+ActionManager.OwnerFor.deleteVariable =
+
+ActionManager.OwnerFor.addSound =
+ActionManager.OwnerFor.addCostume =
+
 ActionManager.OwnerFor.deleteCustomBlock =
 ActionManager.OwnerFor.addBlock = function(block, ownerId) {
     return ownerId;
 };
 
-ActionManager.OwnerFor.removeBlock =
-ActionManager.OwnerFor.setBlockPosition =
-ActionManager.OwnerFor.replaceBlock = function(blockId) {
-    return this._blockToOwnerId[blockId];
+// Actions where owner is third arg:
+ActionManager.OwnerFor.removeCostume =
+ActionManager.OwnerFor.removeSound = function() {
+    return arguments[2];
 };
 
-ActionManager.OwnerFor.addCustomBlock = function(ownerId) {
-    return ownerId;
+ActionManager.OwnerFor.renameSound = function(soundId) {
+    return this._soundToOwner[soundId].id;
 };
 
-ActionManager.OwnerFor.deleteCustomBlocks =
+ActionManager.OwnerFor.updateCostume =
+ActionManager.OwnerFor.renameCostume = function(costumeId) {
+    return this._costumeToOwner[costumeId].id;
+};
+
+ActionManager.OwnerFor.removeBlocks =
 ActionManager.OwnerFor.setBlocksPositions = function(ids) {
     if (ids.length) {
         return this._blockToOwnerId[ids[0]];
     }
 };
 
-ActionManager.OwnerFor.setCustomBlockType = function() {
-    // TODO
+ActionManager.OwnerFor.updateBlockLabel =
+ActionManager.OwnerFor.deleteBlockLabel =
+ActionManager.OwnerFor.setCustomBlockType = function(id) {
+    return this._customBlockOwner[id].id;
 };
 
-ActionManager.OwnerFor.deleteBlockLabel = function() {
-    // TODO
-};
+ActionManager.OwnerFor.moveBlock = function(block, target) {
+    var blockId;
 
-ActionManager.OwnerFor.updateBlockLabel = function() {
-    // TODO
-};
+    // Base this off the target since the block could be new...
+    blockId = (typeof target) === 'string' ? target : target.element;
 
-ActionManager.OwnerFor.moveBlock = function() {
-    // TODO
+    return this._blockToOwnerId[blockId];
 };
 
 SnapActions = new ActionManager();

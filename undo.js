@@ -31,7 +31,7 @@ UndoManager.prototype.record = function(event) {
     if (!event.replayType) {
         if (undoCount !== 0) {
             var currentIndex = eventHistory.length - undoCount - 1;
-            var forgotten = eventHistory.splice(currentIndex + 1, undoCount);
+            var forgotten = this.eventHistory[ownerId].splice(currentIndex + 1, undoCount);
             this.undoCount[ownerId] = 0;  // forget any available redos
         }
         eventHistory.push(event);
