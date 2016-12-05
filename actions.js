@@ -36,6 +36,7 @@ ActionManager.prototype.addActions = function() {
         myself[method] = function() {
             var args = Array.prototype.slice.apply(arguments),
                 fn = '_' + method,
+                ownerId = this.ide().stage.id,
                 result,
                 msg;
 
@@ -44,9 +45,15 @@ ActionManager.prototype.addActions = function() {
             }
 
             msg = {
+                owner: ownerId,
                 type: method,
                 args: args
             };
+
+            if (ActionManager.OwnerFor[method]) {
+                ownerId = ActionManager.OwnerFor[method].apply(this, msg.args);
+                msg.owner = ownerId || msg.owner;
+            }
 
             return this.applyEvent(msg);
         };
@@ -2116,7 +2123,6 @@ ActionManager.prototype.getBlockInputs = function(block) {
     return allInputs;
 };
 
-/* * * * * * * * * * * * On Remote Events * * * * * * * * * * * */
 ActionManager.prototype.onMessage = function(msg) {
     var method = this._getMethodFor(msg.type),
         accepted = true;
@@ -2130,6 +2136,47 @@ ActionManager.prototype.onMessage = function(msg) {
     } else {
         this._applyEvent(msg);
     }
+};
+
+/* * * * * * * * * * * * OwnerFor * * * * * * * * * * * */
+ActionManager.OwnerFor = {};
+
+ActionManager.OwnerFor.deleteCustomBlock =
+ActionManager.OwnerFor.addBlock = function(block, ownerId) {
+    return ownerId;
+};
+
+ActionManager.OwnerFor.removeBlock =
+ActionManager.OwnerFor.setBlockPosition =
+ActionManager.OwnerFor.replaceBlock = function(blockId) {
+    return this._blockToOwnerId[blockId];
+};
+
+ActionManager.OwnerFor.addCustomBlock = function(ownerId) {
+    return ownerId;
+};
+
+ActionManager.OwnerFor.deleteCustomBlocks =
+ActionManager.OwnerFor.setBlocksPositions = function(ids) {
+    if (ids.length) {
+        return this._blockToOwnerId[ids[0]];
+    }
+};
+
+ActionManager.OwnerFor.setCustomBlockType = function() {
+    // TODO
+};
+
+ActionManager.OwnerFor.deleteBlockLabel = function() {
+    // TODO
+};
+
+ActionManager.OwnerFor.updateBlockLabel = function() {
+    // TODO
+};
+
+ActionManager.OwnerFor.moveBlock = function() {
+    // TODO
 };
 
 SnapActions = new ActionManager();

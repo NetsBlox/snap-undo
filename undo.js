@@ -3,9 +3,10 @@ function UndoManager() {
 }
 
 UndoManager.prototype.reset = function() {
-    this.eventHistory = [];
     this.allEvents = [];  // includes undo/redo events
-    this.undoCount = 0;
+
+    this.eventHistory = {};
+    this.undoCount = {};
 };
 
 // Constants
@@ -16,57 +17,73 @@ UndoManager.REDO = 2;
 //  - be able to undo/redo
 //    - map the event to it's undo/redo
 UndoManager.prototype.record = function(event) {
+    var ownerId = event.owner,
+        undoCount,
+        eventHistory;
+
+    if (!this.eventHistory[ownerId]) {
+        this.undoCount[ownerId] = 0;
+        this.eventHistory[ownerId] = [];
+    }
+    undoCount = this.undoCount[ownerId];
+    eventHistory = this.eventHistory[ownerId];
+
     if (!event.replayType) {
-        if (this.undoCount !== 0) {
-            var currentIndex = this.eventHistory.length - this.undoCount - 1;
-            var forgotten = this.eventHistory.splice(currentIndex + 1, this.undoCount);
-            this.undoCount = 0;  // forget any available redos
+        if (undoCount !== 0) {
+            var currentIndex = eventHistory.length - undoCount - 1;
+            var forgotten = eventHistory.splice(currentIndex + 1, undoCount);
+            this.undoCount[ownerId] = 0;  // forget any available redos
         }
-        this.eventHistory.push(event);
+        eventHistory.push(event);
     } else if (event.replayType === UndoManager.UNDO) {
-        this.undoCount++;
+        this.undoCount[ownerId]++;
     } else if (event.replayType === UndoManager.REDO) {
-        this.undoCount--;
-        console.assert(this.undoCount >= 0, 'undo count is negative!');
+        this.undoCount[ownerId]--;
+        console.assert(this.undoCount[ownerId] >= 0, 'undo count is negative!');
     }
     this.allEvents.push(event);
 };
 
-UndoManager.prototype.canUndo = function() {
-    return this.eventHistory.length > this.undoCount;
+UndoManager.prototype.canUndo = function(owner) {
+    return this.eventHistory[owner.id] &&
+        this.eventHistory[owner.id].length > this.undoCount[owner.id];
 };
 
-UndoManager.prototype.canRedo = function() {
-    return this.undoCount > 0;
+UndoManager.prototype.canRedo = function(owner) {
+    return this.eventHistory[owner.id] && this.undoCount[owner.id] > 0;
 };
 
-UndoManager.prototype.undo = function() {
-    var index = this.eventHistory.length - this.undoCount - 1,
-        origEvent = this.eventHistory[index],
+UndoManager.prototype.undo = function(owner) {
+    var eventHistory = this.eventHistory[owner.id] || [],
+        index = eventHistory.length - this.undoCount[owner.id] - 1,
+        origEvent = eventHistory[index],
         event;
 
-    if (index < 0) {
+    if (index < 0 || isNaN(index)) {
         return false;
     }
 
     console.log('undoing', origEvent);
     event = this.getInverseEvent(origEvent);
     event.replayType = UndoManager.UNDO;
+    event.owner = origEvent.owner;
 
     SnapActions.applyEvent(event);
     return true;
 };
 
-UndoManager.prototype.redo = function() {
-    var index = this.eventHistory.length - this.undoCount,
-        origEvent = this.eventHistory[index],
+UndoManager.prototype.redo = function(owner) {
+    var eventHistory = this.eventHistory[owner.id] || [],
+        index = eventHistory.length - this.undoCount[owner.id],
+        origEvent = eventHistory[index],
         event;
 
-    if (index >= this.eventHistory.length) {
+    if (index >= eventHistory.length) {
         return false;
     }
 
     event = {
+        owner: origEvent.owner,
         type: origEvent.type,
         args: origEvent.args.slice()
     };

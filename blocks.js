@@ -5609,20 +5609,20 @@ ScriptsMorph.prototype.userMenu = function () {
             //'undo the last\nblock drop\nin this pane'
         //);
     //}
-    if (SnapUndo.canUndo()) {
+    if (SnapUndo.canUndo(obj)) {
         menu.addItem(
             'undo',
             function() {
-                SnapUndo.undo();
+                SnapUndo.undo(obj);
             },
             'undo the last edit'
         );
     }
-    if (SnapUndo.canRedo()) {
+    if (SnapUndo.canRedo(obj)) {
         menu.addItem(
             'redo',
             function() {
-                SnapUndo.redo();
+                SnapUndo.redo(obj);
             },
             'redo the last edit'
         );

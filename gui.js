@@ -2771,7 +2771,7 @@ IDE_Morph.prototype.projectMenu = function () {
             localize('Replay events from file'),
             function() {
                 var inp = document.createElement('input');
-                if (SnapUndo.canUndo()) {
+                if (SnapUndo.allEvents.length) {
                     return this.showMessage('events can only be replayed on empty project');
                 }
 
