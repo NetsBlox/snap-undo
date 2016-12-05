@@ -12,36 +12,35 @@ UndoManager.prototype.reset = function() {
 // Constants
 UndoManager.UNDO = 1;
 UndoManager.REDO = 2;
-// Need to:
-//  - record events in the history
-//  - be able to undo/redo
-//    - map the event to it's undo/redo
+
 UndoManager.prototype.record = function(event) {
     var ownerId = event.owner,
         undoCount,
         eventHistory;
 
-    if (!this.eventHistory[ownerId]) {
-        this.undoCount[ownerId] = 0;
-        this.eventHistory[ownerId] = [];
-    }
-    undoCount = this.undoCount[ownerId];
-    eventHistory = this.eventHistory[ownerId];
-
-    if (!event.replayType) {
-        if (undoCount !== 0) {
-            var currentIndex = eventHistory.length - undoCount - 1;
-            var forgotten = this.eventHistory[ownerId].splice(currentIndex + 1, undoCount);
-            this.undoCount[ownerId] = 0;  // forget any available redos
-        }
-        eventHistory.push(event);
-    } else if (event.replayType === UndoManager.UNDO) {
-        this.undoCount[ownerId]++;
-    } else if (event.replayType === UndoManager.REDO) {
-        this.undoCount[ownerId]--;
-        console.assert(this.undoCount[ownerId] >= 0, 'undo count is negative!');
-    }
     this.allEvents.push(event);
+    if (ownerId) {  // only record undo events w/ an ownerId
+        if (!this.eventHistory[ownerId]) {
+            this.undoCount[ownerId] = 0;
+            this.eventHistory[ownerId] = [];
+        }
+        undoCount = this.undoCount[ownerId];
+        eventHistory = this.eventHistory[ownerId];
+
+        if (!event.replayType) {
+            if (undoCount !== 0) {
+                var currentIndex = eventHistory.length - undoCount - 1;
+                var forgotten = this.eventHistory[ownerId].splice(currentIndex + 1, undoCount);
+                this.undoCount[ownerId] = 0;  // forget any available redos
+            }
+            eventHistory.push(event);
+        } else if (event.replayType === UndoManager.UNDO) {
+            this.undoCount[ownerId]++;
+        } else if (event.replayType === UndoManager.REDO) {
+            this.undoCount[ownerId]--;
+            console.assert(this.undoCount[ownerId] >= 0, 'undo count is negative!');
+        }
+    }
 };
 
 UndoManager.prototype.canUndo = function(owner) {

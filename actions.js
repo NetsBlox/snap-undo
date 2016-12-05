@@ -52,7 +52,7 @@ ActionManager.prototype.addActions = function() {
 
             if (ActionManager.OwnerFor[method]) {
                 ownerId = ActionManager.OwnerFor[method].apply(this, msg.args);
-                msg.owner = ownerId || msg.owner;
+                msg.owner = ownerId;
             }
 
             return this.applyEvent(msg);
@@ -2221,6 +2221,15 @@ ActionManager.OwnerFor.moveBlock = function(block, target) {
     blockId = (typeof target) === 'string' ? target : target.element;
 
     return this._blockToOwnerId[blockId];
+};
+
+// Can't undo
+ActionManager.OwnerFor.setStageSize =
+ActionManager.OwnerFor.importBlocks =
+ActionManager.OwnerFor.importSprites =
+ActionManager.OwnerFor.duplicateSprites =
+ActionManager.OwnerFor.addSprite = function() {
+    return null;
 };
 
 SnapActions = new ActionManager();
