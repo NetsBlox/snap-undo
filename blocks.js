@@ -13448,10 +13448,10 @@ ScriptFocusMorph.prototype.reactToKeyEvent = function (key) {
     case 'backspace':
         return this.deleteLastElement();
     case 'ctrl z':
-        return this.undrop();
+        return SnapUndo.undo(this.editor.owner);
     case 'ctrl y':
     case 'ctrl shift z':
-        return this.redrop();
+        return SnapUndo.redo(this.editor.owner);
     case 'ctrl [': // ignore the first press of the Mac cmd key
         return;
     default:
