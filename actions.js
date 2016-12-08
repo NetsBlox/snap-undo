@@ -2141,7 +2141,7 @@ ActionManager.prototype.getBlockInputs = function(block) {
 
 ActionManager.prototype.afterActionApplied = function(/*msg*/) {
     // Update the scripts morph undo
-    this.ide().currentSprite.scripts.updateUndropControls();
+    this.ide().currentSprite.scripts.updateUndoControls();
 };
 
 ActionManager.prototype.onMessage = function(msg) {
