@@ -361,6 +361,7 @@ ActionManager.prototype._applyEvent = function(msg) {
             }
         }
     }
+    this.afterActionApplied(msg);
 };
 
 ActionManager.prototype._rawApplyEvent = function(msg) {
@@ -2136,6 +2137,11 @@ ActionManager.prototype.getBlockInputs = function(block) {
         }
     }
     return allInputs;
+};
+
+ActionManager.prototype.afterActionApplied = function(/*msg*/) {
+    // Update the scripts morph undo
+    this.ide().currentSprite.scripts.updateUndropControls();
 };
 
 ActionManager.prototype.onMessage = function(msg) {
