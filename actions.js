@@ -2142,8 +2142,16 @@ ActionManager.prototype.getBlockInputs = function(block) {
 };
 
 ActionManager.prototype.afterActionApplied = function(/*msg*/) {
-    // Update the scripts morph undo
-    this.ide().currentSprite.scripts.updateUndoControls();
+    // Update the undo buttons of the focused window
+    var ide = this.ide(),
+        active = ide.focused,
+        scripts;
+
+    if (active instanceof BlockEditorMorph) {
+        active.focus();
+    } else {  // IDE
+        ide.currentSprite.scripts.updateUndoControls();
+    }
 };
 
 ActionManager.prototype.onMessage = function(msg) {

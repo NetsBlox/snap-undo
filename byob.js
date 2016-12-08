@@ -1834,6 +1834,21 @@ BlockEditorMorph.prototype.init = function (definition, target) {
     block.fixBlockColor(proto, true);
 };
 
+BlockEditorMorph.prototype.mouseClickLeft = function() {
+    this.focus();
+};
+
+BlockEditorMorph.prototype.focus = function() {
+    var ide = this.target.parentThatIsA(IDE_Morph);
+    ide.setFocus(this);
+    this.body.contents.updateUndoControls();
+};
+
+BlockEditorMorph.prototype.blur = function() {
+    // on "unfocus"
+    this.body.contents.hideUndoControls()
+};
+
 BlockEditorMorph.prototype.popUp = function () {
     var world = this.target.world();
 

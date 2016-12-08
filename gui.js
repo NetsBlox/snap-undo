@@ -253,6 +253,7 @@ IDE_Morph.prototype.init = function (isAutoFill) {
 
     // override inherited properites:
     this.color = this.backgroundColor;
+    this.focused = this;
 };
 
 IDE_Morph.prototype.openIn = function (world) {
@@ -551,6 +552,43 @@ IDE_Morph.prototype.createLogo = function () {
     this.logo.color = new Color();
     this.logo.setExtent(new Point(200, 28)); // dimensions are fixed
     this.add(this.logo);
+};
+
+IDE_Morph.prototype.mouseClickLeft = function () {
+    this.setFocus();
+};
+
+IDE_Morph.prototype.setFocus = function (dialog) {
+    if (this.focused === dialog) {
+        return;
+    }
+
+    this.focused.blur();
+    this.focused = dialog || this;
+    this.focused.focus();
+};
+
+IDE_Morph.prototype.focus = function () {
+    if (this.currentTab === 'scripts') {
+        this.currentSprite.scripts.updateUndoControls();
+    }
+};
+
+IDE_Morph.prototype.blur = function () {
+    if (this.currentTab === 'scripts') {
+        this.currentSprite.scripts.hideUndoControls();
+    }
+};
+
+IDE_Morph.prototype.getFocusEntity = function () {
+    // Return the entity which is the subject of the focus. If a block editor
+    // is open, return the definition which is being edited, else return the
+    // sprite being edited
+
+    if (this.focus instanceof BlockEditorMorph) {
+        return this.definition;
+    }
+    return this.currentSprite;
 };
 
 IDE_Morph.prototype.createControlBar = function () {
@@ -1350,8 +1388,8 @@ IDE_Morph.prototype.createSpriteEditor = function () {
         this.spriteEditor.contents.acceptsDrops = true;
 
         scripts.scrollFrame = this.spriteEditor;
-        scripts.updateUndoControls();
         this.add(this.spriteEditor);
+        scripts.updateUndoControls();
         this.spriteEditor.scrollX(this.spriteEditor.padding);
         this.spriteEditor.scrollY(this.spriteEditor.padding);
     } else if (this.currentTab === 'costumes') {

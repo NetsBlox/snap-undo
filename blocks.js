@@ -6149,18 +6149,25 @@ ScriptsMorph.prototype.recordDrop = function (lastGrabOrigin) {
 
 ScriptsMorph.prototype.addUndoControls = function () {
     var toolBar = new AlignmentMorph(),
-        shade = (new Color(140, 140, 140));
+        shade = (new Color(140, 140, 140)),
+        gparent = this.parent.parent,
+        owner = this.owner;
+
+    if (gparent instanceof BlockEditorMorph) {
+        owner = gparent.definition;
+    }
+
     toolBar.undoButton = new PushButtonMorph(
         this,
         function() {
-            SnapUndo.undo(this.owner);
+            SnapUndo.undo(owner);
         },
         new SymbolMorph("turnBack", 12)
     );
     toolBar.redoButton = new PushButtonMorph(
         this,
         function() {
-            SnapUndo.redo(this.owner);
+            SnapUndo.redo(owner);
         },
         new SymbolMorph("turnForward", 12)
     );
@@ -6212,6 +6219,15 @@ ScriptsMorph.prototype.updateUndoControls = function () {
         sf.toolBar = null;
     }
     sf.adjustToolBar();
+};
+
+ScriptsMorph.prototype.hideUndoControls = function () {
+    var sf = this.parentThatIsA(ScrollFrameMorph);
+
+    if (sf.toolBar) {
+        sf.toolBar.undoButton.hide();
+        sf.toolBar.redoButton.hide();
+    }
 };
 
 // ScriptsMorph sorting blocks and comments
@@ -6307,6 +6323,7 @@ ScriptsMorph.prototype.mouseClickLeft = function (pos) {
         return this.edit(pos);
     }
     if (this.focus) {this.focus.stopEditing(); }
+    this.escalateEvent('mouseClickLeft', pos);
 };
 
 // ScriptsMorph keyboard support
