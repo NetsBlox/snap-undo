@@ -5406,7 +5406,7 @@ ScriptsMorph.prototype.init = function (owner) {
     // initialize "undrop" queue
     this.isAnimating = false;
     this.dropRecord = null;
-    this.recordDrop();
+    //this.recordDrop();
 };
 
 // ScriptsMorph deep copying:
@@ -6147,15 +6147,21 @@ ScriptsMorph.prototype.recordDrop = function (lastGrabOrigin) {
     this.updateUndoControls();
 };
 
-ScriptsMorph.prototype.addUndoControls = function () {
-    var toolBar = new AlignmentMorph(),
-        shade = (new Color(140, 140, 140)),
-        gparent = this.parent.parent,
+ScriptsMorph.prototype.definitionOrSprite = function () {
+    var gparent = this.parent.parent,
         owner = this.owner;
 
     if (gparent instanceof BlockEditorMorph) {
         owner = gparent.definition;
     }
+
+    return owner;
+};
+
+ScriptsMorph.prototype.addUndoControls = function () {
+    var toolBar = new AlignmentMorph(),
+        shade = (new Color(140, 140, 140)),
+        owner = this.definitionOrSprite();
 
     toolBar.undoButton = new PushButtonMorph(
         this,
@@ -6188,13 +6194,15 @@ ScriptsMorph.prototype.addUndoControls = function () {
 };
 
 ScriptsMorph.prototype.updateUndoControls = function () {
-    var sf = this.parentThatIsA(ScrollFrameMorph);
+    var sf = this.parentThatIsA(ScrollFrameMorph),
+        owner = this.definitionOrSprite();
+
     if (!sf) {return; }
     if (!sf.toolBar) {
         sf.toolBar = this.addUndoControls();
         sf.add(sf.toolBar);
     }
-    if (SnapUndo.canUndo(this.owner)) {
+    if (SnapUndo.canUndo(owner)) {
         if (!sf.toolBar.undoButton.isVisible) {
             sf.toolBar.undoButton.show();
         }
@@ -6202,7 +6210,7 @@ ScriptsMorph.prototype.updateUndoControls = function () {
         sf.toolBar.undoButton.hide();
     }
 
-    if (SnapUndo.canRedo(this.owner)) {
+    if (SnapUndo.canRedo(owner)) {
         if (!sf.toolBar.redoButton.isVisible) {
             sf.toolBar.redoButton.show();
             sf.toolBar.undoButton.mouseLeave();
