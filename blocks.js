@@ -3904,20 +3904,13 @@ CommandBlockMorph.prototype.snap = function (target) {
         cslot,
         affected;
 
-    scripts.clearDropInfo();
-    scripts.lastDroppedBlock = this;
     if (target === null) {
         this.startLayout();
         this.fixBlockColor();
         this.endLayout();
         CommandBlockMorph.uber.snap.call(this); // align stuck comments
-        if (hand) {
-            scripts.recordDrop(hand.grabOrigin);
-        }
         return;
     }
-
-    scripts.lastDropTarget = target;
 
     this.startLayout();
     if (target.loc === 'bottom') {
@@ -4696,9 +4689,6 @@ ReporterBlockMorph.prototype.snap = function (target) {
     this.fixBlockColor();
     this.endLayout();
     ReporterBlockMorph.uber.snap.call(this);
-    if (hand) {
-        scripts.recordDrop(hand.grabOrigin);
-    }
 };
 
 ReporterBlockMorph.prototype.prepareToBeGrabbed = function (handMorph) {
@@ -12570,22 +12560,14 @@ CommentMorph.prototype.snap = function (target) {
         return null;
     }
 
-    scripts.clearDropInfo();
-
     if (target !== null) {
         target.comment = this;
         this.block = target;
         if (this.snapSound) {
             this.snapSound.play();
         }
-        scripts.lastDropTarget = {element: target};
     }
     this.align();
-    scripts.lastDroppedBlock = this;
-    if (hand) {
-        scripts.recordDrop(hand.grabOrigin);
-    }
-
 };
 
 // CommentMorph sticking to blocks

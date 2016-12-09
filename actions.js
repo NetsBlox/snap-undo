@@ -1156,6 +1156,7 @@ ActionManager.prototype.onAddBlock = function(block, ownerId, x, y) {
     }
 
     this.registerBlocks(firstBlock, owner);
+    this.__updateFocus(firstBlock.id);
     return firstBlock;
 };
 
@@ -1307,6 +1308,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
 
     this.updateCommentsPositions(block);
     this._updateBlockDefinitions(block);
+    this.__updateFocus(block.id);
     return block;
 };
 
@@ -1395,6 +1397,7 @@ ActionManager.prototype.onSetBlockPosition = function(id, position) {
 
     // Save the block definition
     this._updateBlockDefinitions(block);
+    this.__updateFocus(block.id);
 };
 
 ActionManager.prototype.updateCommentsPositions = function(block) {
@@ -2141,11 +2144,31 @@ ActionManager.prototype.getBlockInputs = function(block) {
     return allInputs;
 };
 
+ActionManager.prototype.__updateFocus = function(blockId) {
+    var ownerId = this._blockToOwnerId[blockId],
+        editor = this._getCustomBlockEditor(ownerId),
+        ide = this.ide(),
+        owner;
+
+    if (editor) {
+        ide.setFocus(editor);
+    }
+
+    owner = this._owners[ownerId];
+    if (owner === ide.currentSprite) {
+        ide.setFocus();
+    }
+};
+
 ActionManager.prototype.afterActionApplied = function(/*msg*/) {
     // Update the undo buttons of the focused window
     var ide = this.ide(),
         active = ide.focused,
         scripts;
+
+    // Update the focus (set to the owner if the owner is the currentSprite or
+    // a custom block)
+
 
     if (active instanceof BlockEditorMorph) {
         active.focus();
