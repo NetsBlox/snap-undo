@@ -333,6 +333,7 @@ ActionManager.prototype._applyEvent = function(msg) {
         result;
 
     logger.debug('received event:', msg);
+    this.currentEvent = msg;
 
     // If it is a batch, it may need to call multiple...
     if (this._isBatchEvent(msg)) {
@@ -364,6 +365,7 @@ ActionManager.prototype._applyEvent = function(msg) {
         }
     }
     this.afterActionApplied(msg);
+    this.currentEvent = null;
 };
 
 ActionManager.prototype._rawApplyEvent = function(msg) {
@@ -2149,6 +2151,10 @@ ActionManager.prototype.__updateFocus = function(blockId) {
         editor = this._getCustomBlockEditor(ownerId),
         ide = this.ide(),
         owner;
+
+    if (this.currentEvent.replayType) {
+        return;
+    }
 
     if (editor) {
         ide.setFocus(editor);
