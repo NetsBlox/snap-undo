@@ -1158,7 +1158,7 @@ ActionManager.prototype.onAddBlock = function(block, ownerId, x, y) {
     }
 
     this.registerBlocks(firstBlock, owner);
-    this.__updateFocus(firstBlock.id);
+    this.__updateActiveEditor(firstBlock.id);
     return firstBlock;
 };
 
@@ -1310,7 +1310,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
 
     this.updateCommentsPositions(block);
     this._updateBlockDefinitions(block);
-    this.__updateFocus(block.id);
+    this.__updateActiveEditor(block.id);
     return block;
 };
 
@@ -1399,7 +1399,7 @@ ActionManager.prototype.onSetBlockPosition = function(id, position) {
 
     // Save the block definition
     this._updateBlockDefinitions(block);
-    this.__updateFocus(block.id);
+    this.__updateActiveEditor(block.id);
 };
 
 ActionManager.prototype.updateCommentsPositions = function(block) {
@@ -2146,7 +2146,7 @@ ActionManager.prototype.getBlockInputs = function(block) {
     return allInputs;
 };
 
-ActionManager.prototype.__updateFocus = function(blockId) {
+ActionManager.prototype.__updateActiveEditor = function(blockId) {
     var ownerId = this._blockToOwnerId[blockId],
         editor = this._getCustomBlockEditor(ownerId),
         ide = this.ide(),
@@ -2157,19 +2157,19 @@ ActionManager.prototype.__updateFocus = function(blockId) {
     }
 
     if (editor) {
-        ide.setFocus(editor);
+        ide.setActiveEditor(editor);
     }
 
     owner = this._owners[ownerId];
     if (owner === ide.currentSprite) {
-        ide.setFocus();
+        ide.setActiveEditor();
     }
 };
 
 ActionManager.prototype.afterActionApplied = function(/*msg*/) {
     // Update the undo buttons of the focused window
     var ide = this.ide(),
-        active = ide.focused,
+        active = ide.activeEditor,
         scripts;
 
     // Update the focus (set to the owner if the owner is the currentSprite or
@@ -2177,7 +2177,7 @@ ActionManager.prototype.afterActionApplied = function(/*msg*/) {
 
 
     if (active instanceof BlockEditorMorph) {
-        active.focus();
+        active.onSetActive();
     } else {  // IDE
         ide.currentSprite.scripts.updateUndoControls();
     }

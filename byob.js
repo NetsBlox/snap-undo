@@ -1835,17 +1835,15 @@ BlockEditorMorph.prototype.init = function (definition, target) {
 };
 
 BlockEditorMorph.prototype.mouseClickLeft = function() {
-    this.focus();
+    var ide = this.target.parentThatIsA(IDE_Morph);
+    ide.setActiveEditor(this);
 };
 
-BlockEditorMorph.prototype.focus = function() {
-    var ide = this.target.parentThatIsA(IDE_Morph);
-    ide.setFocus(this);
+BlockEditorMorph.prototype.onSetActive = function() {
     this.body.contents.updateUndoControls();
 };
 
-BlockEditorMorph.prototype.blur = function() {
-    // on "unfocus"
+BlockEditorMorph.prototype.onUnsetActive = function() {
     this.body.contents.hideUndoControls()
 };
 
@@ -1866,7 +1864,7 @@ BlockEditorMorph.prototype.popUp = function () {
         world.keyboardReceiver = null;
         // Set the undo focus
         ide = this.target.parentThatIsA(IDE_Morph);
-        ide.setFocus(this);
+        ide.setActiveEditor(this);
     }
 };
 
@@ -1901,8 +1899,8 @@ BlockEditorMorph.prototype.accept = function (origin) {
 
     // Update the focus
     var ide = this.target.parentThatIsA(IDE_Morph);
-    if (ide && ide.focused === this) {
-        ide.setFocus();
+    if (ide && ide.activeEditor === this) {
+        ide.setActiveEditor();
     }
 
     this.close();

@@ -253,7 +253,7 @@ IDE_Morph.prototype.init = function (isAutoFill) {
 
     // override inherited properites:
     this.color = this.backgroundColor;
-    this.focused = this;
+    this.activeEditor = this;
 };
 
 IDE_Morph.prototype.openIn = function (world) {
@@ -555,38 +555,38 @@ IDE_Morph.prototype.createLogo = function () {
 };
 
 IDE_Morph.prototype.mouseClickLeft = function () {
-    this.setFocus();
+    this.setActiveEditor();
 };
 
-IDE_Morph.prototype.setFocus = function (dialog) {
-    if (this.focused === dialog) {
+IDE_Morph.prototype.setActiveEditor = function (dialog) {
+    if (this.activeEditor === dialog) {
         return;
     }
 
-    this.focused.blur();
-    this.focused = dialog || this;
-    this.focused.focus();
+    this.activeEditor.onUnsetActive();
+    this.activeEditor = dialog || this;
+    this.activeEditor.onSetActive();
 };
 
-IDE_Morph.prototype.focus = function () {
+IDE_Morph.prototype.onSetActive = function () {
     if (this.currentTab === 'scripts') {
         this.currentSprite.scripts.updateUndoControls();
     }
 };
 
-IDE_Morph.prototype.blur = function () {
+IDE_Morph.prototype.onUnsetActive = function () {
     if (this.currentTab === 'scripts') {
         this.currentSprite.scripts.hideUndoControls();
     }
 };
 
-IDE_Morph.prototype.getFocusEntity = function () {
+IDE_Morph.prototype.getActiveEntity = function () {
     // Return the entity which is the subject of the focus. If a block editor
     // is open, return the definition which is being edited, else return the
     // sprite being edited
 
-    if (this.focus instanceof BlockEditorMorph) {
-        return this.definition;
+    if (this.activeEditor instanceof BlockEditorMorph) {
+        return this.activeEditor.definition;
     }
     return this.currentSprite;
 };
