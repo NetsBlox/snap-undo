@@ -6307,9 +6307,30 @@ ScriptsMorph.prototype.setBlockPosition = function (block, hand) {
         originPosition;
 
     if (hand) {
-        if (hand.grabOrigin.origin === this) {  // not dropped between scripts
+        if (hand.grabOrigin.origin === this) {  // on the same script
             originPosition = hand.grabOrigin.position.add(hand.grabOrigin.origin.position());
             block.setPosition(originPosition);
+        } else {  // move between scripts!
+
+            // Revert the block back to the origin in case this fails
+            originPosition = hand.grabOrigin.position.add(hand.grabOrigin.origin.position());
+            block.setPosition(originPosition);
+            hand.grabOrigin.origin.add(block);
+
+            // copy the blocks and add them to the new editor
+            var dup = block.fullCopy();
+                blockEditor = this.parentThatIsA(BlockEditorMorph),
+                ownerId = this.owner.id;
+
+            if (blockEditor) {
+                ownerId = blockEditor.definition.id;
+            }
+
+            return SnapActions.addBlock(dup, this, position, ownerId)
+                // if that succeeds, remove them from the current editor
+                .accept(function() {
+                    SnapActions.removeBlock(block);
+                });
         }
     }
 
