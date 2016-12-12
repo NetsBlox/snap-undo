@@ -510,6 +510,7 @@ ActionManager.prototype._removeBlock = function(block, userDestroy) {
             userDestroy
         ];
         
+    // This detection is bad FIXME
     if (position) {
         args.push(
             position.y,
@@ -518,7 +519,7 @@ ActionManager.prototype._removeBlock = function(block, userDestroy) {
             serialized
         );
     } else {
-        args.push(this._targetOf[block.id]);
+        args.push(this._targetOf[block.id], serialized);
     }
 
     return args;
