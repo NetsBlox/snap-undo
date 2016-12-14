@@ -6151,7 +6151,6 @@ ScriptsMorph.prototype.addUndoControls = function () {
     toolBar.undoButton.drawNew();
     toolBar.undoButton.fixLayout();
     toolBar.add(toolBar.undoButton);
-    toolBar.undoButton.show();
 
     toolBar.redoButton.alpha = 0.2;
     // toolBar.redoButton.hint = 'redo the last undone\nblock drop\nin this pane';
@@ -6159,7 +6158,6 @@ ScriptsMorph.prototype.addUndoControls = function () {
     toolBar.redoButton.drawNew();
     toolBar.redoButton.fixLayout();
     toolBar.add(toolBar.redoButton);
-    toolBar.redoButton.show();
     return toolBar;
 };
 
@@ -6182,7 +6180,7 @@ ScriptsMorph.prototype.updateUndoControls = function () {
         }
     } else if (sf.toolBar.undoButton.isEnabled) {
         sf.toolBar.undoButton.disable();
-            changed = true;
+        changed = true;
     }
 
     if (SnapUndo.canRedo(owner)) {
@@ -6196,20 +6194,22 @@ ScriptsMorph.prototype.updateUndoControls = function () {
         changed = true;
     }
 
-    if (!sf.toolBar.undoButton.isVisible || !sf.toolBar.redoButton.isVisible) {
-        sf.toolBar.undoButton.show();
-        sf.toolBar.redoButton.show();
-        changed = true;
+    if (sf.toolBar.undoButton.isEnabled || sf.toolBar.redoButton.isEnabled) {
+        // both buttons should be visible
+        if (!sf.toolBar.undoButton.isVisible || !sf.toolBar.redoButton.isVisible) {
+            sf.toolBar.undoButton.show();
+            sf.toolBar.redoButton.show();
+            changed = true;
+        }
+    } else if (sf.toolBar.undoButton.isVisible || sf.toolBar.redoButton.isVisible) {
+        sf.removeChild(sf.toolBar);
+        sf.toolBar = null;
     }
 
-    if (changed) {
+    if (changed && sf.toolBar) {
         sf.toolBar.drawNew();
         sf.toolBar.changed();
     }
-    //} else {
-        //sf.removeChild(sf.toolBar);
-        //sf.toolBar = null;
-    //}
     sf.adjustToolBar();
 };
 
