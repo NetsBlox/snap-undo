@@ -6151,6 +6151,7 @@ ScriptsMorph.prototype.addUndoControls = function () {
     toolBar.undoButton.drawNew();
     toolBar.undoButton.fixLayout();
     toolBar.add(toolBar.undoButton);
+    toolBar.undoButton.show();
 
     toolBar.redoButton.alpha = 0.2;
     // toolBar.redoButton.hint = 'redo the last undone\nblock drop\nin this pane';
@@ -6158,42 +6159,57 @@ ScriptsMorph.prototype.addUndoControls = function () {
     toolBar.redoButton.drawNew();
     toolBar.redoButton.fixLayout();
     toolBar.add(toolBar.redoButton);
+    toolBar.redoButton.show();
     return toolBar;
 };
 
 ScriptsMorph.prototype.updateUndoControls = function () {
     var sf = this.parentThatIsA(ScrollFrameMorph),
-        owner = this.definitionOrSprite();
+        owner = this.definitionOrSprite(),
+        changed = false;
 
     if (!sf) {return; }
+
     if (!sf.toolBar) {
         sf.toolBar = this.addUndoControls();
         sf.add(sf.toolBar);
     }
+
     if (SnapUndo.canUndo(owner)) {
-        if (!sf.toolBar.undoButton.isVisible) {
-            sf.toolBar.undoButton.show();
+        if (!sf.toolBar.undoButton.isEnabled) {
+            sf.toolBar.undoButton.enable();
+            changed = true;
         }
-    } else if (sf.toolBar.undoButton.isVisible) {
-        sf.toolBar.undoButton.hide();
+    } else if (sf.toolBar.undoButton.isEnabled) {
+        sf.toolBar.undoButton.disable();
+            changed = true;
     }
 
     if (SnapUndo.canRedo(owner)) {
-        if (!sf.toolBar.redoButton.isVisible) {
-            sf.toolBar.redoButton.show();
+        if (!sf.toolBar.redoButton.isEnabled) {
+            sf.toolBar.redoButton.enable();
             sf.toolBar.undoButton.mouseLeave();
+            changed = true;
         }
-    } else if (sf.toolBar.redoButton.isVisible) {
-        sf.toolBar.redoButton.hide();
+    } else if (sf.toolBar.redoButton.isEnabled) {
+        sf.toolBar.redoButton.disable();
+        changed = true;
     }
 
-    if (sf.toolBar.undoButton.isVisible || sf.toolBar.redoButton.isVisible) {
+    if (!sf.toolBar.undoButton.isVisible || !sf.toolBar.redoButton.isVisible) {
+        sf.toolBar.undoButton.show();
+        sf.toolBar.redoButton.show();
+        changed = true;
+    }
+
+    if (changed) {
         sf.toolBar.drawNew();
         sf.toolBar.changed();
-    } else {
-        sf.removeChild(sf.toolBar);
-        sf.toolBar = null;
     }
+    //} else {
+        //sf.removeChild(sf.toolBar);
+        //sf.toolBar = null;
+    //}
     sf.adjustToolBar();
 };
 
