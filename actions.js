@@ -1580,7 +1580,12 @@ ActionManager.prototype.onRingify = function(blockId, ringId) {
         this._positionOf[ring.id] = this.getStandardPosition(scripts, ring.position());
 
         // If it is a Reporter, potentially may need to update the target
-        // TODO
+        if (block instanceof ReporterBlockMorph && this._targetOf[block.id]) {
+            this._targetOf[ring.id] = this._targetOf[block.id];  // ring occupies the block's old target
+            // update the block for it's new id
+            var newTarget = this.getId(block.parent, block.parent.inputs().indexOf(block));
+            this._targetOf[block.id] = newTarget;
+        }
     }
     this._updateBlockDefinitions(block);
 };
