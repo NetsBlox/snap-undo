@@ -5914,6 +5914,7 @@ ScriptsMorph.prototype.updateUndoControls = function () {
     if (!sf.toolBar) {
         sf.toolBar = this.addUndoControls();
         sf.add(sf.toolBar);
+        changed = true;
     }
 
     if (SnapUndo.canUndo(owner)) {
