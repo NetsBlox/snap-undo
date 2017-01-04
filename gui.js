@@ -569,14 +569,20 @@ IDE_Morph.prototype.setActiveEditor = function (dialog) {
 };
 
 IDE_Morph.prototype.onSetActive = function () {
+    // TODO: Update this
     if (this.currentTab === 'scripts') {
         this.currentSprite.scripts.updateUndoControls();
+    } else {
+        this.spriteEditor.updateUndoControls();
     }
 };
 
 IDE_Morph.prototype.onUnsetActive = function () {
+    // TODO: Update this
     if (this.currentTab === 'scripts') {
         this.currentSprite.scripts.hideUndoControls();
+    } else {
+        this.spriteEditor.updateUndoControls();
     }
 };
 

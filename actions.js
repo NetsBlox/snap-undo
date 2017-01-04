@@ -1828,6 +1828,7 @@ ActionManager.prototype.onAddCostume = function(savedCostume, ownerId, creatorId
             ide.spriteBar.tabBar.tabTo('costumes');
         }
     });
+    myself.__updateActiveEditor();
 };
 
 ActionManager.prototype.onUpdateCostume = function(id, savedCostume) {
@@ -1848,6 +1849,7 @@ ActionManager.prototype.onUpdateCostume = function(id, savedCostume) {
         }
         ide.hasChangedMedia = true;
     });
+    this.__updateActiveEditor(id);
 };
 
 ActionManager.prototype.onRemoveCostume = function(id) {
@@ -1868,7 +1870,8 @@ ActionManager.prototype.onRemoveCostume = function(id) {
         sprite.wearCostume(null);
     }
 
-    delete this._costumes[id];
+    this.__updateActiveEditor(id);
+    delete this._costumes[id];  // FIXME: remove all costume records
 };
 
 ActionManager.prototype.onRenameCostume = function(id, newName) {
@@ -1878,6 +1881,7 @@ ActionManager.prototype.onRenameCostume = function(id, newName) {
     costume.name = newName;
     costume.version = Date.now();
     ide.hasChangedMedia = true;
+    this.__updateActiveEditor(id);
     return costume;
 };
 
@@ -1903,6 +1907,7 @@ ActionManager.prototype.onAddSound = function(serialized, ownerId, creatorId) {
         // This is an issue in Snap!, too
         ide.spriteEditor.updateList();
     }
+    this.__updateActiveEditor(sound.id);
 };
 
 ActionManager.prototype.onRenameSound = function(id, name) {
@@ -1919,6 +1924,7 @@ ActionManager.prototype.onRenameSound = function(id, name) {
     }
 
     ide.hasChangedMedia = true;
+    this.__updateActiveEditor(id);
 };
 
 ActionManager.prototype.onRemoveSound = function(id) {
@@ -1932,6 +1938,7 @@ ActionManager.prototype.onRemoveSound = function(id) {
         ide.spriteEditor.updateList();
     }
 
+    this.__updateActiveEditor(id);
     delete this._sounds[id];
     delete this._soundToOwner[id];
 };
@@ -2172,9 +2179,9 @@ ActionManager.prototype.getBlockInputs = function(block) {
     return allInputs;
 };
 
-ActionManager.prototype.__updateActiveEditor = function(blockId) {
-    var ownerId = this._blockToOwnerId[blockId],
-        editor = this._getCustomBlockEditor(ownerId),
+ActionManager.prototype.__updateActiveEditor = function(itemId) {
+    var ownerId,
+        editor,
         ide = this.ide(),
         owner;
 
@@ -2187,12 +2194,21 @@ ActionManager.prototype.__updateActiveEditor = function(blockId) {
         return;
     }
 
-    if (editor) {
-        ide.setActiveEditor(editor);
+    // Get ownerId 
+    ownerId = this._blockToOwnerId[itemId];
+    if (ownerId) {
+        editor = this._getCustomBlockEditor(ownerId);
+
+        if (editor) {
+            return ide.setActiveEditor(editor);
+        }
+    } else {  // costume or sound
+        ownerId = this._costumeToOwner[itemId] ? this._costumeToOwner[itemId].id :
+            this._soundToOwner[itemId] ? this._soundToOwner[itemId].id : null;
     }
 
     owner = this._owners[ownerId];
-    if (owner === ide.currentSprite) {
+    if (!owner || owner === ide.currentSprite) {
         ide.setActiveEditor();
     }
 };
