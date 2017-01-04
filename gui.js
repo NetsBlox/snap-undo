@@ -594,7 +594,8 @@ IDE_Morph.prototype.getActiveEntity = function () {
     if (this.activeEditor instanceof BlockEditorMorph) {
         return this.activeEditor.definition;
     }
-    return this.currentSprite;
+    // TODO: Add the tab type (scripts, costumes, sounds)
+    return this.currentSprite + '/' + this.currentTab;
 };
 
 IDE_Morph.prototype.createControlBar = function () {
@@ -7486,7 +7487,7 @@ WardrobeMorph.prototype.addUndoControls =
     ScriptsMorph.prototype.addUndoControls;
 
 WardrobeMorph.prototype.definitionOrSprite = function() {
-    return this.sprite;
+    return this.sprite.id + '/costumes';
 };
 
 // SoundIconMorph ///////////////////////////////////////////////////////
@@ -7828,8 +7829,9 @@ JukeboxMorph.prototype.updateUndoControls =
 JukeboxMorph.prototype.addUndoControls =
     ScriptsMorph.prototype.addUndoControls;
 
-JukeboxMorph.prototype.definitionOrSprite =
-    WardrobeMorph.prototype.definitionOrSprite;
+JukeboxMorph.prototype.definitionOrSprite = function() {
+    return this.sprite.id + '/sounds';
+};
 
 // StageHandleMorph ////////////////////////////////////////////////////////
 

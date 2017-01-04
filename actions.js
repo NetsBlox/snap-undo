@@ -2275,55 +2275,22 @@ ActionManager.OwnerFor.setBlockSpec =
 ActionManager.OwnerFor.removeBlock =
 ActionManager.OwnerFor.setBlockPosition = function(blockOrInputId) {
     var blockId = blockOrInputId.split('/').shift();
-    return this._blockToOwnerId[blockId];
+    return this._blockToOwnerId[blockId] + '/scripts';
 };
 
 ActionManager.OwnerFor.replaceBlock = function(block) {
     block = this.deserializeBlock(block);
-    return this._blockToOwnerId[block.id];
+    return this._blockToOwnerId[block.id + '/scripts'];
 };
-
-// Actions where owner is first arg:
-ActionManager.OwnerFor.renameSprite =
-ActionManager.OwnerFor.toggleDraggable =
-ActionManager.OwnerFor.setRotationStyle =
-ActionManager.OwnerFor.addCustomBlock = function(ownerId) {
-    return ownerId;
-};
-
-// Actions where owner is second arg:
-ActionManager.OwnerFor.addSound =
-ActionManager.OwnerFor.addCostume =
 
 ActionManager.OwnerFor.addBlock = function(block, ownerId) {
-    return ownerId;
-};
-
-// Actions where owner is third arg:
-ActionManager.OwnerFor.removeCostume =
-ActionManager.OwnerFor.removeSound = function() {
-    return arguments[2];
-};
-
-ActionManager.OwnerFor.renameSound = function(soundId) {
-    return this._soundToOwner[soundId].id;
-};
-
-ActionManager.OwnerFor.updateCostume =
-ActionManager.OwnerFor.renameCostume = function(costumeId) {
-    return this._costumeToOwner[costumeId].id;
+    return ownerId + '/scripts';
 };
 
 ActionManager.OwnerFor.setBlocksPositions = function(ids) {
     if (ids.length) {
-        return this._blockToOwnerId[ids[0]];
+        return this._blockToOwnerId[ids[0]] + '/scripts';
     }
-};
-
-ActionManager.OwnerFor.updateBlockLabel =
-ActionManager.OwnerFor.deleteBlockLabel =
-ActionManager.OwnerFor.setCustomBlockType = function(id) {
-    return this._customBlockOwner[id].id;
 };
 
 ActionManager.OwnerFor.moveBlock = function(block, target) {
@@ -2338,11 +2305,46 @@ ActionManager.OwnerFor.moveBlock = function(block, target) {
     if (this._customBlocks[blockId]) {
         return blockId;
     } else {
-        return this._blockToOwnerId[blockId];
+        return this._blockToOwnerId[blockId] + '/scripts';
     }
 };
 
+// Actions where owner is second arg:
+ActionManager.OwnerFor.addCostume = function(cos, ownerId) {
+    return ownerId + '/costumes';
+};
+
+ActionManager.OwnerFor.removeCostume = function() {
+    return arguments[2] + '/costumes';
+};
+
+ActionManager.OwnerFor.updateCostume =
+ActionManager.OwnerFor.renameCostume = function(costumeId) {
+    return this._costumeToOwner[costumeId].id + '/costumes';
+};
+
+// sounds
+ActionManager.OwnerFor.addSound = function(sound, ownerId) {
+    return ownerId + '/sounds';
+};
+
+ActionManager.OwnerFor.removeSound = function() {
+    return arguments[2] + '/sounds';
+};
+
+ActionManager.OwnerFor.renameSound = function(soundId) {
+    return this._soundToOwner[soundId].id + '/sounds';
+};
+
+ActionManager.OwnerFor.updateBlockLabel =
+ActionManager.OwnerFor.deleteBlockLabel =
+ActionManager.OwnerFor.setCustomBlockType = function(id) {
+    return this._customBlockOwner[id].id;
+};
+
 // Can't undo
+ActionManager.OwnerFor.addCustomBlock =
+
 ActionManager.OwnerFor.renameSprite =
 ActionManager.OwnerFor.toggleDraggable =
 ActionManager.OwnerFor.setRotationStyle =

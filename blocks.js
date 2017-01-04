@@ -5863,10 +5863,10 @@ ScriptsMorph.prototype.definitionOrSprite = function () {
         owner = this.owner;
 
     if (gparent instanceof BlockEditorMorph) {
-        owner = gparent.definition;
+        return owner = gparent.definition;
     }
 
-    return owner;
+    return owner.id + '/scripts';
 };
 
 ScriptsMorph.prototype.addUndoControls = function () {
