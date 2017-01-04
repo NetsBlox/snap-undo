@@ -7408,7 +7408,7 @@ WardrobeMorph.prototype.updateList = function () {
     this.changed();
 
     this.updateSelection();
-    this.updateUndoControls();
+    this.onNextStep = this.updateUndoControls;
 };
 
 WardrobeMorph.prototype.updateSelection = function () {
@@ -7767,7 +7767,7 @@ JukeboxMorph.prototype.updateList = function () {
     this.changed();
 
     this.updateSelection();
-    this.updateUndoControls();
+    this.onNextStep = this.updateUndoControls;
 };
 
 JukeboxMorph.prototype.updateSelection = function () {
