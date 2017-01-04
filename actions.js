@@ -45,6 +45,7 @@ ActionManager.prototype.addActions = function() {
             }
 
             msg = {
+                time: Date.now(),
                 type: method,
                 args: args
             };
