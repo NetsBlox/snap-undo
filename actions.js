@@ -2134,7 +2134,7 @@ ActionManager.prototype.loadCustomBlocks = function(blocks, owner) {
         editor = myself._getCustomBlockEditor(def.id);
         scripts = editor.body.contents;
         scripts.children.forEach(function(block) {
-            myself.registerBlocks(block, owner);
+            myself.registerBlocks(block, def);
         });
         editor.updateDefinition();
     });
