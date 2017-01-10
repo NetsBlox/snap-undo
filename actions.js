@@ -2308,7 +2308,7 @@ ActionManager.OwnerFor.moveBlock = function(block, target) {
     blockId = blockId.split('/')[0];
 
     if (this._customBlocks[blockId]) {
-        return blockId;
+        return blockId + '/scripts';
     } else {
         return this._blockToOwnerId[blockId] + '/scripts';
     }
