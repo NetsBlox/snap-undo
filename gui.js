@@ -237,6 +237,7 @@ IDE_Morph.prototype.init = function (isAutoFill) {
 
     this.isAutoFill = isAutoFill === undefined ? true : isAutoFill;
     this.isAppMode = false;
+    this.isReplayMode = false;
     this.isSmallStage = false;
     this.filePicker = null;
     this.hasChangedMedia = false;
@@ -505,6 +506,7 @@ IDE_Morph.prototype.buildPanes = function () {
     this.createSpriteEditor();
     this.createCorralBar();
     this.createCorral();
+    this.createReplaySlider();
 };
 
 IDE_Morph.prototype.createLogo = function () {
@@ -1635,6 +1637,20 @@ IDE_Morph.prototype.createCorral = function () {
     };
 };
 
+IDE_Morph.prototype.createReplaySlider = function () {
+    var myself = this;
+    this.replaySlider = new ReplaySlider(this);
+
+    this.replaySlider.action = function(val) {
+        //myself.showMessage('set slider to ' + val);
+    };
+
+    // TODO: set replay mode
+    this.add(this.replaySlider);
+    this.replaySlider.drawNew();
+    this.replaySlider.hide();
+};
+
 // IDE_Morph layout
 
 IDE_Morph.prototype.fixLayout = function (situation) {
@@ -1721,6 +1737,14 @@ IDE_Morph.prototype.fixLayout = function (situation) {
             this.corral.setHeight(this.bottom() - this.corral.top());
             this.corral.fixLayout();
         }
+
+        var width = Math.max(this.width() * 0.8, 250),
+            y = this.height() - 50;
+
+        // Set position
+        this.replaySlider.setWidth(250);
+        this.replaySlider.setHeight(15);
+        this.replaySlider.setCenter(new Point(this.width()/2, y));
     }
 
     Morph.prototype.trackChanges = true;
@@ -2883,7 +2907,7 @@ IDE_Morph.prototype.projectMenu = function () {
             localize('Replay events from file'),
             function() {
                 var inp = document.createElement('input');
-                if (SnapUndo.allEvents.length) {
+                if (SnapUndo.allEvents.length > 1) {
                     return this.showMessage('events can only be replayed on empty project');
                 }
 
@@ -3087,10 +3111,14 @@ IDE_Morph.prototype.loadSnapActions = function (text) {
         this.showMessage('action load failed: invalid json');
         return;
     }
+    this.replayEvents(actions);
+};
 
-    for (var i = 0; i < actions.length; i++) {
-        SnapActions.applyEvent(actions[i]);
-    }
+IDE_Morph.prototype.replayEvents = function (actions) {
+    this.replaySlider.show();
+    this.replaySlider.setActions(actions);
+    this.isReplayMode = true;
+    // TODO: Update this
 };
 
 IDE_Morph.prototype.resourceURL = function () {
@@ -3577,6 +3605,7 @@ IDE_Morph.prototype.newProject = function () {
     this.createCorral();
     this.selectSprite(this.stage.children[0]);
     this.fixLayout();
+    this.isReplayMode = false;
     SnapActions.disableCollaboration();
     SnapActions.loadProject(this);
     SnapUndo.reset();
@@ -5707,7 +5736,6 @@ ProjectDialogMorph.prototype.buildContents = function () {
         this.setExtent(new Point(455, 335));
     }
     this.fixLayout();
-
 };
 
 ProjectDialogMorph.prototype.popUp = function (wrrld) {

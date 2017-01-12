@@ -345,7 +345,9 @@ ActionManager.prototype._applyEvent = function(msg) {
 
     this.lastSeen = msg.id;
     this.idCount = 0;
-    SnapUndo.record(msg);
+    if (!this.ide().isReplayMode) {
+        SnapUndo.record(msg);
+    }
 
     // Call 'success' or 'reject', if relevant
     if (msg.user === this.id) {
@@ -1964,16 +1966,20 @@ ActionManager.prototype.onSetRotationStyle = function(id, rotationStyle) {
 };
 //////////////////// Import ////////////////////
 ActionManager.prototype.onImportSprites = function(xmlString) {
+    // TODO: make this sync
     return this.ide().openSpritesString(xmlString);
 };
 
 ActionManager.prototype.onImportBlocks = function(aString, lbl) {
+    // TODO: make this sync
     return this.ide().openBlocksString(aString, lbl, true);
 };
 
 ActionManager.prototype.onOpenProject = function(str) {
+    // TODO: make this sync
     this.ide().openProjectString(str);
 }
+
 //////////////////// Loading Projects ////////////////////
 ActionManager.prototype.loadProject = function(ide, lastSeen) {
     var myself = this;

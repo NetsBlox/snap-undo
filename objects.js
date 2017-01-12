@@ -8404,3 +8404,66 @@ StagePrompterMorph.prototype.mouseClickLeft = function () {
 StagePrompterMorph.prototype.accept = function () {
     this.isDone = true;
 };
+
+// Replay Slider
+ReplaySlider.prototype = new SliderMorph();
+ReplaySlider.prototype.constructor = ReplaySlider;
+ReplaySlider.uber = SliderMorph.prototype;
+
+function ReplaySlider(ide) {
+    this.ide = ide;
+    this.actions = null;
+    this.actionIndex = -1;
+    this.init(0, 100, 0, 10, 'horizontal');
+
+    this.isApplyingAction = false;
+    this.update();
+}
+
+ReplaySlider.prototype.setActions = function(actions) {
+    this.actions = actions;
+    this.value = 0;
+    this.setStop(actions.length);
+};
+
+// apply any actions between 
+ReplaySlider.prototype.update = function() {
+    var myself = this,
+        originalEvent,
+        diff,
+        dir,
+        index,
+        action;
+
+    if (this.actionIndex !== this.value && this.actions && !this.isApplyingAction) {
+        diff = this.value - this.actionIndex;
+        dir = diff/Math.abs(diff);
+        index = this.actionIndex + dir;
+        originalEvent = this.actions[index],
+        action = originalEvent;
+
+        if (dir === -1) {
+            action = SnapUndo.getInverseEvent(action);
+        }
+
+        // Apply the given event
+        this.isApplyingAction = true;
+        SnapActions.applyEvent(action)
+            .accept(function() {
+                console.log('accepted!');
+                myself.actionIndex = index;
+                myself.isApplyingAction = false;
+                if (dir === -1) {
+                    myself.ide.showMessage(originalEvent.type + ' (undo)');
+                } else {
+                    myself.ide.showMessage(originalEvent.type);
+                }
+                setTimeout(myself.update.bind(myself), 10);
+            })
+            .reject(function() {
+                throw Error('Could not apply event: ' + JSON.stringify(action, null, 2));
+            });
+    } else {
+        setTimeout(this.update.bind(this), 10);
+    }
+};
