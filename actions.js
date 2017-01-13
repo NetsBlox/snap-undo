@@ -1334,6 +1334,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
     scripts.drawNew();
 
     if (isNewBlock) {
+        this._positionOf[block.id] = this.getStandardPosition(scripts, block.position());
         // set the owner to custom block id if necessary
         if (target.element instanceof PrototypeHatBlockMorph) {
             this.registerBlocks(block, target.element.definition);
