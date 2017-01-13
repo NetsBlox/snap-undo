@@ -146,6 +146,7 @@ ActionManager.prototype.initializeRecords = function() {
     // Additional records for undo/redo support
     this._positionOf = {};
     this._targetOf = {};
+    this._targetTo = {};  // reverse map of _targetOf TODO
     this._blockToOwnerId = {};
 };
 
@@ -520,6 +521,7 @@ ActionManager.prototype._removeBlock = function(block, userDestroy) {
             serialized
         );
     }
+    // TODO: Get the records to restore on undo
 
     return args;
 };
@@ -1329,7 +1331,8 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
 };
 
 ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
-    var block = this.getBlockFromId(id),
+    var myself = this,
+        block = this.getBlockFromId(id),
         method = userDestroy && block.userDestroy ? 'userDestroy' : 'destroy',
         scripts = block.parentThatIsA(ScriptsMorph),
         parent = block.parent;
@@ -1340,9 +1343,19 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
             block.prepareToBeGrabbed(this.world().hand);
         }
 
+        // clear the records for entire deleted subtree/following blocks
+        var root = block;
+        if (method === 'userDestroy') {  // only provide the reporter inputs
+            root = block.inputs();
+            this.__clearBlockRecords(id);
+        }
+
+        this.traverse(root, function(block) {
+            myself.__clearBlockRecords(id);
+        });
+
         // Remove the block
         block[method]();
-        this.__clearBlockRecords(id);
 
         this._updateBlockDefinitions(block);
 
@@ -2157,7 +2170,7 @@ ActionManager.prototype.loadCustomBlocks = function(blocks, owner) {
 };
 
 ActionManager.prototype.traverse = function(block, fn) {
-    var current = [block],
+    var current = block instanceof Array ? block : [block],
         next,
         inputs,
         i,j;
@@ -2239,6 +2252,9 @@ ActionManager.prototype.__clearBlockRecords = function(id) {
     delete this._positionOf[id];
     delete this._blockToOwnerId[id];
     delete this._targetOf[id];
+
+    // TODO: if it is a command block, check to see if we need to clear any records
+    // of other blocks to this one
 };
 
 ActionManager.prototype.afterActionApplied = function(/*msg*/) {

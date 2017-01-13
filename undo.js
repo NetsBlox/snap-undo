@@ -273,6 +273,8 @@ UndoManager.Invert.removeBlock = function(args) {
     //  [id, userDestroy, y, x, ownerId, block]
     // or 
     //  [id, userDestroy, target, block]
+
+    // TODO: Detect if a block needs to be added beneath this one...
     if (args.length === 4) {
         args.splice(1, 1);
         return {
