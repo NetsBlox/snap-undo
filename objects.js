@@ -8423,7 +8423,7 @@ function ReplaySlider(ide) {
 ReplaySlider.prototype.setActions = function(actions) {
     this.actions = actions;
     this.value = 0;
-    this.setStop(actions.length);
+    this.setStop(actions.length-1);
 };
 
 // apply any actions between 
