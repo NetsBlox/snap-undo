@@ -2298,14 +2298,15 @@ ActionManager.prototype.__clearBlockRecords = function(id) {
     delete this._blockToOwnerId[id];
 
     delete this._targetOf[id];
-    delete this._targetFor[id];
 
     if (this._targetFor[id]) {
         // Clear the target ids of all blocks connected to this block
         var connectedIds = Object.keys(this._targetFor[id]);
-        for (var i = connectedIds[i].length; i--;) {
+        for (var i = connectedIds.length; i--;) {
+            delete this._targetOf[connectedIds[i]];
         }
     }
+    delete this._targetFor[id];
     this.__clearTarget(id, true);
 };
 
