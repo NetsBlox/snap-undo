@@ -8406,28 +8406,82 @@ StagePrompterMorph.prototype.accept = function () {
 };
 
 // Replay Slider
-ReplaySlider.prototype = new SliderMorph();
-ReplaySlider.prototype.constructor = ReplaySlider;
-ReplaySlider.uber = SliderMorph.prototype;
+ReplayControls.prototype = new Morph();
+ReplayControls.prototype.constructor = ReplayControls;
+ReplayControls.uber = Morph.prototype;
 
-function ReplaySlider(ide) {
-    this.ide = ide;
-    this.actions = null;
-    this.actionIndex = -1;
-    this.init(0, 100, 0, 10, 'horizontal');
-
-    this.isApplyingAction = false;
-    this.update();
+function ReplayControls(ide) {
+    this.init(ide);
 }
 
-ReplaySlider.prototype.setActions = function(actions) {
+ReplayControls.prototype.init = function(ide) {
+    var myself = this;
+
+    this.ide = ide;
+    this.alpha = 0;
+    this.actions = null;
+    this.actionIndex = -1;
+    this.isApplyingAction = false;
+
+    // Add the play button and slider
+    this.playButton = new SymbolMorph('pointRight', 40);
+    this.playButton.mouseClickLeft = function() {
+        myself.play();
+        // TODO
+        console.log('playing...');
+    };
+
+    this.slider = new SliderMorph(0, 100, 0, 1, 'horizontal');
+
+    this.add(this.slider);
+    this.add(this.playButton);
+
+    this.update();
+    this.fixLayout();
+};
+
+ReplayControls.prototype.play = function() {
+    // TODO
+};
+
+ReplayControls.prototype.pause = function() {
+    // TODO
+};
+
+ReplayControls.prototype.fixLayout = function() {
+    var center = this.center(),
+        bottom = this.bottom(),
+        top = this.top(),
+        width = this.width(),
+        height = this.height(),
+        sliderHeight = 15,
+        btnSize,
+        margin = 10;
+
+    btnSize = height - (3*margin + sliderHeight);
+    this.playButton.size = btnSize;
+
+    this.playButton.setCenter(new Point(center.x, 0));
+    this.playButton.setTop(top + margin);
+    this.playButton.drawNew();
+
+    this.slider.setWidth(width - 2*margin);
+    this.slider.setHeight(sliderHeight);
+    this.slider.setCenter(new Point(center.x, 0));
+    this.slider.setBottom(bottom - margin);
+
+    this.slider.drawNew();
+    this.slider.changed();
+};
+
+ReplayControls.prototype.setActions = function(actions) {
     this.actions = actions;
-    this.value = 0;
-    this.setStop(actions.length-1);
+    this.slider.value = 0;
+    this.slider.setStop(actions.length-1);
 };
 
 // apply any actions between 
-ReplaySlider.prototype.update = function() {
+ReplayControls.prototype.update = function() {
     var myself = this,
         originalEvent,
         diff,
@@ -8435,8 +8489,8 @@ ReplaySlider.prototype.update = function() {
         index,
         action;
 
-    if (this.actionIndex !== this.value && this.actions && !this.isApplyingAction) {
-        diff = this.value - this.actionIndex;
+    if (this.actionIndex !== this.slider.value && this.actions && !this.isApplyingAction) {
+        diff = this.slider.value - this.actionIndex;
         dir = diff/Math.abs(diff);
         index = this.actionIndex + dir;
         originalEvent = this.actions[index],
@@ -8447,6 +8501,7 @@ ReplaySlider.prototype.update = function() {
         }
 
         // Apply the given event
+        // TODO: take into account the actual time difference
         this.isApplyingAction = true;
         SnapActions.applyEvent(action)
             .accept(function() {
@@ -8464,6 +8519,6 @@ ReplaySlider.prototype.update = function() {
                 throw Error('Could not apply event: ' + JSON.stringify(action, null, 2));
             });
     } else {
-        setTimeout(this.update.bind(this), 10);
+        setTimeout(this.update.bind(this), 100);
     }
 };

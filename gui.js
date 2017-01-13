@@ -506,7 +506,7 @@ IDE_Morph.prototype.buildPanes = function () {
     this.createSpriteEditor();
     this.createCorralBar();
     this.createCorral();
-    this.createReplaySlider();
+    this.createReplayControls();
 };
 
 IDE_Morph.prototype.createLogo = function () {
@@ -1637,18 +1637,13 @@ IDE_Morph.prototype.createCorral = function () {
     };
 };
 
-IDE_Morph.prototype.createReplaySlider = function () {
+IDE_Morph.prototype.createReplayControls = function () {
     var myself = this;
-    this.replaySlider = new ReplaySlider(this);
+    this.replayControls = new ReplayControls(this);
 
-    this.replaySlider.action = function(val) {
-        //myself.showMessage('set slider to ' + val);
-    };
-
-    // TODO: set replay mode
-    this.add(this.replaySlider);
-    this.replaySlider.drawNew();
-    this.replaySlider.hide();
+    this.add(this.replayControls);
+    this.replayControls.drawNew();
+    this.replayControls.hide();
 };
 
 // IDE_Morph layout
@@ -1739,12 +1734,13 @@ IDE_Morph.prototype.fixLayout = function (situation) {
         }
 
         var width = Math.max(this.width() * 0.8, 250),
-            y = this.height() - 50;
+            y = this.height() - 100;
 
         // Set position
-        this.replaySlider.setWidth(250);
-        this.replaySlider.setHeight(15);
-        this.replaySlider.setCenter(new Point(this.width()/2, y));
+        this.replayControls.setWidth(250);
+        this.replayControls.setHeight(80);
+        this.replayControls.setCenter(new Point(this.width()/2, y));
+        this.replayControls.fixLayout();
     }
 
     Morph.prototype.trackChanges = true;
@@ -3115,8 +3111,8 @@ IDE_Morph.prototype.loadSnapActions = function (text) {
 };
 
 IDE_Morph.prototype.replayEvents = function (actions) {
-    this.replaySlider.show();
-    this.replaySlider.setActions(actions);
+    this.replayControls.show();
+    this.replayControls.setActions(actions);
     this.isReplayMode = true;
     // TODO: Update this
 };
