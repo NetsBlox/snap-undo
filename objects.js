@@ -8432,6 +8432,8 @@ ReplayControls.prototype.init = function(ide) {
     };
 
     this.slider = new SliderMorph(0, 100, 0, 1, 'horizontal');
+    this.slider.start = 0;
+    this.slider.value = 0;
 
     this.add(this.slider);
     this.add(this.playButton);
@@ -8476,6 +8478,7 @@ ReplayControls.prototype.fixLayout = function() {
 
 ReplayControls.prototype.setActions = function(actions) {
     this.actions = actions;
+    this.slider.start = 0;
     this.slider.value = 0;
     this.slider.setStop(actions.length-1);
 };
