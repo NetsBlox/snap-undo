@@ -18,7 +18,7 @@ function ActionManager() {
     this._onAccept = {};
     this._onReject = {};
     this.initialize();
-};
+}
 
 ActionManager.prototype.addActions = function() {
     var actions = Array.prototype.slice.call(arguments),
