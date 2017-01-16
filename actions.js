@@ -2010,10 +2010,16 @@ ActionManager.prototype.onImportBlocks = function(aString, lbl) {
     return this.ide().openBlocksString(aString, lbl, true);
 };
 
-ActionManager.prototype.onOpenProject = function(str) {
-    if (str) {
+ActionManager.prototype.onOpenProject = function(str, noReset) {
+    // Reset settings
+    if (!noReset) {
         this.disableCollaboration();
         SnapUndo.reset();
+        this.lastSeen = 0;
+        this.idCount = 0;
+    }
+
+    if (str) {
         location.hash = '';
 
         if (str.indexOf('<project') === 0) {
