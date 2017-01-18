@@ -1070,7 +1070,6 @@ ActionManager.prototype._onSetBlockPosition = function(id, x, y) {
             target = this._targetFor[id][connectedIds[i]];
             if (target.loc === 'top') {
                 this.__clearTarget(this.__targetId(target));
-                console.error('TODO: clear the record!');
             }
         }
     }
