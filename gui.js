@@ -277,8 +277,8 @@ IDE_Morph.prototype.openIn = function (world) {
 
     this.buildPanes();
     SnapActions.disableCollaboration();
-    SnapActions.loadProject(this);
     SnapUndo.reset();
+    SnapActions.loadProject(this);
     world.add(this);
     world.userMenu = this.userMenu;
 
@@ -1850,8 +1850,8 @@ IDE_Morph.prototype.droppedText = function (aString, name) {
     if (aString.indexOf('<project') === 0) {
         location.hash = '';
         SnapActions.disableCollaboration();
-        this.openProjectString(aString);
-        return SnapUndo.reset();
+        SnapUndo.reset();
+        return this.openProjectString(aString);
     }
     if (aString.indexOf('<snapdata') === 0) {
         location.hash = '';
@@ -3603,8 +3603,8 @@ IDE_Morph.prototype.newProject = function () {
     this.fixLayout();
     this.isReplayMode = false;
     SnapActions.disableCollaboration();
-    SnapActions.loadProject(this);
     SnapUndo.reset();
+    SnapActions.loadProject(this);
 };
 
 IDE_Morph.prototype.save = function () {
@@ -4097,6 +4097,8 @@ IDE_Morph.prototype.openProjectString = function (str) {
 };
 
 IDE_Morph.prototype.rawOpenProjectString = function (str) {
+    var project;
+
     this.toggleAppMode(false);
     this.spriteBar.tabBar.tabTo('scripts');
     StageMorph.prototype.hiddenPrimitives = {};
@@ -4108,7 +4110,7 @@ IDE_Morph.prototype.rawOpenProjectString = function (str) {
     Process.prototype.enableLiveCoding = false;
     if (Process.prototype.isCatchingErrors) {
         try {
-            this.serializer.openProject(
+            project = this.serializer.openProject(
                 this.serializer.load(str, this),
                 this
             );
@@ -4116,11 +4118,12 @@ IDE_Morph.prototype.rawOpenProjectString = function (str) {
             this.showMessage('Load failed: ' + err);
         }
     } else {
-        this.serializer.openProject(
+        project = this.serializer.openProject(
             this.serializer.load(str, this),
             this
         );
     }
+    SnapActions.loadProject(this, project.collabStartIndex, str);
     this.stopFastTracking();
 };
 
@@ -4143,7 +4146,8 @@ IDE_Morph.prototype.openCloudDataString = function (str) {
 };
 
 IDE_Morph.prototype.rawOpenCloudDataString = function (str) {
-    var model;
+    var project,
+        model;
     StageMorph.prototype.hiddenPrimitives = {};
     StageMorph.prototype.codeMappings = {};
     StageMorph.prototype.codeHeaders = {};
@@ -4152,11 +4156,12 @@ IDE_Morph.prototype.rawOpenCloudDataString = function (str) {
     StageMorph.prototype.enableSublistIDs = false;
     Process.prototype.enableLiveCoding = false;
     SnapActions.disableCollaboration();
+    SnapUndo.reset();
     if (Process.prototype.isCatchingErrors) {
         try {
             model = this.serializer.parse(str);
             this.serializer.loadMediaModel(model.childNamed('media'));
-            this.serializer.openProject(
+            project = this.serializer.openProject(
                 this.serializer.loadProjectModel(
                     model.childNamed('project'),
                     this
@@ -4169,7 +4174,7 @@ IDE_Morph.prototype.rawOpenCloudDataString = function (str) {
     } else {
         model = this.serializer.parse(str);
         this.serializer.loadMediaModel(model.childNamed('media'));
-        this.serializer.openProject(
+        project = this.serializer.openProject(
             this.serializer.loadProjectModel(
                 model.childNamed('project'),
                 this
@@ -4177,8 +4182,8 @@ IDE_Morph.prototype.rawOpenCloudDataString = function (str) {
             this
         );
     }
+    SnapActions.loadProject(this, project.collabStartIndex, str);
     this.stopFastTracking();
-    SnapUndo.reset();
 };
 
 IDE_Morph.prototype.uniqueIdForImport = function (str, name, callback) {
@@ -4308,8 +4313,8 @@ IDE_Morph.prototype.openProject = function (name) {
         this.setProjectName(name);
         str = localStorage['-snap-project-' + name];
         SnapActions.disableCollaboration();
-        this.openProjectString(str);
         SnapUndo.reset();
+        this.openProjectString(str);
         this.setURL('#open:' + str);
     }
 };
@@ -6141,8 +6146,8 @@ ProjectDialogMorph.prototype.openProject = function () {
         // Note "file" is a property of the parseResourceFile function.
         src = this.ide.getURL(this.ide.resourceURL('Examples', proj.file));
         SnapActions.disableCollaboration();
-        this.ide.openProjectString(src);
         SnapUndo.reset();
+        this.ide.openProjectString(src);
         this.destroy();
     } else { // 'local'
         this.ide.openProject(proj.name);
