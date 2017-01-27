@@ -8519,6 +8519,10 @@ ReplayControls.prototype.update = function() {
 
                 displayTxt = action.type;
                 if (action.replayType === UndoManager.UNDO) {
+                    // Get the originalEvent
+                    if (originalEvent === action) {  // going forwards
+                        originalEvent = myself.getInverseEvent(action);
+                    }
                     displayTxt = originalEvent.type + ' (undo)';
                 } else if (action.replayType === UndoManager.REDO) {
                     displayTxt += ' (redo)';
@@ -8537,7 +8541,10 @@ ReplayControls.prototype.update = function() {
 
 ReplayControls.prototype.getInverseEvent = function(event) {
     if (!event.replayType) {
-        return SnapUndo.getInverseEvent(event);
+        var undoEvent = SnapUndo.getInverseEvent(event);
+        undoEvent.replayType = UndoManager.UNDO;
+        undoEvent.owner = event.owner;
+        return undoEvent;
     } else {  // undo the undo event (look up the original event)
         var nestedPairsCnt = 0,
             iter;
