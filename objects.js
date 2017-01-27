@@ -8542,7 +8542,7 @@ ReplayControls.prototype.play = function() {
     }
 };
 
-ReplayControls.prototype.playNext = function(force, dir) {
+ReplayControls.prototype.playNext = function(singleStep, dir) {
     // Get the position of the button in the slider and move it
     var currentAction = this.actions[this.actionIndex],
         nextAction = this.actions[this.actionIndex+1],
@@ -8553,15 +8553,18 @@ ReplayControls.prototype.playNext = function(force, dir) {
     dir = dir || 1;
     value = this.actionIndex + dir;
 
-    if ((this.isPlaying || force) && value < this.actions.length && -1 < value) {
-        delay = nextAction.time - currentAction.time;
+    if ((this.isPlaying || singleStep) && value < this.actions.length && -1 < value) {
         btnLeft = (value-this.slider.start) * this.slider.unitSize() +
             this.slider.left();
 
         this.slider.button.setLeft(btnLeft);
         this.slider.updateValue();
 
-        return setTimeout(this.playNext.bind(this), delay);
+        if (!singleStep) {
+            delay = Math.abs(nextAction.time - currentAction.time);
+            nextAction = this.actions[this.actionIndex + delay];
+            return setTimeout(this.playNext.bind(this), delay);
+        }
     }
     this.pause();
 };
