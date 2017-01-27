@@ -8422,6 +8422,7 @@ ReplayControls.prototype.init = function(ide) {
     this.actions = null;
     this.actionIndex = -1;
     this.isApplyingAction = false;
+    this.isPlaying = false;
 
     // Add the play button and slider
     this.playButton = new SymbolMorph('pointRight', 40);
@@ -8434,6 +8435,7 @@ ReplayControls.prototype.init = function(ide) {
     this.slider = new SliderMorph(0, 100, 0, 1, 'horizontal');
     this.slider.start = 0;
     this.slider.value = 0;
+    // TODO: Pause on slider click
 
     this.add(this.slider);
     this.add(this.playButton);
@@ -8443,7 +8445,38 @@ ReplayControls.prototype.init = function(ide) {
 };
 
 ReplayControls.prototype.play = function() {
-    // TODO
+    if (this.actionIndex < this.actions.length-1) {
+        var currentAction = this.actions[this.actionIndex],
+            nextAction = this.actions[this.actionIndex+1],
+            delay = nextAction.time - currentAction.time;
+
+        this.isPlaying = true;
+        setTimeout(this.playNext.bind(this), delay);
+    }
+};
+
+ReplayControls.prototype.playNext = function() {
+    // Get the position of the button in the slider and move it
+    var currentAction = this.actions[this.actionIndex],
+        nextAction = this.actions[this.actionIndex+1],
+        delay,
+        value,
+        btnLeft;
+
+    if (this.isPlaying && this.actionIndex < this.actions.length-1) {
+        delay = nextAction.time - currentAction.time;
+        value = this.actionIndex + 1;
+        btnLeft = (value-this.slider.start) * this.slider.unitSize() +
+            this.slider.left();
+
+        this.slider.button.setLeft(btnLeft);
+        this.slider.updateValue();
+
+
+        console.log('playing next event in ' + delay + 'ms');
+        return setTimeout(this.playNext.bind(this), delay);
+    }
+    this.isPlaying = false;
 };
 
 ReplayControls.prototype.pause = function() {
@@ -8481,6 +8514,7 @@ ReplayControls.prototype.setActions = function(actions) {
     this.slider.start = 0;
     this.slider.value = 0;
     this.slider.setStop(actions.length-1);
+    this.isPlaying = false;
 };
 
 // apply any actions between 
