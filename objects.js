@@ -8714,7 +8714,10 @@ ReplayControls.prototype.init = function(ide) {
     this.actionTime = 0;
     this.isApplyingAction = false;
     this.isPlaying = false;
+
     this.isShowingCaptions = false;
+
+    this.replaySpeed = 1.0;
 
     this.playButton = new SymbolMorph('pointRight', 40, this.buttonColor);
     this.playButton.mouseClickLeft = function() {
@@ -8763,12 +8766,58 @@ ReplayControls.prototype.init = function(ide) {
 };
 
 ReplayControls.prototype.settingsMenu = function() {
-    console.log('open settings!');
-    // TODO: Create the settings dialog and open it!
-    var menu = new MenuMorph(this);
+    var myself = this,
+        menu = new MenuMorph(this),
+        replaySpeedMenu = new MenuMorph(this),
+        speeds = {
+            'slow': 0.5,
+            'normal': 1,
+            'slightly faster': 1.5,
+            'fast': 2,
+            'really fast': 2.5,
+            'ludicrous speed': 3
+        };
 
-    // TODO: Add options for the speed
-    menu.addItem('Language...', 'languageMenu');
+    Object.keys(speeds).forEach(function(name) {
+        var value = speeds[name];
+        delete speeds[name];
+
+        name = localize(name) + ' (' + value + 'x)';
+        speeds[name] = value;
+    });
+
+    Object.keys(speeds).forEach(function(name) {
+        var speed = speeds[name];
+        replaySpeedMenu.addItem(speed + 'x', function() {
+            myself.replaySpeed = speed;
+        }, null, null, myself.replaySpeed === speed);
+    });
+    replaySpeedMenu.addItem('other...', function() {
+        new DialogBoxMorph(
+            null,
+            function (num) {
+                myself.replaySpeed = Math.max(+num, 0) || 1;
+            }
+        ).withKey('replaySpeed').prompt(
+            'Replay Speed',
+            myself.replaySpeed.toString(),
+            myself.world(),
+            null, // pic
+            speeds,
+            false, // read only?
+            true // numeric
+        );
+    });
+
+    menu.addMenu('Replay speed...', replaySpeedMenu);
+
+    // pop up with the mouse at the lower right corner
+    var world = this.world(),
+        position;
+
+    menu.drawNew();
+    position = world.hand.position().subtract(menu.extent());
+    menu.popup(world, position);
 };
 
 ReplayControls.prototype.toggleCaptions = function() {
@@ -8856,7 +8905,7 @@ ReplayControls.prototype.step = function() {
     if (this.isPlaying) {
         // Get the change in time
         var now = Date.now(),
-            delta = now - this.lastPlayUpdate,
+            delta = (now - this.lastPlayUpdate) * this.replaySpeed,
             value = this.slider.value + delta;
 
         // if at the end, pause it!
