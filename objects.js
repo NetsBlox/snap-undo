@@ -8424,12 +8424,18 @@ ReplayControls.prototype.init = function(ide) {
     this.actionIndex = -1;
     this.isApplyingAction = false;
     this.isPlaying = false;
+    this.isShowingCaptions = false;
 
     // Add the play button and slider
     this.playButton = new SymbolMorph('pointRight', 40);
     this.playButton.mouseClickLeft = function() {
         myself.play();
     };
+
+    this.captionsButton = new SymbolMorph('speechBubble', 30);
+    this.captionsButton.mouseClickLeft = function() {
+        myself.toggleCaptions();
+    }
 
     this.slider = new SliderMorph(0, 100, 0, 1, 'horizontal');
     this.slider.start = 0;
@@ -8442,8 +8448,54 @@ ReplayControls.prototype.init = function(ide) {
 
     this.add(this.slider);
     this.add(this.playButton);
+    this.add(this.captionsButton);
 
     this.update();
+};
+
+ReplayControls.prototype.toggleCaptions = function() {
+    var myself = this,
+        ide = this.parentThatIsA(IDE_Morph),
+        color;
+
+    this.isShowingCaptions = !this.isShowingCaptions;
+    color = this.isShowingCaptions ? new Color(98, 194, 19) : new Color(0, 0, 0);
+    ide.showMessage(localize('captions ' + (this.isShowingCaptions ? 'enabled' : 'disabled')), 1);
+
+    this.captionsButton.color = color;
+    this.captionsButton.drawNew();
+    this.captionsButton.changed();
+};
+
+ReplayControls.prototype.displayCaption = function(action, originalEvent) {
+    var message, 
+        intervalHandle,
+        m;
+
+    // TODO: add the user, too
+    message = action.type;
+    if (action.replayType === UndoManager.UNDO) {
+        // Get the originalEvent
+        if (originalEvent === action) {  // going forwards
+            originalEvent = this.getInverseEvent(action);
+        }
+        message = originalEvent.type + ' (undo)';
+    } else if (action.replayType === UndoManager.REDO) {
+        message += ' (redo)';
+    }
+
+    // Show the caption
+    m = new MenuMorph(null, message, null, 16);
+
+    var pos = new Point(this.center().x, this.top()-50);
+    m.popup(this.world(), pos);
+
+    intervalHandle = setInterval(function () {
+        m.destroy();
+        clearInterval(intervalHandle);
+    }, 4000);
+
+    return m;
 };
 
 ReplayControls.prototype.play = function() {
@@ -8468,7 +8520,7 @@ ReplayControls.prototype.play = function() {
     }
 };
 
-ReplayControls.prototype.playNext = function() {
+ReplayControls.prototype.playNext = function(force) {
     // Get the position of the button in the slider and move it
     var currentAction = this.actions[this.actionIndex],
         nextAction = this.actions[this.actionIndex+1],
@@ -8476,7 +8528,7 @@ ReplayControls.prototype.playNext = function() {
         value,
         btnLeft;
 
-    if (this.isPlaying && this.actionIndex < this.actions.length-1) {
+    if ((this.isPlaying || force) && this.actionIndex < this.actions.length-1) {
         delay = nextAction.time - currentAction.time;
         value = this.actionIndex + 1;
         btnLeft = (value-this.slider.start) * this.slider.unitSize() +
@@ -8522,6 +8574,10 @@ ReplayControls.prototype.fixLayout = function() {
     this.playButton.setTop(top + sliderHeight + margin);
     this.playButton.drawNew();
 
+    this.captionsButton.setTop(top + sliderHeight + margin);
+    this.captionsButton.setRight(this.right() - 3*margin);
+    this.captionsButton.drawNew();
+
     this.slider.setWidth(width - 2*margin);
     this.slider.setHeight(sliderHeight);
     this.slider.setCenter(new Point(center.x, 0));
@@ -8566,25 +8622,16 @@ ReplayControls.prototype.update = function() {
         }
 
         // Apply the given event
-        // TODO: take into account the actual time difference
         this.isApplyingAction = true;
         SnapActions.applyEvent(action)
             .accept(function() {
                 myself.actionIndex += dir;
                 myself.isApplyingAction = false;
 
-                displayTxt = action.type;
-                if (action.replayType === UndoManager.UNDO) {
-                    // Get the originalEvent
-                    if (originalEvent === action) {  // going forwards
-                        originalEvent = myself.getInverseEvent(action);
-                    }
-                    displayTxt = originalEvent.type + ' (undo)';
-                } else if (action.replayType === UndoManager.REDO) {
-                    displayTxt += ' (redo)';
+                if (myself.isShowingCaptions) {
+                    myself.displayCaption(action, originalEvent);
                 }
 
-                myself.ide.showMessage(displayTxt, 2);
                 setTimeout(myself.update.bind(myself), 10);
             })
             .reject(function() {
