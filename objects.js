@@ -8486,6 +8486,7 @@ ReplayControls.prototype.setActions = function(actions) {
 // apply any actions between 
 ReplayControls.prototype.update = function() {
     var myself = this,
+        displayTxt,
         originalEvent,
         diff,
         dir,
@@ -8495,12 +8496,17 @@ ReplayControls.prototype.update = function() {
     if (this.actionIndex !== this.slider.value && this.actions && !this.isApplyingAction) {
         diff = this.slider.value - this.actionIndex;
         dir = diff/Math.abs(diff);
-        index = this.actionIndex + dir;
-        originalEvent = this.actions[index],
-        action = originalEvent;
 
-        if (dir === -1) {
-            action = SnapUndo.getInverseEvent(action);
+        // Since actionIndex is the last applied action, the reverse direction
+        // should use that value -> not one prior
+
+        if (dir === 1) {
+            index = this.actionIndex + dir;
+            originalEvent = this.actions[index];
+            action = originalEvent;
+        } else {  // "rewind"
+            originalEvent = this.actions[this.actionIndex];
+            action = this.getInverseEvent(originalEvent);
         }
 
         // Apply the given event
@@ -8508,14 +8514,17 @@ ReplayControls.prototype.update = function() {
         this.isApplyingAction = true;
         SnapActions.applyEvent(action)
             .accept(function() {
-                console.log('accepted!');
-                myself.actionIndex = index;
+                myself.actionIndex += dir;
                 myself.isApplyingAction = false;
-                if (dir === -1) {
-                    myself.ide.showMessage(originalEvent.type + ' (undo)');
-                } else {
-                    myself.ide.showMessage(originalEvent.type);
+
+                displayTxt = action.type;
+                if (action.replayType === UndoManager.UNDO) {
+                    displayTxt = originalEvent.type + ' (undo)';
+                } else if (action.replayType === UndoManager.REDO) {
+                    displayTxt += ' (redo)';
                 }
+
+                myself.ide.showMessage(displayTxt);
                 setTimeout(myself.update.bind(myself), 10);
             })
             .reject(function() {
@@ -8523,5 +8532,42 @@ ReplayControls.prototype.update = function() {
             });
     } else {
         setTimeout(this.update.bind(this), 100);
+    }
+};
+
+ReplayControls.prototype.getInverseEvent = function(event) {
+    if (!event.replayType) {
+        return SnapUndo.getInverseEvent(event);
+    } else {  // undo the undo event (look up the original event)
+        var nestedPairsCnt = 0,
+            iter;
+
+        for (var i = this.actionIndex-1; i--;) {
+            iter = this.actions[i];
+            iter.replayType = iter.replayType || 0;
+            if (iter.owner !== event.owner) {  // skip other event queues
+                continue;
+            }
+
+            //  undo events should be looking for the original event (!replayType)
+            //  redo events should be looking for the undo event (replayType === 1)
+            //
+            //  if event.replayType is 1, iter.replayType should be undefined (0)
+            //  if event.replayType is 2, iter.replayType should be 1
+            if ((event.replayType === iter.replayType + 1) && nestedPairsCnt === 0) {
+                return this.actions[i];  // found the original event to replay
+            }
+
+            //  The undo events will create a "parens-start" when encountering
+            //  another undo event
+            //
+            //  The redo events will create a "parens-start" when encountering
+            //  another redo event
+            if (iter.replayType === event.replayType) {
+                nestedPairsCnt--;
+            } else {
+                nestedPairsCnt++;
+            }
+        }
     }
 };
