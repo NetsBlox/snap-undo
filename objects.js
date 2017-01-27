@@ -8518,14 +8518,14 @@ ReplayControls.prototype.fixLayout = function() {
     btnSize = height - (3*margin + sliderHeight);
     this.playButton.size = btnSize;
 
-    this.playButton.setCenter(new Point(center.x, 0));
-    this.playButton.setTop(top + margin);
+    this.playButton.setLeft(this.left() + 4*margin);
+    this.playButton.setTop(top + sliderHeight + margin);
     this.playButton.drawNew();
 
     this.slider.setWidth(width - 2*margin);
     this.slider.setHeight(sliderHeight);
     this.slider.setCenter(new Point(center.x, 0));
-    this.slider.setBottom(bottom - margin);
+    this.slider.setTop(top);
 
     this.slider.drawNew();
     this.slider.changed();
