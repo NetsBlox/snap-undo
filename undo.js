@@ -3,77 +3,95 @@ function UndoManager() {
 }
 
 UndoManager.prototype.reset = function() {
-    this.eventHistory = [];
     this.allEvents = [];  // includes undo/redo events
-    this.undoCount = 0;
+
+    this.eventHistory = {};
+    this.undoCount = {};
 };
 
 // Constants
 UndoManager.UNDO = 1;
 UndoManager.REDO = 2;
-// Need to:
-//  - record events in the history
-//  - be able to undo/redo
-//    - map the event to it's undo/redo
+
 UndoManager.prototype.record = function(event) {
-    if (!event.replayType) {
-        if (this.undoCount !== 0) {
-            var currentIndex = this.eventHistory.length - this.undoCount - 1;
-            var forgotten = this.eventHistory.splice(currentIndex + 1, this.undoCount);
-            this.undoCount = 0;  // forget any available redos
-        }
-        this.eventHistory.push(event);
-    } else if (event.replayType === UndoManager.UNDO) {
-        this.undoCount++;
-    } else if (event.replayType === UndoManager.REDO) {
-        this.undoCount--;
-        console.assert(this.undoCount >= 0, 'undo count is negative!');
-    }
+    var ownerId = event.owner,
+        undoCount,
+        eventHistory;
+
     this.allEvents.push(event);
+    if (ownerId) {  // only record undo events w/ an ownerId
+        if (!this.eventHistory[ownerId]) {
+            this.undoCount[ownerId] = 0;
+            this.eventHistory[ownerId] = [];
+        }
+        undoCount = this.undoCount[ownerId];
+        eventHistory = this.eventHistory[ownerId];
+
+        if (!event.replayType) {
+            if (undoCount !== 0) {
+                var currentIndex = eventHistory.length - undoCount - 1;
+                var forgotten = this.eventHistory[ownerId].splice(currentIndex + 1, undoCount);
+                this.undoCount[ownerId] = 0;  // forget any available redos
+            }
+            eventHistory.push(event);
+        } else if (event.replayType === UndoManager.UNDO) {
+            this.undoCount[ownerId]++;
+        } else if (event.replayType === UndoManager.REDO) {
+            this.undoCount[ownerId]--;
+            console.assert(this.undoCount[ownerId] >= 0, 'undo count is negative!');
+        }
+    }
 };
 
-UndoManager.prototype.canUndo = function() {
-    return this.eventHistory.length > this.undoCount;
+UndoManager.prototype.canUndo = function(owner) {
+    var ownerId = owner.id || owner;
+    return this.eventHistory[ownerId] &&
+        this.eventHistory[ownerId].length > this.undoCount[ownerId];
 };
 
-UndoManager.prototype.canRedo = function() {
-    return this.undoCount > 0;
+UndoManager.prototype.canRedo = function(owner) {
+    var ownerId = owner.id || owner;
+    return this.eventHistory[ownerId] && this.undoCount[ownerId] > 0;
 };
 
-UndoManager.prototype.undo = function() {
-    var index = this.eventHistory.length - this.undoCount - 1,
-        origEvent = this.eventHistory[index],
+UndoManager.prototype.undo = function(owner) {
+    var ownerId = owner.id || owner,
+        eventHistory = this.eventHistory[ownerId] || [],
+        index = eventHistory.length - this.undoCount[ownerId] - 1,
+        origEvent = eventHistory[index],
         event;
 
-    if (index < 0) {
-        return false;
+    if (index < 0 || isNaN(index)) {
+        return null;
     }
 
     console.log('undoing', origEvent);
     event = this.getInverseEvent(origEvent);
     event.replayType = UndoManager.UNDO;
+    event.owner = origEvent.owner;
 
-    SnapActions.applyEvent(event);
-    return true;
+    return SnapActions.applyEvent(event);
 };
 
-UndoManager.prototype.redo = function() {
-    var index = this.eventHistory.length - this.undoCount,
-        origEvent = this.eventHistory[index],
+UndoManager.prototype.redo = function(owner) {
+    var ownerId = owner.id || owner,
+        eventHistory = this.eventHistory[ownerId] || [],
+        index = eventHistory.length - this.undoCount[ownerId],
+        origEvent = eventHistory[index],
         event;
 
-    if (index >= this.eventHistory.length) {
-        return false;
+    if (index >= eventHistory.length) {
+        return null;
     }
 
     event = {
+        owner: origEvent.owner,
         type: origEvent.type,
         args: origEvent.args.slice()
     };
     event.replayType = UndoManager.REDO;
 
-    SnapActions.applyEvent(event);
-    return true;
+    return SnapActions.applyEvent(event);
 };
 
 UndoManager.prototype.getInverseEvent = function(event) {
@@ -153,10 +171,16 @@ UndoManager.Invert.toggleDraggable = function(args) {
 };
 
 UndoManager.Invert.importSprites = function(args) {
-    args.shift();
+    var ids = args.pop();
+
     return {
-        type: 'removeSprites',
-        args: args
+        type: 'batch',
+        args: ids.map(function(id) {
+            return {
+                type: 'removeSprite',
+                args: [id]
+            };
+        })
     };
 };
 
@@ -232,29 +256,52 @@ UndoManager.Invert.deleteBlockLabel = function(args) {
     //// Block manipulation
 UndoManager.Invert.addBlock = function(args) {
     // args are [block, ownerId, x, y, ids]
+    var ids = args.pop();
     return {
-        type: 'removeBlocks',
-        args: args.reverse()
+        type: 'batch',
+        args: ids.map(function(id) {
+            return {
+                type: 'removeBlock',
+                args: [id, true]
+            };
+        })
     };
 };
 
 UndoManager.Invert.removeBlock = function(args) {
     // args are
-    //  [id, userDestroy, y, x, ownerId, block]
+    //  [id, userDestroy, y, x, ownerId, block, reconnectPairs]
     // or 
-    //  [id, userDestroy, target]
-    if (args.length === 3) {
-        args.splice(1, 1);
-        return {
-            type: 'moveBlock',
-            args: args
+    //  [id, userDestroy, target, block, reconnectPairs]
+
+    var pairs = args.pop(),
+        event = {
+            type: 'batch',
+            args: []
         };
+
+    if (args.length === 4) {
+        args.splice(1, 1);
+        event.args.push({
+            type: 'moveBlock',
+            args: args.reverse()
+        });
     } else {
-        return {
+        event.args.push({
             type: 'addBlock',
             args: args.reverse()
-        };
+        });
     }
+
+    // TODO: reconnect all blocks that were connected to this one
+    for (var i = pairs.length; i--;) {
+        event.args.push({
+            type: 'moveBlock',
+            args: pairs[i]
+        });
+    }
+
+    return event;
 };
 
 UndoManager.Invert._actionForState = function(state) {
@@ -271,8 +318,13 @@ UndoManager.Invert._actionForState = function(state) {
     } else if (state.length === 1) {  // newly created
         if (state[0] instanceof Array) {
             return {
-                type: 'removeBlocks',
-                args: state
+                type: 'batch',
+                args: state[0].map(function(id) {
+                    return {
+                        type: 'removeBlock',
+                        args: [id, true]
+                    };
+                })
             };
         } else {
             return {
@@ -311,22 +363,37 @@ UndoManager.swap = function(array, x, y) {
 
 UndoManager.Invert.moveBlock = function(args) {
     // args are either:
-    //  [id, target, oldState]
+    //  [id, target, spliceEvent|null, oldState]
     //    or
-    //  [id, target, oldState, displacedReporter]
-    var revertToOldState = UndoManager.Invert._actionForState.call(null, args[2]),
+    //  [id, target, null, oldState, displacedReporter]
+    //    or
+    //  [id, target, spliceEvent|null, oldState, oldTargetState]  // connecting to 'top' of cmd block
+    var revertToOldState = UndoManager.Invert._actionForState.call(null, args[3]),
+        target = args[1],
+        spliceEvent = args[2],
         event = {
             type: 'batch',
-            args: [revertToOldState]
+            args: []
         };
         
+    if (revertToOldState.type === 'batch') {
+        event.args = revertToOldState.args;
+    } else {
+        event.args.push(revertToOldState);
+    }
 
-    // If a block was displaced, move it back to it's original target
-    if (args.length === 4) {
-        event.args.push({
-            type: 'moveBlock',
-            args: args[3]
-        });
+    if (spliceEvent) {
+        event.args.unshift(spliceEvent);
+    }
+    if (target.loc === 'top' || target.loc === 'wrap') {
+        revertToOldState = UndoManager.Invert._actionForState.call(null, args[4]);
+        // Never need to revert to a 'wrap'
+        if (!(revertToOldState.type === 'moveBlock' && revertToOldState.args[1].loc === 'wrap')) {
+            event.args.unshift(revertToOldState);
+        }
+    } else if (args.length > 4) {  // If a block was displaced, move it back to it's original target
+        revertToOldState = UndoManager.Invert._actionForState.call(null, args[4]);
+        event.args.push(revertToOldState);
     }
 
     return event;

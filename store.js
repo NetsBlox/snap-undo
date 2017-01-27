@@ -7,7 +7,7 @@
     written by Jens Mönig
     jens@moenig.org
 
-    Copyright (C) 2016 by Jens Mönig
+    Copyright (C) 2017 by Jens Mönig
 
     This file is part of Snap!.
 
@@ -57,11 +57,11 @@ BlockMorph, ArgMorph, InputSlotMorph, TemplateSlotMorph, CommandSlotMorph,
 FunctionSlotMorph, MultiArgMorph, ColorSlotMorph, nop, CommentMorph, isNil,
 localize, sizeOf, ArgLabelMorph, SVG_Costume, MorphicPreferences,
 SyntaxElementMorph, Variable, isSnapObject, console, BooleanSlotMorph,
-normalizeCanvas*/
+normalizeCanvas, contains*/
 
 // Global stuff ////////////////////////////////////////////////////////
 
-modules.store = '2016-August-03';
+modules.store = '2017-January-27';
 
 
 // XML_Serializer ///////////////////////////////////////////////////////
@@ -391,10 +391,12 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
     if (model.pentrails) {
         project.pentrails = new Image();
         project.pentrails.onload = function () {
-            normalizeCanvas(project.stage.trailsCanvas);
-            var context = project.stage.trailsCanvas.getContext('2d');
-            context.drawImage(project.pentrails, 0, 0);
-            project.stage.changed();
+            if (project.stage.trailsCanvas) { // work-around a bug in FF
+                normalizeCanvas(project.stage.trailsCanvas);
+                var context = project.stage.trailsCanvas.getContext('2d');
+                context.drawImage(project.pentrails, 0, 0);
+                project.stage.changed();
+            }
         };
         project.pentrails.src = model.pentrails.contents;
     }
@@ -412,6 +414,8 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
     project.stage.setExtent(StageMorph.prototype.dimensions);
     SpriteMorph.prototype.useFlatLineEnds =
         model.stage.attributes.lines === 'flat';
+    BooleanSlotMorph.prototype.isTernary =
+        model.stage.attributes.ternary !== 'false';
     project.stage.isThreadSafe =
         model.stage.attributes.threadsafe === 'true';
     StageMorph.prototype.enableCodeMapping =
@@ -632,8 +636,8 @@ SnapSerializer.prototype.loadSprites = function (xmlString, ide) {
             myself.objects[model.attributes.id] = sprite;
         }
         if (model.attributes.name) {
-            sprite.name = model.attributes.name;
-            project.sprites[model.attributes.name] = sprite;
+            sprite.name = ide.newSpriteName(model.attributes.name);
+            project.sprites[sprite.name] = sprite;
         }
         if (model.attributes.color) {
             sprite.color = myself.loadColor(model.attributes.color);
@@ -833,7 +837,9 @@ SnapSerializer.prototype.loadCustomBlock = function (element, isGlobal) {
             i += 1;
             definition.declarations[names[i]] = [
                 child.attributes.type,
-                child.contents,
+                contains(['%b', '%boolUE'], child.attributes.type) ?
+                    (child.contents ? child.contents === 'true' : null)
+                        : child.contents,
                 options ? options.contents : undefined,
                 child.attributes.readonly === 'true'
             ];
@@ -1027,7 +1033,8 @@ SnapSerializer.prototype.loadComment = function (model) {
 
 SnapSerializer.prototype.loadBlock = function (model, isReporter) {
     // private
-    var block, info, inputs, isGlobal, rm, receiver;
+    var block, info, inputs, isGlobal, rm, receiver, migration,
+        migrationOffset = 0;
     if (model.tag === 'block') {
         if (Object.prototype.hasOwnProperty.call(
                 model.attributes,
@@ -1039,8 +1046,21 @@ SnapSerializer.prototype.loadBlock = function (model, isReporter) {
             block.id = model.attributes.collabId;
             return block;
         }
+        /*
+        if (model.attributes.s === 'reportJSFunction' &&
+                !Process.prototype.enableJS) {
+            if (window.confirm('enable JavaScript?')) {
+                Process.prototype.enableJS = true;
+            } else {
+                throw new Error('JavaScript is not enabled');
+            }
+        }
+        */
         block = SpriteMorph.prototype.blockForSelector(model.attributes.s);
-        block.id = model.attributes.collabId;
+        migration = SpriteMorph.prototype.blockMigrations[model.attributes.s];
+        if (migration) {
+            migrationOffset = migration.offset;
+        }
     } else if (model.tag === 'custom-block') {
         isGlobal = model.attributes.scope ? false : true;
         receiver = isGlobal ? this.project.stage
@@ -1106,7 +1126,7 @@ SnapSerializer.prototype.loadBlock = function (model, isReporter) {
         } else if (child.tag === 'receiver') {
             nop(); // ignore
         } else {
-            this.loadInput(child, inputs[i], block);
+            this.loadInput(child, inputs[i + migrationOffset], block);
         }
     }, this);
     block.cachedInputs = null;
@@ -1158,7 +1178,10 @@ SnapSerializer.prototype.loadInput = function (model, input, block) {
         input.setColor(this.loadColor(model.contents));
     } else {
         val = this.loadValue(model);
-        if (!isNil(val) && input.setContents) {
+        if (!isNil(val) && !isNil(input) && input.setContents) {
+            // checking whether "input" is nil should not
+            // be necessary, but apparently is after retina support
+            // was added.
             input.setContents(this.loadValue(model));
         }
     }
@@ -1475,9 +1498,8 @@ SnapSerializer.prototype.openProject = function (project, ide) {
     //  watcher.onNextStep = function () {this.currentValue = null;};
     //})
 
-    // Update the collaborator
-    SnapActions.loadProject(ide, project.collabStartIndex);
     ide.world().keyboardReceiver = project.stage;
+    return project;
 };
 
 // SnapSerializer XML-representation of objects:
@@ -1531,6 +1553,7 @@ StageMorph.prototype.toXML = function (serializer) {
             '<stage name="@" width="@" height="@" collabId="@" ' +
             'costume="@" tempo="@" threadsafe="@" ' +
             'lines="@" ' +
+            'ternary="@" ' +
             'codify="@" ' +
             'inheritance="@" ' +
             'sublistIDs="@" ' +
@@ -1562,6 +1585,7 @@ StageMorph.prototype.toXML = function (serializer) {
         this.getTempo(),
         this.isThreadSafe,
         SpriteMorph.prototype.useFlatLineEnds ? 'flat' : 'round',
+        BooleanSlotMorph.prototype.isTernary,
         this.enableCodeMapping,
         this.enableInheritance,
         this.enableSublistIDs,
@@ -1660,8 +1684,8 @@ Costume.prototype.toXML = function (serializer) {
         this.id,
         this.rotationCenter.x,
         this.rotationCenter.y,
-        this instanceof SVG_Costume ?
-                this.contents.src : this.contents.toDataURL('image/png')
+        this instanceof SVG_Costume ? this.contents.src
+                : normalizeCanvas(this.contents).toDataURL('image/png')
     );
 };
 
