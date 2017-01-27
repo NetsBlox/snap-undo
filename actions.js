@@ -2019,6 +2019,7 @@ ActionManager.prototype.loadProject = function(ide, lastSeen, serialized) {
     // Record the event
     event = {
         type: 'openProject',
+        time: Date.now(),
         args: []
     };
 
