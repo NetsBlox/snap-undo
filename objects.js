@@ -8772,10 +8772,10 @@ ReplayControls.prototype.settingsMenu = function() {
         speeds = {
             'slow': 0.5,
             'normal': 1,
-            'slightly faster': 1.5,
-            'fast': 2,
-            'really fast': 2.5,
-            'ludicrous speed': 3
+            'slightly faster': 3,
+            'fast': 5,
+            'really fast': 10,
+            'ludicrous speed': 20
         };
 
     Object.keys(speeds).forEach(function(name) {
