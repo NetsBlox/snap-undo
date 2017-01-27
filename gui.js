@@ -4783,11 +4783,13 @@ IDE_Morph.prototype.setPaletteWidth = function (newWidth) {
 
 IDE_Morph.prototype.createNewProject = function () {
     var myself = this;
-    this.exitReplayMode();
     this.confirm(
         'Replace the current project with a new one?',
         'New Project',
-        function () {myself.newProject(); }
+        function () {
+            myself.exitReplayMode();
+            myself.newProject();
+        }
     );
 };
 
