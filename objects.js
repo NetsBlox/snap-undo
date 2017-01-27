@@ -8813,7 +8813,6 @@ ReplayControls.prototype.settingsMenu = function() {
     menu.addMenu(
         'Max inactive duration...',
         createSubMenu(durations, 'maxInactiveDuration', 's', ['no acceleration'])
-        //localize('Automatically fast-forward \nduring inactive periods')
     );
 
     // Replay Speed
