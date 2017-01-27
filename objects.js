@@ -8553,7 +8553,7 @@ ReplayControls.prototype.playNext = function(force, dir) {
     dir = dir || 1;
     value = this.actionIndex + dir;
 
-    if ((this.isPlaying || force) && value < this.actions.length-1 && -1 < value) {
+    if ((this.isPlaying || force) && value < this.actions.length && -1 < value) {
         delay = nextAction.time - currentAction.time;
         btnLeft = (value-this.slider.start) * this.slider.unitSize() +
             this.slider.left();
