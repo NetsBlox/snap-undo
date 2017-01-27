@@ -8423,6 +8423,7 @@ ReplayControls.prototype.init = function(ide) {
     this.alpha = 0;
     this.actions = null;
     this.actionIndex = -1;
+    this.actionTime = 0;
     this.isApplyingAction = false;
     this.isPlaying = false;
     this.isShowingCaptions = false;
@@ -8526,9 +8527,10 @@ ReplayControls.prototype.play = function() {
     if (this.actionIndex < this.actions.length-1) {
         var currentAction = this.actions[this.actionIndex],
             nextAction = this.actions[this.actionIndex+1],
-            delay = nextAction.time - currentAction.time;
+            delay = currentAction ? nextAction.time - currentAction.time : 0;
 
         this.isPlaying = true;
+        this.lastPlayUpdate = Date.now();
 
         this.removeChild(this.playButton);
         this.playButton = new SymbolMorph('pause', 40, this.buttonColor);
@@ -8537,34 +8539,47 @@ ReplayControls.prototype.play = function() {
         };
         this.add(this.playButton);
         this.fixLayout();
-
-        setTimeout(this.playNext.bind(this), delay);
     }
 };
 
-ReplayControls.prototype.playNext = function(singleStep, dir) {
+ReplayControls.prototype.getSliderLeftFromValue = function(value) {
+    return (value-this.slider.start) * this.slider.unitSize() +
+        this.slider.left();
+};
+
+ReplayControls.prototype.step = function() {
+    if (this.isPlaying) {
+        // Get the change in time
+        var now = Date.now(),
+            delta = now - this.lastPlayUpdate,
+            value = this.slider.value + delta;
+
+        // if at the end, pause it!
+        if (value > this.slider.stop) {
+            value = this.slider.stop;
+            this.pause();
+        }
+        this.slider.button.setLeft(this.getSliderLeftFromValue(value));
+        this.slider.updateValue();
+        this.lastPlayUpdate = now;
+    }
+};
+
+ReplayControls.prototype.playNext = function(dir) {
     // Get the position of the button in the slider and move it
-    var currentAction = this.actions[this.actionIndex],
-        nextAction = this.actions[this.actionIndex+1],
-        delay,
-        value,
-        btnLeft;
+    var myself = this,
+        currentAction,
+        nextAction,
+        value;
 
     dir = dir || 1;
-    value = this.actionIndex + dir;
+    nextAction = this.actions[this.actionIndex + dir];
 
-    if ((this.isPlaying || singleStep) && value < this.actions.length && -1 < value) {
-        btnLeft = (value-this.slider.start) * this.slider.unitSize() +
-            this.slider.left();
+    if (nextAction) {
+        value = nextAction.time;
 
-        this.slider.button.setLeft(btnLeft);
+        this.slider.button.setLeft(this.getSliderLeftFromValue(value));
         this.slider.updateValue();
-
-        if (!singleStep) {
-            delay = Math.abs(nextAction.time - currentAction.time);
-            nextAction = this.actions[this.actionIndex + delay];
-            return setTimeout(this.playNext.bind(this), delay);
-        }
     }
     this.pause();
 };
@@ -8624,24 +8639,23 @@ ReplayControls.prototype.fixLayout = function() {
 
 ReplayControls.prototype.setActions = function(actions) {
     this.actions = actions;
-    this.slider.start = 0;
-    this.slider.value = 0;
-    this.slider.setStop(actions.length-1);
+    this.slider.start = actions[0].time - 1;
+    this.slider.value = this.slider.start;
+    this.slider.setStop(actions[actions.length-1].time + 1);
     this.isPlaying = false;
 };
 
 // apply any actions between 
 ReplayControls.prototype.update = function() {
     var myself = this,
-        displayTxt,
         originalEvent,
         diff,
         dir,
         index,
         action;
 
-    if (this.actionIndex !== this.slider.value && this.actions && !this.isApplyingAction) {
-        diff = this.slider.value - this.actionIndex;
+    if (this.actionTime !== this.slider.value && this.actions && !this.isApplyingAction) {
+        diff = this.slider.value - this.actionTime;
         dir = diff/Math.abs(diff);
 
         // Since actionIndex is the last applied action, the reverse direction
@@ -8651,8 +8665,14 @@ ReplayControls.prototype.update = function() {
             index = this.actionIndex + dir;
             originalEvent = this.actions[index];
             action = originalEvent;
+            if (!originalEvent || originalEvent.time >= this.slider.value) {
+                return setTimeout(this.update.bind(this), 100);
+            }
         } else {  // "rewind"
             originalEvent = this.actions[this.actionIndex];
+            if (!originalEvent || originalEvent.time <= this.slider.value) {
+                return setTimeout(this.update.bind(this), 100);
+            }
             action = this.getInverseEvent(originalEvent);
         }
 
@@ -8661,6 +8681,7 @@ ReplayControls.prototype.update = function() {
         SnapActions.applyEvent(action)
             .accept(function() {
                 myself.actionIndex += dir;
+                myself.actionTime = originalEvent.time;
                 myself.isApplyingAction = false;
 
                 if (myself.isShowingCaptions) {
