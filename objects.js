@@ -8415,7 +8415,8 @@ function ReplayControls(ide) {
 }
 
 ReplayControls.prototype.init = function(ide) {
-    var myself = this;
+    var myself = this,
+        mouseDown;
 
     this.ide = ide;
     this.alpha = 0;
@@ -8428,29 +8429,41 @@ ReplayControls.prototype.init = function(ide) {
     this.playButton = new SymbolMorph('pointRight', 40);
     this.playButton.mouseClickLeft = function() {
         myself.play();
-        // TODO
-        console.log('playing...');
     };
 
     this.slider = new SliderMorph(0, 100, 0, 1, 'horizontal');
     this.slider.start = 0;
     this.slider.value = 0;
-    // TODO: Pause on slider click
+    mouseDown = this.slider.mouseDownLeft;
+    this.slider.mouseDownLeft = function(pos) {
+        myself.pause();
+        mouseDown.call(this, pos);
+    };
 
     this.add(this.slider);
     this.add(this.playButton);
 
     this.update();
-    this.fixLayout();
 };
 
 ReplayControls.prototype.play = function() {
+    var myself = this;
+
     if (this.actionIndex < this.actions.length-1) {
         var currentAction = this.actions[this.actionIndex],
             nextAction = this.actions[this.actionIndex+1],
             delay = nextAction.time - currentAction.time;
 
         this.isPlaying = true;
+
+        this.removeChild(this.playButton);
+        this.playButton = new SymbolMorph('pause', 40);
+        this.playButton.mouseClickLeft = function() {
+            myself.pause();
+        };
+        this.add(this.playButton);
+        this.fixLayout();
+
         setTimeout(this.playNext.bind(this), delay);
     }
 };
@@ -8472,15 +8485,24 @@ ReplayControls.prototype.playNext = function() {
         this.slider.button.setLeft(btnLeft);
         this.slider.updateValue();
 
-
-        console.log('playing next event in ' + delay + 'ms');
         return setTimeout(this.playNext.bind(this), delay);
     }
-    this.isPlaying = false;
+    this.pause();
 };
 
 ReplayControls.prototype.pause = function() {
-    // TODO
+    var myself = this;
+
+    this.removeChild(this.playButton);
+    this.playButton = new SymbolMorph('pointRight', 40);
+    this.playButton.mouseClickLeft = function() {
+        myself.play();
+    };
+    this.add(this.playButton);
+    this.fixLayout();
+
+    console.log('paused!');
+    this.isPlaying = false;
 };
 
 ReplayControls.prototype.fixLayout = function() {
@@ -8562,7 +8584,7 @@ ReplayControls.prototype.update = function() {
                     displayTxt += ' (redo)';
                 }
 
-                myself.ide.showMessage(displayTxt);
+                myself.ide.showMessage(displayTxt, 2);
                 setTimeout(myself.update.bind(myself), 10);
             })
             .reject(function() {
