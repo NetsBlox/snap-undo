@@ -8407,6 +8407,7 @@ StagePrompterMorph.prototype.accept = function () {
 
 // Replay Slider
 ReplayControls.prototype = new Morph();
+ReplayControls.prototype.buttonColor = new Color(200, 200, 200);
 ReplayControls.prototype.constructor = ReplayControls;
 ReplayControls.uber = Morph.prototype;
 
@@ -8426,16 +8427,20 @@ ReplayControls.prototype.init = function(ide) {
     this.isPlaying = false;
     this.isShowingCaptions = false;
 
-    // Add the play button and slider
-    this.playButton = new SymbolMorph('pointRight', 40);
+    this.playButton = new SymbolMorph('pointRight', 40, this.buttonColor);
     this.playButton.mouseClickLeft = function() {
         myself.play();
     };
 
-    this.captionsButton = new SymbolMorph('speechBubble', 30);
+    this.captionsButton = new SymbolMorph('speechBubble', 30, this.buttonColor);
     this.captionsButton.mouseClickLeft = function() {
         myself.toggleCaptions();
-    }
+    };
+
+    this.stepForwardButton = new SymbolMorph('stepForward', 20, this.buttonColor);
+    this.stepForwardButton.mouseClickLeft = function() {
+        myself.stepForward();
+    };
 
     this.slider = new SliderMorph(0, 100, 0, 1, 'horizontal');
     this.slider.start = 0;
@@ -8449,6 +8454,7 @@ ReplayControls.prototype.init = function(ide) {
     this.add(this.slider);
     this.add(this.playButton);
     this.add(this.captionsButton);
+    this.add(this.stepForwardButton);
 
     this.update();
 };
@@ -8459,12 +8465,17 @@ ReplayControls.prototype.toggleCaptions = function() {
         color;
 
     this.isShowingCaptions = !this.isShowingCaptions;
-    color = this.isShowingCaptions ? new Color(98, 194, 19) : new Color(0, 0, 0);
+    color = this.isShowingCaptions ? new Color(98, 194, 19) : this.buttonColor;
     ide.showMessage(localize('captions ' + (this.isShowingCaptions ? 'enabled' : 'disabled')), 1);
 
     this.captionsButton.color = color;
     this.captionsButton.drawNew();
     this.captionsButton.changed();
+};
+
+ReplayControls.prototype.stepForward = function() {
+    this.pause();
+    this.playNext(true);
 };
 
 ReplayControls.prototype.displayCaption = function(action, originalEvent) {
@@ -8509,7 +8520,7 @@ ReplayControls.prototype.play = function() {
         this.isPlaying = true;
 
         this.removeChild(this.playButton);
-        this.playButton = new SymbolMorph('pause', 40);
+        this.playButton = new SymbolMorph('pause', 40, this.buttonColor);
         this.playButton.mouseClickLeft = function() {
             myself.pause();
         };
@@ -8546,7 +8557,7 @@ ReplayControls.prototype.pause = function() {
     var myself = this;
 
     this.removeChild(this.playButton);
-    this.playButton = new SymbolMorph('pointRight', 40);
+    this.playButton = new SymbolMorph('pointRight', 40, this.buttonColor);
     this.playButton.mouseClickLeft = function() {
         myself.play();
     };
@@ -8577,6 +8588,10 @@ ReplayControls.prototype.fixLayout = function() {
     this.captionsButton.setTop(top + sliderHeight + margin);
     this.captionsButton.setRight(this.right() - 3*margin);
     this.captionsButton.drawNew();
+
+    this.stepForwardButton.setCenter(this.playButton.center());
+    this.stepForwardButton.setLeft(this.playButton.center().x + 4*margin);
+    this.stepForwardButton.drawNew();
 
     this.slider.setWidth(width - 2*margin);
     this.slider.setHeight(sliderHeight);
