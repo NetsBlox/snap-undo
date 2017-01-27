@@ -8859,6 +8859,14 @@ ReplayControls.prototype.toggleCaptions = function() {
     this.captionsButton.changed();
 };
 
+ReplayControls.prototype.jumpToBeginning = function() {
+    // TODO
+};
+
+ReplayControls.prototype.jumpToEnd = function() {
+    // TODO
+};
+
 ReplayControls.prototype.stepForward = function() {
     this.pause();
     this.playNext();

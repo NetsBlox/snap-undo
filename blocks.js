@@ -9645,6 +9645,8 @@ SymbolMorph.prototype.symbolCanvasColored = function (aColor) {
         return this.drawSymbolStop(canvas, aColor);
     case 'pointRight':
         return this.drawSymbolPointRight(canvas, aColor);
+    case 'doubleArrowForward':
+        return this.drawSymbolStepForward(canvas, aColor);
     case 'stepForward':
         return this.drawSymbolStepForward(canvas, aColor);
     case 'stepBackward':
