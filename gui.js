@@ -1732,17 +1732,19 @@ IDE_Morph.prototype.fixLayout = function (situation) {
             this.corral.setHeight(this.bottom() - this.corral.top());
             this.corral.fixLayout();
         }
-
-        var width = Math.max(this.width() * 0.8, 250);
-
-        // Set position
-        this.replayControls.setWidth(this.width()-40);
-        this.replayControls.setHeight(80);
-        this.replayControls.setCenter(new Point(this.width()/2, 0));
-        this.replayControls.setBottom(this.bottom());
-        this.replayControls.fixLayout();
-        // TODO: Make sure this is on top!
     }
+
+    var width = Math.max(this.width() * 0.8, 250);
+
+    // Set position
+    this.removeChild(this.replayControls);
+    this.add(this.replayControls);  // make sure it is on top!
+
+    this.replayControls.setWidth(this.width()-40);
+    this.replayControls.setHeight(80);
+    this.replayControls.setCenter(new Point(this.width()/2, 0));
+    this.replayControls.setBottom(this.bottom());
+    this.replayControls.fixLayout();
 
     Morph.prototype.trackChanges = true;
     this.changed();
