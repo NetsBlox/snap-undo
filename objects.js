@@ -8433,11 +8433,6 @@ ReplayControls.prototype.init = function(ide) {
         myself.play();
     };
 
-    this.captionsButton = new SymbolMorph('speechBubble', 30, this.buttonColor);
-    this.captionsButton.mouseClickLeft = function() {
-        myself.toggleCaptions();
-    };
-
     this.stepForwardButton = new SymbolMorph('stepForward', 20, this.buttonColor);
     this.stepForwardButton.mouseClickLeft = function() {
         myself.stepForward();
@@ -8446,6 +8441,17 @@ ReplayControls.prototype.init = function(ide) {
     this.stepBackwardButton = new SymbolMorph('stepBackward', 20, this.buttonColor);
     this.stepBackwardButton.mouseClickLeft = function() {
         myself.stepBackward();
+    };
+
+    // Buttons on the right
+    this.settingsButton = new SymbolMorph('gears', 30, this.buttonColor);
+    this.settingsButton.mouseClickLeft = function() {
+        myself.settingsMenu();
+    };
+
+    this.captionsButton = new SymbolMorph('speechBubble', 30, this.buttonColor);
+    this.captionsButton.mouseClickLeft = function() {
+        myself.toggleCaptions();
     };
 
     this.slider = new SliderMorph(0, 100, 0, 1, 'horizontal');
@@ -8459,11 +8465,22 @@ ReplayControls.prototype.init = function(ide) {
 
     this.add(this.slider);
     this.add(this.playButton);
-    this.add(this.captionsButton);
     this.add(this.stepForwardButton);
     this.add(this.stepBackwardButton);
 
+    this.add(this.captionsButton);
+    this.add(this.settingsButton);
+
     this.update();
+};
+
+ReplayControls.prototype.settingsMenu = function() {
+    console.log('open settings!');
+    // TODO: Create the settings dialog and open it!
+    var menu = new MenuMorph(this);
+
+    // TODO: Add options for the speed
+    menu.addItem('Language...', 'languageMenu');
 };
 
 ReplayControls.prototype.toggleCaptions = function() {
@@ -8615,10 +8632,6 @@ ReplayControls.prototype.fixLayout = function() {
     this.playButton.setTop(top + sliderHeight + margin);
     this.playButton.drawNew();
 
-    this.captionsButton.setTop(top + sliderHeight + margin);
-    this.captionsButton.setRight(this.right() - 3*margin);
-    this.captionsButton.drawNew();
-
     this.stepBackwardButton.setCenter(this.playButton.center());
     this.stepBackwardButton.setRight(this.playButton.left() - 2.5*margin);
     this.stepBackwardButton.drawNew();
@@ -8626,6 +8639,16 @@ ReplayControls.prototype.fixLayout = function() {
     this.stepForwardButton.setCenter(this.playButton.center());
     this.stepForwardButton.setLeft(this.playButton.right() + 2.5*margin);
     this.stepForwardButton.drawNew();
+
+    // Buttons on the right
+    this.settingsButton.setTop(top + sliderHeight + margin);
+    this.settingsButton.setRight(this.right() - 3*margin);
+    this.settingsButton.drawNew();
+
+    this.captionsButton.setTop(top + sliderHeight + margin);
+    this.captionsButton.setRight(this.settingsButton.left() - margin);
+    this.captionsButton.drawNew();
+
 
     this.slider.setWidth(width - 2*margin);
     this.slider.setHeight(sliderHeight);
