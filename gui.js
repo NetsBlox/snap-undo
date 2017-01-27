@@ -3118,6 +3118,11 @@ IDE_Morph.prototype.replayEvents = function (actions) {
     // TODO: Update this
 };
 
+IDE_Morph.prototype.exitReplayMode = function () {
+    this.isReplayMode = false;
+    this.replayControls.hide();
+};
+
 IDE_Morph.prototype.resourceURL = function () {
     // Take in variadic inputs that represent an a nested folder structure.
     // Method can be easily overridden if running in a custom location.
@@ -4083,6 +4088,8 @@ IDE_Morph.prototype.exportProjectSummary = function (useDropShadows) {
 IDE_Morph.prototype.openProjectString = function (str) {
     var msg,
         myself = this;
+
+    this.exitReplayMode();
     this.nextSteps([
         function () {
             msg = myself.showMessage('Opening project...');
@@ -4132,6 +4139,8 @@ IDE_Morph.prototype.openCloudDataString = function (str) {
     var msg,
         myself = this,
         size = Math.round(str.length / 1024);
+
+    this.exitReplayMode();
     this.nextSteps([
         function () {
             msg = myself.showMessage('Opening project\n' + size + ' KB...');
@@ -4772,6 +4781,7 @@ IDE_Morph.prototype.setPaletteWidth = function (newWidth) {
 
 IDE_Morph.prototype.createNewProject = function () {
     var myself = this;
+    this.exitReplayMode();
     this.confirm(
         'Replace the current project with a new one?',
         'New Project',
