@@ -1982,13 +1982,11 @@ ActionManager.prototype.onSetRotationStyle = function(id, rotationStyle) {
 };
 //////////////////// Import ////////////////////
 ActionManager.prototype.onImportSprites = function(xmlString) {
-    // TODO: make this sync
-    return this.ide().openSpritesString(xmlString);
+    return this.ide().rawOpenSpritesString(xmlString);
 };
 
 ActionManager.prototype.onImportBlocks = function(aString, lbl) {
-    // TODO: make this sync
-    return this.ide().openBlocksString(aString, lbl, true);
+    return this.ide().rawOpenBlocksString(aString, lbl, true);
 };
 
 ActionManager.prototype.onOpenProject = function(str) {
