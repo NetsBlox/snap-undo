@@ -8573,7 +8573,7 @@ ReplayControls.prototype.playNext = function(dir) {
         value;
 
     dir = dir || 1;
-    nextAction = this.actions[this.actionIndex + dir];
+    nextAction = this.actions[this.actionIndex + Math.max(dir, 0)];
 
     if (nextAction) {
         value = nextAction.time + dir;
@@ -8595,7 +8595,6 @@ ReplayControls.prototype.pause = function() {
     this.add(this.playButton);
     this.fixLayout();
 
-    console.log('paused!');
     this.isPlaying = false;
 };
 
