@@ -8482,12 +8482,12 @@ ReplayControls.prototype.toggleCaptions = function() {
 
 ReplayControls.prototype.stepForward = function() {
     this.pause();
-    this.playNext(true);
+    this.playNext();
 };
 
 ReplayControls.prototype.stepBackward = function() {
     this.pause();
-    this.playNext(true, -1);
+    this.playNext(-1);
 };
 
 ReplayControls.prototype.displayCaption = function(action, originalEvent) {
@@ -8576,7 +8576,7 @@ ReplayControls.prototype.playNext = function(dir) {
     nextAction = this.actions[this.actionIndex + dir];
 
     if (nextAction) {
-        value = nextAction.time;
+        value = nextAction.time + dir;
 
         this.slider.button.setLeft(this.getSliderLeftFromValue(value));
         this.slider.updateValue();
