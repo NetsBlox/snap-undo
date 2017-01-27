@@ -1400,7 +1400,7 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
 
         // Remove the block
         // If undo-ing, slide to the palette
-        if (this.currentEvent.replayType || this.currentEvent.user !== this.id) {
+        if (this.__canAnimate()) {
             // Animate the block deletion
             var palette = this.ide().palette;
 
@@ -1431,6 +1431,10 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
     }
 };
 
+ActionManager.prototype.__canAnimate = function() {
+    return this.currentEvent.replayType || this.currentEvent.user !== this.id;
+};
+
 ActionManager.prototype._updateBlockDefinitions = function(block) {
     var editor = block.parentThatIsA(BlockEditorMorph);
     if (editor) {
@@ -1454,7 +1458,15 @@ ActionManager.prototype.onSetBlockPosition = function(id, position) {
     this.disconnectBlock(block, scripts);
 
     position = this.getAdjustedPosition(position, scripts);
-    block.setPosition(position);
+    // TODO: Check if we should animate...
+    if (this.__canAnimate()) {
+        block.slideBackTo({
+            origin: scripts,
+            position: position
+        });
+    } else {
+        block.setPosition(position);
+    }
 
     this.updateCommentsPositions(block);
 
