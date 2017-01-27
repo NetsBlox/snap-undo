@@ -8605,13 +8605,13 @@ ReplayControls.prototype.fixLayout = function() {
     this.captionsButton.setRight(this.right() - 3*margin);
     this.captionsButton.drawNew();
 
-    this.stepForwardButton.setCenter(this.playButton.center());
-    this.stepForwardButton.setLeft(this.playButton.center().x + 4*margin);
-    this.stepForwardButton.drawNew();
-
     this.stepBackwardButton.setCenter(this.playButton.center());
-    this.stepBackwardButton.setRight(this.playButton.center().x - 4*margin);
+    this.stepBackwardButton.setRight(this.playButton.left() - 2.5*margin);
     this.stepBackwardButton.drawNew();
+
+    this.stepForwardButton.setCenter(this.playButton.center());
+    this.stepForwardButton.setLeft(this.playButton.right() + 2.5*margin);
+    this.stepForwardButton.drawNew();
 
     this.slider.setWidth(width - 2*margin);
     this.slider.setHeight(sliderHeight);
