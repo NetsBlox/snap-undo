@@ -1345,6 +1345,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         }
     }
 
+    // TODO: Animate!
     block.snap(target);
     scripts.drawNew();
 
@@ -1369,7 +1370,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
     }
 
     this.updateCommentsPositions(block);
-    this._updateBlockDefinitions(block);
+    this.__updateBlockDefinitions(block);
     this.__updateActiveEditor(block.id);
     return block;
 };
@@ -1413,7 +1414,7 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
             block[method]();
         }
 
-        this._updateBlockDefinitions(block);
+        this.__updateBlockDefinitions(block);
 
         // Update parent block's UI
         if (parent) {
@@ -1435,7 +1436,7 @@ ActionManager.prototype.__canAnimate = function() {
     return this.currentEvent.replayType || this.currentEvent.user !== this.id;
 };
 
-ActionManager.prototype._updateBlockDefinitions = function(block) {
+ActionManager.prototype.__updateBlockDefinitions = function(block) {
     var editor = block.parentThatIsA(BlockEditorMorph);
     if (editor) {
         editor.updateDefinition();
@@ -1458,7 +1459,7 @@ ActionManager.prototype.onSetBlockPosition = function(id, position) {
     this.disconnectBlock(block, scripts);
 
     position = this.getAdjustedPosition(position, scripts);
-    // TODO: Check if we should animate...
+
     if (this.__canAnimate()) {
         block.slideBackTo({
             origin: scripts,
@@ -1471,7 +1472,7 @@ ActionManager.prototype.onSetBlockPosition = function(id, position) {
     this.updateCommentsPositions(block);
 
     // Save the block definition
-    this._updateBlockDefinitions(block);
+    this.__updateBlockDefinitions(block);
     this.__updateActiveEditor(block.id);
 };
 
@@ -1533,7 +1534,7 @@ ActionManager.prototype.onAddListInput = function(id, count) {
 
     scripts.drawNew();
     scripts.changed();
-    this._updateBlockDefinitions(block);
+    this.__updateBlockDefinitions(block);
 };
 
 ActionManager.prototype.onRemoveListInput = function(id, count) {
@@ -1547,13 +1548,13 @@ ActionManager.prototype.onRemoveListInput = function(id, count) {
 
     block.changed()
     scripts.changed();
-    this._updateBlockDefinitions(block);
+    this.__updateBlockDefinitions(block);
 };
 
 ActionManager.prototype.onSetBlockSpec = function(id, spec) {
     var block = this.getBlockFromId(id);
     block.userSetSpec(spec);
-    this._updateBlockDefinitions(block);
+    this.__updateBlockDefinitions(block);
 };
 
 ActionManager.prototype.onSetField = function(fieldId, value) {
@@ -1562,7 +1563,9 @@ ActionManager.prototype.onSetField = function(fieldId, value) {
     console.assert(block instanceof InputSlotMorph,
         'Unexpected block type: ' + block.constructor);
     block.setContents(value);
-    this._updateBlockDefinitions(block);
+    // TODO: Can we highlight this?
+
+    this.__updateBlockDefinitions(block);
 };
 
 ActionManager.prototype.onSetColorField = function(fieldId, desc) {
@@ -1571,7 +1574,7 @@ ActionManager.prototype.onSetColorField = function(fieldId, desc) {
 
     block.setColor(color);
     this.fieldValues[fieldId] = color;
-    this._updateBlockDefinitions(block);
+    this.__updateBlockDefinitions(block);
 };
 
 ActionManager.prototype.onSetCommentText = function(id, text) {
@@ -1583,7 +1586,7 @@ ActionManager.prototype.onSetCommentText = function(id, text) {
     block.layoutChanged();
     block.lastValue = text;
 
-    this._updateBlockDefinitions(block);
+    this.__updateBlockDefinitions(block);
 };
 
 ActionManager.prototype.onSetSelector = function(id, sel) {
@@ -1596,7 +1599,7 @@ ActionManager.prototype.onSetSelector = function(id, sel) {
     this.traverse(block, function(block) {
         myself._blocks[block.id] = block;
     });
-    this._updateBlockDefinitions(block);
+    this.__updateBlockDefinitions(block);
 };
 
 ActionManager.prototype.onAddVariable = function(name, ownerId) {
@@ -1652,7 +1655,7 @@ ActionManager.prototype.onRingify = function(blockId, ringId) {
             this.__recordTarget(block.id, newTarget);
         }
     }
-    this._updateBlockDefinitions(block);
+    this.__updateBlockDefinitions(block);
 };
 
 ActionManager.prototype.onUnringify = function(id) {
@@ -1661,7 +1664,7 @@ ActionManager.prototype.onUnringify = function(id) {
         var ring = block.unringify();
         delete this._blocks[ring.id];
     }
-    this._updateBlockDefinitions(block);
+    this.__updateBlockDefinitions(block);
 };
 
 ActionManager.prototype.onToggleBoolean = function(id, fromValue) {
@@ -1681,7 +1684,7 @@ ActionManager.prototype.onToggleBoolean = function(id, fromValue) {
         return;
     }
     block.reactToSliderEdit();
-    this._updateBlockDefinitions(block);
+    this.__updateBlockDefinitions(block);
 };
 
 ////////////////////////// Custom Blocks //////////////////////////
