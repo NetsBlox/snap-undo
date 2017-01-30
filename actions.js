@@ -1463,7 +1463,7 @@ ActionManager.prototype.onSetBlockPosition = function(id, position) {
     if (this.__canAnimate()) {
         block.slideBackTo({
             origin: scripts,
-            position: position
+            position: position.subtract(scripts.position())
         });
     } else {
         block.setPosition(position);
