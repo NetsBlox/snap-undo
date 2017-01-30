@@ -1345,7 +1345,6 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         }
     }
 
-    // TODO: Animate!
     block.snap(target);
     scripts.drawNew();
 
