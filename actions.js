@@ -126,6 +126,8 @@ ActionManager.prototype.initializeRecords = function() {
     this.lastSent = null;
     this.idCount = 0;
 
+    this.queuedActions = [];
+
     this.blockChildren = {};
     this.blockToParent = {};
     this.fieldValues = {};
@@ -239,9 +241,44 @@ ActionManager.prototype.initialize = function() {
     this._ws = null;
     this.supportsCollaboration = null;
     this.isLeader = true;
+    this.isApplyingAction = false;
 
     this.initializeRecords();
     this.initializeEventMethods();
+};
+
+ActionManager.prototype.completeAction = function() {
+    var action = this.currentEvent;
+
+    this.isApplyingAction = false;
+    this.lastSeen = action.id;
+    this.idCount = 0;
+    if (!this.ide().isReplayMode) {
+        SnapUndo.record(action);
+    }
+
+    // Call 'success' or 'reject', if relevant
+    if (action.user === this.id) {
+        if (this._onAccept[action.id]) {
+            this._onAccept[action.id](result);
+            delete this._onAccept[action.id];
+        }
+        delete this._onReject[action.id];
+
+        // We can call reject for any ids less than the given id...
+        for (var i = action.id; i--;) {
+            if (this._onReject[action.id]) {
+                this._onReject[action.id](result);
+                delete this._onReject[action.id];
+            }
+        }
+    }
+    this.afterActionApplied(action);
+    this.currentEvent = null;
+
+    if (this.queuedActions.length) {
+        setTimeout(this._applyEvent.bind(this), 0, this.queuedActions.shift());
+    }
 };
 
 ActionManager.prototype.joinSession = function(sessionId, error) {
@@ -321,7 +358,12 @@ ActionManager.prototype.acceptEvent = function(msg) {
 
     // If we are undo/redo-ing, make sure it hasn't already been sent
     this.send(msg);
-    setTimeout(this._applyEvent.bind(this), 0, msg);
+
+    if (this.isApplyingAction) {  // Queue events if in transaction
+        this.queuedActions.push(msg);
+    } else {
+        setTimeout(this._applyEvent.bind(this), 0, msg);
+    }
 };
 
 ActionManager.prototype._isBatchEvent = function(msg) {
@@ -334,40 +376,19 @@ ActionManager.prototype._applyEvent = function(msg) {
 
     logger.debug('received event:', msg);
     this.currentEvent = msg;
+    this.isApplyingAction = true;
 
     // If it is a batch, it may need to call multiple...
     if (this._isBatchEvent(msg)) {
         result = msg.args.map(function(event) {
+            // TODO: fix this... to work w/ 'completeAction'
+            // Maybe add a batch count?
             myself._rawApplyEvent(event);
         });
     } else {
         result = this._rawApplyEvent(msg);
     }
-
-    this.lastSeen = msg.id;
-    this.idCount = 0;
-    if (!this.ide().isReplayMode) {
-        SnapUndo.record(msg);
-    }
-
-    // Call 'success' or 'reject', if relevant
-    if (msg.user === this.id) {
-        if (this._onAccept[msg.id]) {
-            this._onAccept[msg.id](result);
-            delete this._onAccept[msg.id];
-        }
-        delete this._onReject[msg.id];
-
-        // We can call reject for any ids less than the given id...
-        for (var i = msg.id; i--;) {
-            if (this._onReject[msg.id]) {
-                this._onReject[msg.id](result);
-                delete this._onReject[msg.id];
-            }
-        }
-    }
-    this.afterActionApplied(msg);
-    this.currentEvent = null;
+    // TODO: handle exceptions...
 };
 
 ActionManager.prototype._rawApplyEvent = function(event) {
@@ -1139,6 +1160,7 @@ ActionManager.prototype.onReplaceBlock = function(block, newBlock) {
     ownerId = this._blockToOwnerId[block.id];
 
     position = this._positionOf[block.id];
+    // TODO: add completeAction (only once, though!)
     this.onRemoveBlock(block.id, true);
     return this.onAddBlock(newBlock, ownerId, position.x, position.y);
 };
@@ -1169,6 +1191,7 @@ ActionManager.prototype.onAddBlock = function(block, ownerId, x, y) {
                 .add(new Point(palette.left() - firstBlock.width(), palette.height()/4)));
 
             ide.palette.add(firstBlock);
+            // TODO: completeAction
             firstBlock.slideBackTo({
                 origin: owner.scripts,
                 position: position.subtract(owner.scripts.position())
@@ -1206,6 +1229,7 @@ ActionManager.prototype.onAddBlock = function(block, ownerId, x, y) {
 
     this.registerBlocks(firstBlock, owner);
     this.__updateActiveEditor(firstBlock.id);
+    this.completeAction();
     return firstBlock;
 };
 
@@ -1345,6 +1369,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         }
     }
 
+    // TODO: Add animation
     block.snap(target);
     scripts.drawNew();
 
@@ -1371,6 +1396,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
     this.updateCommentsPositions(block);
     this.__updateBlockDefinitions(block);
     this.__updateActiveEditor(block.id);
+    this.completeAction();
     return block;
 };
 
@@ -1429,6 +1455,7 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
             }
         }
     }
+    // TODO: Add complete action
 };
 
 ActionManager.prototype.__canAnimate = function() {
@@ -1473,6 +1500,7 @@ ActionManager.prototype.onSetBlockPosition = function(id, position) {
     // Save the block definition
     this.__updateBlockDefinitions(block);
     this.__updateActiveEditor(block.id);
+    // TODO: Add complete action
 };
 
 ActionManager.prototype.updateCommentsPositions = function(block) {
@@ -1534,6 +1562,7 @@ ActionManager.prototype.onAddListInput = function(id, count) {
     scripts.drawNew();
     scripts.changed();
     this.__updateBlockDefinitions(block);
+    this.completeAction();
 };
 
 ActionManager.prototype.onRemoveListInput = function(id, count) {
@@ -1548,12 +1577,14 @@ ActionManager.prototype.onRemoveListInput = function(id, count) {
     block.changed()
     scripts.changed();
     this.__updateBlockDefinitions(block);
+    this.completeAction();
 };
 
 ActionManager.prototype.onSetBlockSpec = function(id, spec) {
     var block = this.getBlockFromId(id);
     block.userSetSpec(spec);
     this.__updateBlockDefinitions(block);
+    this.completeAction();
 };
 
 ActionManager.prototype.onSetField = function(fieldId, value) {
@@ -1565,6 +1596,7 @@ ActionManager.prototype.onSetField = function(fieldId, value) {
     // TODO: Can we highlight this?
 
     this.__updateBlockDefinitions(block);
+    this.completeAction();
 };
 
 ActionManager.prototype.onSetColorField = function(fieldId, desc) {
@@ -1574,6 +1606,7 @@ ActionManager.prototype.onSetColorField = function(fieldId, desc) {
     block.setColor(color);
     this.fieldValues[fieldId] = color;
     this.__updateBlockDefinitions(block);
+    this.completeAction();
 };
 
 ActionManager.prototype.onSetCommentText = function(id, text) {
@@ -1586,6 +1619,7 @@ ActionManager.prototype.onSetCommentText = function(id, text) {
     block.lastValue = text;
 
     this.__updateBlockDefinitions(block);
+    this.completeAction();
 };
 
 ActionManager.prototype.onSetSelector = function(id, sel) {
@@ -1599,6 +1633,7 @@ ActionManager.prototype.onSetSelector = function(id, sel) {
         myself._blocks[block.id] = block;
     });
     this.__updateBlockDefinitions(block);
+    this.completeAction();
 };
 
 ActionManager.prototype.onAddVariable = function(name, ownerId) {
@@ -1620,6 +1655,7 @@ ActionManager.prototype.onAddVariable = function(name, ownerId) {
     var ide = owner.parentThatIsA(IDE_Morph);
     ide.flushBlocksCache('variables'); // b/c of inheritance
     ide.refreshPalette();
+    this.completeAction();
 };
 
 ActionManager.prototype.onDeleteVariable = function(name, ownerId) {
@@ -1628,6 +1664,7 @@ ActionManager.prototype.onDeleteVariable = function(name, ownerId) {
             this._owners[ownerId];
 
     owner.deleteVariable(name)
+    this.completeAction();
 };
 
 ActionManager.prototype.onRingify = function(blockId, ringId) {
@@ -1655,6 +1692,7 @@ ActionManager.prototype.onRingify = function(blockId, ringId) {
         }
     }
     this.__updateBlockDefinitions(block);
+    this.completeAction();
 };
 
 ActionManager.prototype.onUnringify = function(id) {
@@ -1664,6 +1702,7 @@ ActionManager.prototype.onUnringify = function(id) {
         delete this._blocks[ring.id];
     }
     this.__updateBlockDefinitions(block);
+    this.completeAction();
 };
 
 ActionManager.prototype.onToggleBoolean = function(id, fromValue) {
@@ -1684,6 +1723,7 @@ ActionManager.prototype.onToggleBoolean = function(id, fromValue) {
     }
     block.reactToSliderEdit();
     this.__updateBlockDefinitions(block);
+    this.completeAction();
 };
 
 ////////////////////////// Custom Blocks //////////////////////////
@@ -1711,6 +1751,7 @@ ActionManager.prototype.onAddCustomBlock = function(ownerId, serialized, isGloba
     owner.paletteCache = {};
     ide.refreshPalette();
 
+    this.completeAction();
     return def;
 };
 
@@ -1718,9 +1759,11 @@ ActionManager.prototype.onDeleteCustomBlocks = function(ids) {
     var myself = this,
         ownerId = this.ide().stage.id;
 
-    return ids.map(function(id) {
+    ids.forEach(function(id) {
+        // TODO: call completeAction once!
         myself.onDeleteCustomBlock(id, ownerId);
     });
+    this.completeAction();
 };
 
 ActionManager.prototype.onDeleteCustomBlock = function(id, ownerId) {
@@ -1748,6 +1791,7 @@ ActionManager.prototype.onDeleteCustomBlock = function(id, ownerId) {
         ide.flushPaletteCache();
         ide.refreshPalette();
     }
+    this.completeAction();
 };
 
 ActionManager.prototype._getCustomCmdBlock = function(id) {
@@ -1777,6 +1821,7 @@ ActionManager.prototype.onUpdateBlockLabel = function(id, index, type, label) {
     fragLabel.type = type;
     fragment.updateBlockLabel(fragLabel);
     editor.updateDefinition();
+    this.completeAction();
 };
 
 ActionManager.prototype.onDeleteBlockLabel = function(id, index) {
@@ -1786,6 +1831,7 @@ ActionManager.prototype.onDeleteBlockLabel = function(id, index) {
     fragment.fragment.isDeleted = true;
     fragment.updateBlockLabel(fragment.fragment);
     editor.updateDefinition();
+    this.completeAction();
 };
 
 ActionManager.prototype.onSetCustomBlockType = function(id, cat, type) {
@@ -1799,6 +1845,7 @@ ActionManager.prototype.onSetCustomBlockType = function(id, cat, type) {
     hat.type = definition.type = type;
     editor.updateDefinition();
     customBlock.refreshPrototype();
+    this.completeAction();
 };
 
 ////////////////////////// Sprites //////////////////////////
@@ -1837,11 +1884,13 @@ ActionManager.prototype.onAddSprite = function(serialized, creatorId) {
     if (creatorId === this.id) {
         ide.selectSprite(sprites[sprites.length-1]);
     }
+    this.completeAction();
 };
 
 ActionManager.prototype.onRemoveSprite = function(spriteId) {
     var sprite = this._owners[spriteId];
     this.ide().removeSprite(sprite);
+    this.completeAction();
 };
 
 ActionManager.prototype.onRenameSprite = function(spriteId, name) {
@@ -1853,6 +1902,7 @@ ActionManager.prototype.onRenameSprite = function(spriteId, name) {
     if (ide.currentSprite === sprite) {
         ide.spriteBar.nameField.setContents(name);
     }
+    this.completeAction();
 };
 
 ActionManager.prototype.onToggleDraggable = function(spriteId, draggable) {
@@ -1863,6 +1913,7 @@ ActionManager.prototype.onToggleDraggable = function(spriteId, draggable) {
     if (ide.currentSprite === sprite) {
         ide.spriteBar.padlock.refresh();
     }
+    this.completeAction();
 };
 
 ActionManager.prototype._registerCostume = function(costume, sprite) {
@@ -1893,6 +1944,7 @@ ActionManager.prototype.onAddCostume = function(savedCostume, ownerId, creatorId
         }
     });
     myself.__updateActiveEditor();
+    this.completeAction();
 };
 
 ActionManager.prototype.onUpdateCostume = function(id, savedCostume) {
@@ -1914,6 +1966,7 @@ ActionManager.prototype.onUpdateCostume = function(id, savedCostume) {
         ide.hasChangedMedia = true;
     });
     this.__updateActiveEditor(id);
+    this.completeAction();
 };
 
 ActionManager.prototype.onRemoveCostume = function(id) {
@@ -1936,6 +1989,7 @@ ActionManager.prototype.onRemoveCostume = function(id) {
 
     this.__updateActiveEditor(id);
     delete this._costumes[id];  // FIXME: remove all costume records
+    this.completeAction();
 };
 
 ActionManager.prototype.onRenameCostume = function(id, newName) {
@@ -1946,6 +2000,7 @@ ActionManager.prototype.onRenameCostume = function(id, newName) {
     costume.version = Date.now();
     ide.hasChangedMedia = true;
     this.__updateActiveEditor(id);
+    this.completeAction();
     return costume;
 };
 
@@ -1972,6 +2027,7 @@ ActionManager.prototype.onAddSound = function(serialized, ownerId, creatorId) {
         ide.spriteEditor.updateList();
     }
     this.__updateActiveEditor(sound.id);
+    this.completeAction();
 };
 
 ActionManager.prototype.onRenameSound = function(id, name) {
@@ -1989,6 +2045,7 @@ ActionManager.prototype.onRenameSound = function(id, name) {
 
     ide.hasChangedMedia = true;
     this.__updateActiveEditor(id);
+    this.completeAction();
 };
 
 ActionManager.prototype.onRemoveSound = function(id) {
@@ -2005,10 +2062,12 @@ ActionManager.prototype.onRemoveSound = function(id) {
     this.__updateActiveEditor(id);
     delete this._sounds[id];
     delete this._soundToOwner[id];
+    this.completeAction();
 };
 
 ActionManager.prototype.onSetStageSize = function(width, height) {
     this.ide().setStageExtent(new Point(width, height));
+    this.completeAction();
 };
 
 ActionManager.prototype.onSetRotationStyle = function(id, rotationStyle) {
@@ -2022,14 +2081,18 @@ ActionManager.prototype.onSetRotationStyle = function(id, rotationStyle) {
     this.ide().rotationStyleButtons.forEach(function (each) {
         each.refresh();
     });
+    this.completeAction();
 };
 //////////////////// Import ////////////////////
 ActionManager.prototype.onImportSprites = function(xmlString) {
-    return this.ide().rawOpenSpritesString(xmlString);
+    this.ide().rawOpenSpritesString(xmlString);
+    this.completeAction();
 };
 
 ActionManager.prototype.onImportBlocks = function(aString, lbl) {
-    return this.ide().rawOpenBlocksString(aString, lbl, true);
+    var blocks = this.ide().rawOpenBlocksString(aString, lbl, true);
+    this.completeAction();
+    return blocks;
 };
 
 ActionManager.prototype.onOpenProject = function(str) {
@@ -2039,15 +2102,15 @@ ActionManager.prototype.onOpenProject = function(str) {
         location.hash = '';
 
         if (str.indexOf('<project') === 0) {
-            return this.ide().rawOpenProjectString(str);
-        }
-        if (str.indexOf('<snapdata') === 0) {
-            return this.ide().rawOpenCloudDataString(str);
+            this.ide().rawOpenProjectString(str);
+        } else if (str.indexOf('<snapdata') === 0) {
+            this.ide().rawOpenCloudDataString(str);
         }
     } else {
         this.initializeRecords();
         this.ide().newProject();
     }
+    this.completeAction();
 };
 
 //////////////////// Loading Projects ////////////////////
