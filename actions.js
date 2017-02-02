@@ -248,7 +248,7 @@ ActionManager.prototype.initialize = function() {
     this.initializeEventMethods();
 };
 
-ActionManager.prototype.completeAction = function() {
+ActionManager.prototype.completeAction = function(result) {
     var action = this.currentEvent;
 
     if (this.currentBatch) {
@@ -1192,26 +1192,42 @@ ActionManager.prototype.registerBlocks = function(firstBlock, owner, initial) {
 };
 
 ActionManager.prototype.onReplaceBlock = function(block, newBlock) {
-    var ownerId,
+    var myself = this,
+        ownerId,
         position;
 
     block = this.deserializeBlock(block);
     ownerId = this._blockToOwnerId[block.id];
-
     position = this._positionOf[block.id];
-    // TODO: add completeAction (only once, though!)
-    this.onRemoveBlock(block.id, true);
-    return this.onAddBlock(newBlock, ownerId, position.x, position.y);
+
+    this._onRemoveBlock(block.id, true, function() {
+        myself._onAddBlock(
+            newBlock,
+            ownerId,
+            position.x,
+            position.y,
+            function(result) {
+                console.log('replaceBlock finished!', result);
+                myself.completeAction(result);
+            }
+        );
+    });
 };
 
-ActionManager.prototype.onAddBlock = function(block, ownerId, x, y) {
-    var block,
+ActionManager.prototype._onAddBlock = function(block, ownerId, x, y, callback) {
+    var myself = this,
+        block,
         ide = this.ide(),
         owner = this._owners[ownerId],
         world = ide.parentThatIsA(WorldMorph),
         hand = world.hand,
         position = new Point(x, y),
-        firstBlock;
+        firstBlock,
+        afterAdd = function() {
+            myself.registerBlocks(firstBlock, owner);
+            myself.__updateActiveEditor(firstBlock.id);
+            callback(firstBlock);
+        };
 
 
     firstBlock = this.deserializeBlock(block);
@@ -1223,24 +1239,25 @@ ActionManager.prototype.onAddBlock = function(block, ownerId, x, y) {
     if (!this._customBlocks[ownerId]) {  // not a custom block
         position = this.getAdjustedPosition(position, owner.scripts);
 
-        if (this.currentEvent.replayType || this.currentEvent.user !== this.id) {
+        if (this.__canAnimate()) {
             var palette = ide.palette;
             
             firstBlock.setPosition(palette.position()
                 .add(new Point(palette.left() - firstBlock.width(), palette.height()/4)));
 
             ide.palette.add(firstBlock);
-            // TODO: completeAction
+            // TODO: This needs to be refactored!
             firstBlock.slideBackTo({
                 origin: owner.scripts,
                 position: position.subtract(owner.scripts.position())
-            });
+            }, null, null, afterAdd);
         } else {
             firstBlock.setPosition(position);
             owner.scripts.add(firstBlock);
             owner.scripts.changed();
             firstBlock.changed();
             owner.scripts.adjustBounds();
+            afterAdd();
         }
     } else {
         var editor = this._getCustomBlockEditor(ownerId),
@@ -1251,6 +1268,7 @@ ActionManager.prototype.onAddBlock = function(block, ownerId, x, y) {
         scripts.add(firstBlock);
         editor.updateDefinition();
         owner = this._customBlocks[ownerId];
+        afterAdd();
     }
     if (firstBlock.fixChildrensBlockColor) {
         firstBlock.fixChildrensBlockColor(true);
@@ -1265,11 +1283,14 @@ ActionManager.prototype.onAddBlock = function(block, ownerId, x, y) {
             ide.controlBar.stopButton.refresh();
         }
     }
+};
 
-    this.registerBlocks(firstBlock, owner);
-    this.__updateActiveEditor(firstBlock.id);
-    this.completeAction();
-    return firstBlock;
+ActionManager.prototype.onAddBlock = function(block, ownerId, x, y) {
+    var myself = this;
+
+    this._onAddBlock(block, ownerId, x, y, function(block) {
+        myself.completeAction(block);
+    })
 };
 
 ActionManager.prototype.world = function() {
@@ -1439,7 +1460,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
     return block;
 };
 
-ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
+ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
     var myself = this,
         block = this.getBlockFromId(id),
         method = userDestroy && block.userDestroy ? 'userDestroy' : 'destroy',
@@ -1447,7 +1468,7 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
         parent = block.parent,
         afterRemove = function() {
             myself.__updateBlockDefinitions(block);
-            myself.completeAction();
+            callback();
         };
 
     if (block) {
@@ -1473,6 +1494,7 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
             // Animate the block deletion
             var palette = this.ide().palette;
 
+            // TODO: Can we do 'userDestroy' this way? We may need to disconnect the block first...
             delete block.id;
             block.slideBackTo({
                 origin: palette,
@@ -1480,6 +1502,7 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
             }, null, null, afterRemove);
         } else {
             block[method]();
+            afterRemove();
 
             // Update parent block's UI
             if (parent) {
@@ -1496,6 +1519,14 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
             }
         }
     }
+};
+
+ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
+    var myself = this;
+
+    this._onRemoveBlock(id, userDestroy, function() {
+        myself.completeAction();
+    });
 };
 
 ActionManager.prototype.__canAnimate = function() {
@@ -1767,8 +1798,7 @@ ActionManager.prototype.onAddCustomBlock = function(ownerId, serialized, isGloba
     owner.paletteCache = {};
     ide.refreshPalette();
 
-    this.completeAction();
-    return def;
+    this.completeAction(def);
 };
 
 ActionManager.prototype.onDeleteCustomBlocks = function(ids) {
@@ -1776,13 +1806,12 @@ ActionManager.prototype.onDeleteCustomBlocks = function(ids) {
         ownerId = this.ide().stage.id;
 
     ids.forEach(function(id) {
-        // TODO: call completeAction once!
-        myself.onDeleteCustomBlock(id, ownerId);
+        myself._onDeleteCustomBlock(id, ownerId);
     });
     this.completeAction();
 };
 
-ActionManager.prototype.onDeleteCustomBlock = function(id, ownerId) {
+ActionManager.prototype._onDeleteCustomBlock = function(id, ownerId) {
     var definition = this._customBlocks[id],
         rcvr = this._owners[ownerId],
         stage,
@@ -1807,6 +1836,10 @@ ActionManager.prototype.onDeleteCustomBlock = function(id, ownerId) {
         ide.flushPaletteCache();
         ide.refreshPalette();
     }
+};
+
+ActionManager.prototype.onDeleteCustomBlock = function(id, ownerId) {
+    this._onDeleteCustomBlock(id, ownerId);
     this.completeAction();
 };
 
@@ -2016,8 +2049,7 @@ ActionManager.prototype.onRenameCostume = function(id, newName) {
     costume.version = Date.now();
     ide.hasChangedMedia = true;
     this.__updateActiveEditor(id);
-    this.completeAction();
-    return costume;
+    this.completeAction(costume);
 };
 
 ActionManager.prototype.onAddSound = function(serialized, ownerId, creatorId) {
@@ -2107,8 +2139,7 @@ ActionManager.prototype.onImportSprites = function(xmlString) {
 
 ActionManager.prototype.onImportBlocks = function(aString, lbl) {
     var blocks = this.ide().rawOpenBlocksString(aString, lbl, true);
-    this.completeAction();
-    return blocks;
+    this.completeAction(blocks);
 };
 
 ActionManager.prototype.onOpenProject = function(str) {
