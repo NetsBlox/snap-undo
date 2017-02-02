@@ -1123,10 +1123,12 @@ ActionManager.prototype._onSetBlockPosition = function(id, x, y, callback) {
     position = this.getAdjustedPosition(position, scripts);
 
     if (this.__canAnimate()) {
-        block.slideBackTo({
-            origin: scripts,
-            position: position.subtract(scripts.position())
-        }, null, null, afterMove);
+        block.glideTo(
+            position,
+            null,
+            null,
+            afterMove
+        );
     } else {
         block.setPosition(position);
         afterMove();
@@ -1245,12 +1247,16 @@ ActionManager.prototype._onAddBlock = function(block, ownerId, x, y, callback) {
             firstBlock.setPosition(palette.position()
                 .add(new Point(palette.left() - firstBlock.width(), palette.height()/4)));
 
-            ide.palette.add(firstBlock);
-            // TODO: This needs to be refactored!
-            firstBlock.slideBackTo({
-                origin: owner.scripts,
-                position: position.subtract(owner.scripts.position())
-            }, null, null, afterAdd);
+            palette.add(firstBlock);
+            firstBlock.glideTo(
+                position,
+                null,
+                null,
+                function() {
+                    owner.scripts.add(firstBlock);
+                    afterAdd();
+                }
+            );
         } else {
             firstBlock.setPosition(position);
             owner.scripts.add(firstBlock);
@@ -1456,8 +1462,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
     this.updateCommentsPositions(block);
     this.__updateBlockDefinitions(block);
     this.__updateActiveEditor(block.id);
-    this.completeAction();
-    return block;
+    this.completeAction(block);
 };
 
 ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
@@ -1490,16 +1495,19 @@ ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
 
         // Remove the block
         // If undo-ing, slide to the palette
-        if (this.__canAnimate()) {
+        if (this.__canAnimate() && method === 'destroy') {
             // Animate the block deletion
             var palette = this.ide().palette;
 
             // TODO: Can we do 'userDestroy' this way? We may need to disconnect the block first...
             delete block.id;
-            block.slideBackTo({
-                origin: palette,
-                position: new Point(0, palette.height()/4)
-            }, null, null, afterRemove);
+            palette.add(block);
+            block.glideTo(
+                new Point(0, palette.height()/4),
+                null,
+                null,
+                afterRemove
+            );
         } else {
             block[method]();
             afterRemove();
