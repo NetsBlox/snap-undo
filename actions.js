@@ -1472,6 +1472,7 @@ ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
         scripts = block.parentThatIsA(ScriptsMorph),
         parent = block.parent,
         afterRemove = function() {
+            block[method]();
             myself.__updateBlockDefinitions(block);
             callback();
         };
@@ -1493,13 +1494,17 @@ ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
             myself.__clearBlockRecords(id);
         });
 
-        // Remove the block
-        // If undo-ing, slide to the palette
-        if (this.__canAnimate() && method === 'destroy') {
+        // Animate the removal if dragging to palette wouldn't delete unwanted
+        // blocks. That is, we are either deleting all following blocks or there
+        // are no following blocks
+        var hasNextBlock = block.nextBlock && block.nextBlock(),
+            canAnimate = this.__canAnimate() &&
+                (method === 'destroy' || !hasNextBlock);
+
+        if (canAnimate) {;
             // Animate the block deletion
             var palette = this.ide().palette;
 
-            // TODO: Can we do 'userDestroy' this way? We may need to disconnect the block first...
             delete block.id;
             palette.add(block);
             block.glideTo(
@@ -1509,7 +1514,6 @@ ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
                 afterRemove
             );
         } else {
-            block[method]();
             afterRemove();
 
             // Update parent block's UI
