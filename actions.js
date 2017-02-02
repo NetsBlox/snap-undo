@@ -122,6 +122,7 @@ ActionManager.prototype.initializeEventMethods = function() {
 };
 
 ActionManager.prototype.initializeRecords = function() {
+    this.currentBatch = null;
     this.lastSeen = 0;
     this.lastSent = null;
     this.idCount = 0;
@@ -250,6 +251,18 @@ ActionManager.prototype.initialize = function() {
 ActionManager.prototype.completeAction = function() {
     var action = this.currentEvent;
 
+    if (this.currentBatch) {
+        var currentIndex = this.currentBatch.args.indexOf(action),
+            nextEvent = this.currentBatch.args[currentIndex + 1];
+
+        if (nextEvent) {  // Apply the next event
+            return this._rawApplyEvent(nextEvent);
+        }
+        // Otherwise, the batch is over.
+        action = this.currentBatch;
+        this.currentBatch = null;;
+    }
+
     this.isApplyingAction = false;
     this.lastSeen = action.id;
     this.idCount = 0;
@@ -374,14 +387,11 @@ ActionManager.prototype._applyEvent = function(msg) {
     this.currentEvent = msg;
     this.isApplyingAction = true;
 
-    // If it is a batch, it may need to call multiple...
     if (this._isBatchEvent(msg)) {
-        result = msg.args.map(function(event) {
-            // TODO: fix this... to work w/ 'completeAction'
-            // Maybe add a batch count?
-            myself._rawApplyEvent(event);
-        });
+        this.currentBatch = msg;
+        this._rawApplyEvent(msg.args[0]);
     } else {
+        this.currentBatch = null;
         result = this._rawApplyEvent(msg);
     }
     // TODO: handle exceptions...
@@ -391,9 +401,8 @@ ActionManager.prototype._rawApplyEvent = function(event) {
     var method = this._getMethodFor(event.type),
         result;
 
-    this.currentEvent = event;
+    this.currentEvent = event;  // TODO: how can we handle this?
     result = this[method].apply(this, event.args);
-    this.currentEvent = null;
     return result;
 };
 
@@ -1069,26 +1078,22 @@ ActionManager.prototype._importSprites = function(str) {
     return [str, ids];
 };
 
-/* * * * * * * * * * * * Updating internal rep * * * * * * * * * * * */
-ActionManager.prototype.onSetBlocksPositions = function(ids, positions) {
-    var myself = this,
-        movedCount = ids.length,
-        callback = function() {
-            movedCount++;
-            if (movedCount === ids.length) {
-                myself.completeAction();
-            }
-        };
-
-    for (var i = ids.length; i--;) {
-        this._onSetBlockPosition(ids[i], positions[i].x, positions[i].y, callback);
-    }
-};
-
 ActionManager.prototype._onSetBlockPosition = function(id, x, y, callback) {
-    var position = new Point(x, y),
+    var myself = this,
+        position = new Point(x, y),
         connectedIds,
-        target;
+        target,
+        block = this.getBlockFromId(id),
+        scripts = block.parentThatIsA(ScriptsMorph),
+        afterMove = function() {
+            myself.updateCommentsPositions(block);
+
+            // Save the block definition
+            myself.__updateBlockDefinitions(block);
+            myself.__updateActiveEditor(block.id);
+            callback();
+        },
+        editor;
 
     // If there is a block connected to the 'top' of this block, clear the given
     // target
@@ -1102,10 +1107,6 @@ ActionManager.prototype._onSetBlockPosition = function(id, x, y, callback) {
         }
     }
     this.__clearTarget(id);
-
-    var block = this.getBlockFromId(id),
-        scripts = block.parentThatIsA(ScriptsMorph),
-        editor;
 
     console.assert(block, 'Block "' + id + '" does not exist! Cannot set position');
 
@@ -1125,21 +1126,28 @@ ActionManager.prototype._onSetBlockPosition = function(id, x, y, callback) {
         block.slideBackTo({
             origin: scripts,
             position: position.subtract(scripts.position())
-        });
-        // TODO: call callback
+        }, null, null, afterMove);
     } else {
         block.setPosition(position);
+        afterMove();
     }
-
-    this.updateCommentsPositions(block);
-
-    // Save the block definition
-    this.__updateBlockDefinitions(block);
-    this.__updateActiveEditor(block.id);
-    callback();
 };
 
-/* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
+ActionManager.prototype.onSetBlocksPositions = function(ids, positions) {
+    var myself = this,
+        movedCount = ids.length,
+        callback = function() {
+            movedCount++;
+            if (movedCount === ids.length) {
+                myself.completeAction();
+            }
+        };
+
+    for (var i = ids.length; i--;) {
+        this._onSetBlockPosition(ids[i], positions[i].x, positions[i].y, callback);
+    }
+};
+
 ActionManager.prototype.getAdjustedPosition = function(position, scripts) {
     var scale = SyntaxElementMorph.prototype.scale;
     position = position.multiplyBy(scale).add(scripts.topLeft());
@@ -1436,7 +1444,11 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
         block = this.getBlockFromId(id),
         method = userDestroy && block.userDestroy ? 'userDestroy' : 'destroy',
         scripts = block.parentThatIsA(ScriptsMorph),
-        parent = block.parent;
+        parent = block.parent,
+        afterRemove = function() {
+            myself.__updateBlockDefinitions(block);
+            myself.completeAction();
+        };
 
     if (block) {
         // Check the parent and revert to default input
@@ -1465,28 +1477,25 @@ ActionManager.prototype.onRemoveBlock = function(id, userDestroy) {
             block.slideBackTo({
                 origin: palette,
                 position: new Point(0, palette.height()/4)
-            });
+            }, null, null, afterRemove);
         } else {
             block[method]();
-        }
 
-        this.__updateBlockDefinitions(block);
+            // Update parent block's UI
+            if (parent) {
+                if (parent.reactToGrabOf) {
+                    parent.reactToGrabOf(block);
+                }
+                if (parent.fixLayout) parent.fixLayout();
+                parent.changed();
 
-        // Update parent block's UI
-        if (parent) {
-            if (parent.reactToGrabOf) {
-                parent.reactToGrabOf(block);
-            }
-            if (parent.fixLayout) parent.fixLayout();
-            parent.changed();
-
-            if (scripts) {
-                scripts.drawNew();
-                scripts.changed();
+                if (scripts) {
+                    scripts.drawNew();
+                    scripts.changed();
+                }
             }
         }
     }
-    // TODO: Add complete action
 };
 
 ActionManager.prototype.__canAnimate = function() {
