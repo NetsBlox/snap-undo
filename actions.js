@@ -344,11 +344,7 @@ ActionManager.prototype.applyEvent = function(event) {
 };
 
 ActionManager.prototype._getMethodFor = function(action) {
-    var method = '_on' + action.substring(0,1).toUpperCase() + action.substring(1);
-
-    if (!this[method]) {
-        method = method.substring(1);
-    }
+    var method = 'on' + action.substring(0,1).toUpperCase() + action.substring(1);
 
     return method;
 };
@@ -1074,18 +1070,26 @@ ActionManager.prototype._importSprites = function(str) {
 };
 
 /* * * * * * * * * * * * Updating internal rep * * * * * * * * * * * */
-ActionManager.prototype._onSetBlocksPositions = function(ids, positions) {
+ActionManager.prototype.onSetBlocksPositions = function(ids, positions) {
+    var myself = this,
+        movedCount = ids.length,
+        callback = function() {
+            movedCount++;
+            if (movedCount === ids.length) {
+                myself.completeAction();
+            }
+        };
+
     for (var i = ids.length; i--;) {
-        this._onSetBlockPosition(ids[i], positions[i].x, positions[i].y);
+        this._onSetBlockPosition(ids[i], positions[i].x, positions[i].y, callback);
     }
 };
 
-ActionManager.prototype._onSetBlockPosition = function(id, x, y) {
+ActionManager.prototype._onSetBlockPosition = function(id, x, y, callback) {
     var position = new Point(x, y),
         connectedIds,
         target;
 
-    this._positionOf[id] = position;
     // If there is a block connected to the 'top' of this block, clear the given
     // target
     if (this._targetFor[id]) {
@@ -1099,13 +1103,40 @@ ActionManager.prototype._onSetBlockPosition = function(id, x, y) {
     }
     this.__clearTarget(id);
 
-    this.onSetBlockPosition(id, position);
-};
+    var block = this.getBlockFromId(id),
+        scripts = block.parentThatIsA(ScriptsMorph),
+        editor;
 
-ActionManager.prototype._onSetField = function(fieldId, value) {
-    this.fieldValues[fieldId] = value;
+    console.assert(block, 'Block "' + id + '" does not exist! Cannot set position');
 
-    this.onSetField(fieldId, value);
+    // Check if editing a custom block
+    position = new Point(x, y);
+    editor = block.parentThatIsA(BlockEditorMorph);
+    this._positionOf[id] = position;
+    if (editor) {  // not a custom block
+        scripts = editor.body.contents;
+    }
+
+    this.disconnectBlock(block, scripts);
+
+    position = this.getAdjustedPosition(position, scripts);
+
+    if (this.__canAnimate()) {
+        block.slideBackTo({
+            origin: scripts,
+            position: position.subtract(scripts.position())
+        });
+        // TODO: call callback
+    } else {
+        block.setPosition(position);
+    }
+
+    this.updateCommentsPositions(block);
+
+    // Save the block definition
+    this.__updateBlockDefinitions(block);
+    this.__updateActiveEditor(block.id);
+    callback();
 };
 
 /* * * * * * * * * * * * Updating Snap! * * * * * * * * * * * */
@@ -1469,38 +1500,12 @@ ActionManager.prototype.__updateBlockDefinitions = function(block) {
     }
 };
 
-ActionManager.prototype.onSetBlockPosition = function(id, position) {
-    // Disconnect from previous...
-    var block = this.getBlockFromId(id),
-        scripts = block.parentThatIsA(ScriptsMorph);
+ActionManager.prototype.onSetBlockPosition = function(id, x, y) {
+    var myself = this;
 
-    console.assert(block, 'Block "' + id + '" does not exist! Cannot set position');
-
-    // Check if editing a custom block
-    var editor = block.parentThatIsA(BlockEditorMorph);
-    if (editor) {  // not a custom block
-        scripts = editor.body.contents;
-    }
-
-    this.disconnectBlock(block, scripts);
-
-    position = this.getAdjustedPosition(position, scripts);
-
-    if (this.__canAnimate()) {
-        block.slideBackTo({
-            origin: scripts,
-            position: position.subtract(scripts.position())
-        });
-    } else {
-        block.setPosition(position);
-    }
-
-    this.updateCommentsPositions(block);
-
-    // Save the block definition
-    this.__updateBlockDefinitions(block);
-    this.__updateActiveEditor(block.id);
-    // TODO: Add complete action
+    this._onSetBlockPosition(id, x, y, function() {
+        myself.completeAction();
+    });
 };
 
 ActionManager.prototype.updateCommentsPositions = function(block) {
@@ -1592,6 +1597,8 @@ ActionManager.prototype.onSetField = function(fieldId, value) {
 
     console.assert(block instanceof InputSlotMorph,
         'Unexpected block type: ' + block.constructor);
+
+    this.fieldValues[fieldId] = value;
     block.setContents(value);
     // TODO: Can we highlight this?
 
