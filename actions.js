@@ -1487,7 +1487,10 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
 };
 
 ActionManager.prototype.computeMovePosition = function(block, target) {
-    var targetBlock;
+    var targetBlock,
+        offsetY,
+        before,
+        cslot;
 
     // calculate the position of the block after the move
     if (block instanceof CommandBlockMorph) {
@@ -1506,7 +1509,6 @@ ActionManager.prototype.computeMovePosition = function(block, target) {
                 );
             }
         } else if (target.loc === 'top') {
-            target.element.removeHighlight();
             offsetY = block.bottomBlock().bottom() - block.bottom();
             return new Point(
                 targetBlock.left(),
@@ -1514,28 +1516,14 @@ ActionManager.prototype.computeMovePosition = function(block, target) {
             );
         } else if (target.loc === 'wrap') {
             cslot = detect( // this should be a method making use of caching
-                this.inputs(), // these are already cached, so maybe it's okay
+                block.inputs(), // these are already cached, so maybe it's okay
                 function (each) {return each instanceof CSlotMorph; }
             );
             // assume the cslot is (still) empty, was checked determining the target
-            before = (target.element.parent);
+            before = (targetBlock.parent);
 
             // adjust position of wrapping block
-            this.moveBy(target.point.subtract(cslot.slotAttachPoint()));
-
-            // wrap c-slot around target
-            cslot.nestedBlock(target.element);
-            if (before instanceof CommandBlockMorph) {
-                before.nextBlock(this);
-            } else if (before instanceof CommandSlotMorph) {
-                before.nestedBlock(this);
-            }
-
-            // fix zebra coloring.
-            // this could probably be generalized into the fixBlockColor mechanism
-            target.element.blockSequence().forEach(
-                function (cmd) {cmd.fixBlockColor(); }
-            );
+            return block.position().add(target.point.subtract(cslot.slotAttachPoint()));
         }
     } else {
         position = target.element.position();
