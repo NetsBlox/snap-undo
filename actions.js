@@ -1489,7 +1489,6 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
 ActionManager.prototype.computeMovePosition = function(block, target) {
     var targetBlock,
         offsetY,
-        before,
         cslot;
 
     // calculate the position of the block after the move
@@ -1519,14 +1518,42 @@ ActionManager.prototype.computeMovePosition = function(block, target) {
                 block.inputs(), // these are already cached, so maybe it's okay
                 function (each) {return each instanceof CSlotMorph; }
             );
-            // assume the cslot is (still) empty, was checked determining the target
-            before = (targetBlock.parent);
 
             // adjust position of wrapping block
             return block.position().add(target.point.subtract(cslot.slotAttachPoint()));
         }
-    } else {
-        position = target.element.position();
+    } else if (block instanceof ReporterBlockMorph) {
+        // TODO
+        if (target instanceof CommandSlotMorph) {
+            var nb = target.nestedBlock();
+            if (nb) {
+                return nb.position().add(nb.extent());
+            }
+        }
+        target.parent.replaceInput(target, this);
+    } else {  // Comment
+        var top = target.topBlock(),
+            affectedBlocks,
+            newTop,
+            bottom,
+            rightMost;
+
+        newTop = target.top() + target.corner;
+        bottom = newTop + block.height();
+        affectedBlocks = top.allChildren().filter(function (child) {
+            return child instanceof BlockMorph &&
+                child.bottom() > newTop &&
+                child.top() < bottom;
+        });
+        rightMost = Math.max.apply(
+            null,
+            affectedBlocks.map(function (block) {return block.right(); })
+        );
+
+        return new Point(
+            rightMost + 5,
+            newTop
+        );
     }
 };
 
