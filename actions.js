@@ -401,7 +401,7 @@ ActionManager.prototype._rawApplyEvent = function(event) {
     var method = this._getMethodFor(event.type),
         result;
 
-    this.currentEvent = event;  // TODO: how can we handle this?
+    this.currentEvent = event;
     result = this[method].apply(this, event.args);
     return result;
 };
@@ -1674,9 +1674,8 @@ ActionManager.prototype.disconnectBlock = function(block, scripts) {
     var oldParent = block.parent;
 
     scripts = scripts || block.parentThatIsA(ScriptsMorph);
+    block.prepareToBeGrabbed();
     if (oldParent && !(oldParent instanceof ScriptsMorph)) {
-
-        block.prepareToBeGrabbed();
 
         scripts.add(block);
 
