@@ -1386,13 +1386,16 @@ ActionManager.prototype.getBlockFromId = function(id) {
 
 ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
     // Convert the pId, connId back to the target...
-    var block = this.deserializeBlock(id),
+    var myself = this,
+        block = this.deserializeBlock(id),
         isNewBlock = !this._blocks[block.id],
         target = copy(rawTarget),
-        scripts;
+        scripts,
+        afterMove;
 
     this.__recordTarget(block.id, rawTarget);
 
+    // Resolve the target
     if (block instanceof CommandBlockMorph) {
         // Check if connecting to the beginning of a custom block definition
         if (this._customBlocks[target.element]) {
@@ -1427,42 +1430,116 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         logger.error('Unsupported "onMoveBlock":', block);
     }
 
-    if (isNewBlock) {
-        scripts.add(block);
-    } else {
-        if (block.parent && block.parent.reactToGrabOf) {
-            block.parent.reactToGrabOf(block);
-        }
-    }
-
-    // TODO: Add animation
-    block.snap(target);
-    scripts.drawNew();
-
-    if (isNewBlock) {
-        this._positionOf[block.id] = this.getStandardPosition(scripts, block.position());
-        // set the owner to custom block id if necessary
-        if (target.element instanceof PrototypeHatBlockMorph) {
-            this.registerBlocks(block, target.element.definition);
+    afterMove = function() {
+        if (isNewBlock) {
+            scripts.add(block);
         } else {
-            this.registerBlocks(block, scripts.owner);
-	}
-    }
+            if (block.parent && block.parent.reactToGrabOf) {
+                block.parent.reactToGrabOf(block);
+            }
+        }
 
-    if (target instanceof ReporterBlockMorph) {
-        this.__clearTarget(target.id);
-        this._positionOf[target.id] = this.getStandardPosition(scripts, target.position());
-    }
+        block.snap(target);
+        scripts.drawNew();
 
-    if (target.loc === 'top') {
-        var topBlock = block.topBlock();
-        this._positionOf[topBlock.id] = this.getStandardPosition(scripts, topBlock.position());
-    }
+        if (isNewBlock) {
+            myself._positionOf[block.id] = myself.getStandardPosition(scripts, block.position());
+            // set the owner to custom block id if necessary
+            if (target.element instanceof PrototypeHatBlockMorph) {
+                myself.registerBlocks(block, target.element.definition);
+            } else {
+                myself.registerBlocks(block, scripts.owner);
+        }
+        }
 
-    this.updateCommentsPositions(block);
-    this.__updateBlockDefinitions(block);
-    this.__updateActiveEditor(block.id);
-    this.completeAction(block);
+        if (target instanceof ReporterBlockMorph) {
+            myself.__clearTarget(target.id);
+            myself._positionOf[target.id] = myself.getStandardPosition(scripts, target.position());
+        }
+
+        if (target.loc === 'top') {
+            var topBlock = block.topBlock();
+            myself._positionOf[topBlock.id] = myself.getStandardPosition(scripts, topBlock.position());
+        }
+
+        myself.updateCommentsPositions(block);
+        myself.__updateBlockDefinitions(block);
+        myself.__updateActiveEditor(block.id);
+        myself.completeAction(block);
+    };
+
+    // Glide to the given position first
+    if (isNewBlock) {
+        this.ide().palette.add(block);
+    }
+    if (this.__canAnimate()) {
+        var position = this.computeMovePosition(block, target);
+
+        block.glideTo(
+            position,
+            null,
+            null,
+            afterMove
+        );
+    } else {
+        afterMove();
+    }
+};
+
+ActionManager.prototype.computeMovePosition = function(block, target) {
+    var targetBlock;
+
+    // calculate the position of the block after the move
+    if (block instanceof CommandBlockMorph) {
+        targetBlock = target.element;
+
+        if (target.loc === 'bottom') {
+            if (target.type === 'slot') {
+                return new Point(
+                    targetBlock.left() + targetBlock.edge + targetBlock.rfBorder,
+                    targetBlock.top() + targetBlock.edge + targetBlock.rfBorder
+                )
+            } else {
+                return new Point(
+                    target.element.left(),
+                    target.element.bottom() - (target.element.corner)
+                );
+            }
+        } else if (target.loc === 'top') {
+            target.element.removeHighlight();
+            offsetY = block.bottomBlock().bottom() - block.bottom();
+            return new Point(
+                targetBlock.left(),
+                targetBlock.top() + block.corner - offsetY - block.height()
+            );
+        } else if (target.loc === 'wrap') {
+            cslot = detect( // this should be a method making use of caching
+                this.inputs(), // these are already cached, so maybe it's okay
+                function (each) {return each instanceof CSlotMorph; }
+            );
+            // assume the cslot is (still) empty, was checked determining the target
+            before = (target.element.parent);
+
+            // adjust position of wrapping block
+            this.moveBy(target.point.subtract(cslot.slotAttachPoint()));
+
+            // wrap c-slot around target
+            cslot.nestedBlock(target.element);
+            if (before instanceof CommandBlockMorph) {
+                before.nextBlock(this);
+            } else if (before instanceof CommandSlotMorph) {
+                before.nestedBlock(this);
+            }
+
+            // fix zebra coloring.
+            // this could probably be generalized into the fixBlockColor mechanism
+            target.element.blockSequence().forEach(
+                function (cmd) {cmd.fixBlockColor(); }
+            );
+        }
+    } else {
+        position = target.element.position();
+    }
 };
 
 ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
