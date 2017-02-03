@@ -1523,14 +1523,13 @@ ActionManager.prototype.computeMovePosition = function(block, target) {
             return block.position().add(target.point.subtract(cslot.slotAttachPoint()));
         }
     } else if (block instanceof ReporterBlockMorph) {
-        // TODO
         if (target instanceof CommandSlotMorph) {
             var nb = target.nestedBlock();
             if (nb) {
                 return nb.position().add(nb.extent());
             }
         }
-        target.parent.replaceInput(target, this);
+        return target.position();
     } else {  // Comment
         var top = target.topBlock(),
             affectedBlocks,
@@ -1675,6 +1674,7 @@ ActionManager.prototype.disconnectBlock = function(block, scripts) {
 
     scripts = scripts || block.parentThatIsA(ScriptsMorph);
     block.prepareToBeGrabbed();
+
     if (oldParent && !(oldParent instanceof ScriptsMorph)) {
 
         scripts.add(block);
@@ -1743,7 +1743,6 @@ ActionManager.prototype.onSetField = function(fieldId, value) {
 
     this.fieldValues[fieldId] = value;
     block.setContents(value);
-    // TODO: Can we highlight this?
 
     this.__updateBlockDefinitions(block);
     this.completeAction();
