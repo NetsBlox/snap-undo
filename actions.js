@@ -1583,7 +1583,7 @@ ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
         }
 
         this.traverse(root, function(block) {
-            myself.__clearBlockRecords(id);
+            myself.__clearBlockRecords(block.id);
         });
 
         // Animate the removal if dragging to palette wouldn't delete unwanted
