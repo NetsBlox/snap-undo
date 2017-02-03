@@ -1254,6 +1254,7 @@ ActionManager.prototype._onAddBlock = function(block, ownerId, x, y, callback) {
                 null,
                 function() {
                     owner.scripts.add(firstBlock);
+                    owner.scripts.drawNew();
                     afterAdd();
                 }
             );
