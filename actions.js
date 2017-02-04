@@ -1209,7 +1209,6 @@ ActionManager.prototype.onReplaceBlock = function(block, newBlock) {
             position.x,
             position.y,
             function(result) {
-                console.log('replaceBlock finished!', result);
                 myself.completeAction(result);
             }
         );
@@ -1615,12 +1614,11 @@ ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
                 }
                 if (parent.fixLayout) parent.fixLayout();
                 parent.changed();
-
-                if (scripts) {
-                    scripts.drawNew();
-                    scripts.changed();
-                }
             }
+        }
+        if (scripts) {
+            scripts.drawNew();
+            scripts.changed();
         }
     }
 };
