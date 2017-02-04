@@ -1471,6 +1471,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
     // Glide to the given position first
     if (isNewBlock) {
         this.ide().palette.add(block);
+        block.setPosition(this.blockInitPosition());
     }
     if (this.__canAnimate()) {
         var position = this.computeMovePosition(block, target);
@@ -1556,6 +1557,11 @@ ActionManager.prototype.computeMovePosition = function(block, target) {
     }
 };
 
+ActionManager.prototype.blockInitPosition = function() {
+    var palette = this.ide().palette;
+    return new Point(palette.width()/2, palette.height()/4);
+};
+
 ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
     var myself = this,
         block = this.getBlockFromId(id),
@@ -1599,7 +1605,7 @@ ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
             delete block.id;
             palette.add(block);
             block.glideTo(
-                new Point(0, palette.height()/4),
+                this.blockInitPosition(),
                 null,
                 null,
                 afterRemove
