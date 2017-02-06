@@ -1225,6 +1225,10 @@ ActionManager.prototype._onAddBlock = function(block, ownerId, x, y, callback) {
         position = new Point(x, y),
         firstBlock,
         afterAdd = function() {
+            if (firstBlock.fixChildrensBlockColor) {
+                firstBlock.fixChildrensBlockColor(true);
+            }
+
             myself.registerBlocks(firstBlock, owner);
             myself.__updateActiveEditor(firstBlock.id);
             callback(firstBlock);
@@ -1276,10 +1280,6 @@ ActionManager.prototype._onAddBlock = function(block, ownerId, x, y, callback) {
         owner = this._customBlocks[ownerId];
         afterAdd();
     }
-    if (firstBlock.fixChildrensBlockColor) {
-        firstBlock.fixChildrensBlockColor(true);
-    }
-
     // register generic hat blocks
     if (firstBlock.selector === 'receiveCondition') {
         stage = ide.stage;
