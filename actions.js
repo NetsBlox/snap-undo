@@ -1086,6 +1086,8 @@ ActionManager.prototype._onSetBlockPosition = function(id, x, y, callback) {
         block = this.getBlockFromId(id),
         scripts = block.parentThatIsA(ScriptsMorph),
         afterMove = function() {
+            block.changed();
+            block.removeShadow();
             myself.updateCommentsPositions(block);
 
             // Save the block definition
