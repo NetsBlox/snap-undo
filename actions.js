@@ -714,8 +714,7 @@ ActionManager.prototype._getSpliceEvent = function(target) {
     // Create the move event for reconnecting the target element to the current
     // occupant
     var topBlock,
-        bottomBlock,
-        restoreTarget;
+        bottomBlock;
 
     if (target.loc === 'top') {
         topBlock = target.element.parent instanceof BlockMorph ?
@@ -732,18 +731,11 @@ ActionManager.prototype._getSpliceEvent = function(target) {
     }
 
     if (topBlock && bottomBlock) {  // splice!
-        restoreTarget = {
-            type: target.type,
-            loc: 'bottom',
-            element: topBlock.id,
-            point: target.type === 'slot' ? topBlock.slotAttachPoint() :
-                topBlock.bottomAttachPoint()
-        };
         return {
             type: 'moveBlock',
             args: [
                 bottomBlock.id,
-                restoreTarget
+                target
             ]
         };
     }
