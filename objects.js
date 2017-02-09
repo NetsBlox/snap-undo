@@ -8765,8 +8765,8 @@ ReplayControls.prototype.init = function(ide) {
     };
     var updateValue = this.slider.updateValue;
     this.slider.updateValue = function() {
-        myself.updateDisplayTime();
         updateValue.apply(this, arguments);
+        myself.updateDisplayTime();
     };
 
     this.add(this.slider);
