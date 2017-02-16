@@ -2236,8 +2236,6 @@ ActionManager.prototype.onImportBlocks = function(aString, lbl) {
 
 ActionManager.prototype.onOpenProject = function(str) {
     if (str) {
-        location.hash = '';
-
         if (str.indexOf('<project') === 0) {
             this.ide().rawOpenProjectString(str);
         } else if (str.indexOf('<snapdata') === 0) {
