@@ -2236,8 +2236,6 @@ ActionManager.prototype.onImportBlocks = function(aString, lbl) {
 
 ActionManager.prototype.onOpenProject = function(str) {
     if (str) {
-        this.disableCollaboration();
-        SnapUndo.reset();
         location.hash = '';
 
         if (str.indexOf('<project') === 0) {
