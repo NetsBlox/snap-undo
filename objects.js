@@ -8716,6 +8716,7 @@ ReplayControls.prototype.init = function(ide) {
     this.isPlaying = false;
 
     this.isShowingCaptions = false;
+    this.lastCaption = null;
 
     this.replaySpeed = 1.0;
     this.maxInactiveDuration = 0;
@@ -8734,6 +8735,14 @@ ReplayControls.prototype.init = function(ide) {
     this.stepBackwardButton.mouseClickLeft = function() {
         myself.stepBackward();
     };
+
+    this.displayTime = new TextMorph(
+        '0:00 / 1:00',
+        1.5*PushButtonMorph.prototype.fontSize,
+        PushButtonMorph.prototype.fontStyle,
+        true
+    );
+    this.displayTime.color = this.buttonColor;
 
     // Buttons on the right
     this.settingsButton = new SymbolMorph('gears', 30, this.buttonColor);
@@ -8754,11 +8763,17 @@ ReplayControls.prototype.init = function(ide) {
         myself.pause();
         mouseDown.call(this, pos);
     };
+    var updateValue = this.slider.updateValue;
+    this.slider.updateValue = function() {
+        updateValue.apply(this, arguments);
+        myself.updateDisplayTime();
+    };
 
     this.add(this.slider);
     this.add(this.playButton);
     this.add(this.stepForwardButton);
     this.add(this.stepBackwardButton);
+    this.add(this.displayTime);
 
     this.add(this.captionsButton);
     this.add(this.settingsButton);
@@ -8854,6 +8869,11 @@ ReplayControls.prototype.toggleCaptions = function() {
     color = this.isShowingCaptions ? new Color(98, 194, 19) : this.buttonColor;
     ide.showMessage(localize('captions ' + (this.isShowingCaptions ? 'enabled' : 'disabled')), 1);
 
+    if (this.lastCaption) {
+        this.lastCaption.destroy();
+        this.lastCaption = null;
+    }
+
     this.captionsButton.color = color;
     this.captionsButton.drawNew();
     this.captionsButton.changed();
@@ -8880,7 +8900,7 @@ ReplayControls.prototype.stepBackward = function() {
 ReplayControls.prototype.displayCaption = function(action, originalEvent) {
     var message, 
         intervalHandle,
-        m;
+        menu;
 
     // TODO: add the user, too
     message = action.type;
@@ -8895,17 +8915,31 @@ ReplayControls.prototype.displayCaption = function(action, originalEvent) {
     }
 
     // Show the caption
-    m = new MenuMorph(null, message, null, 16);
+    menu = new MenuMorph(null, message, null, 16);
 
-    var pos = new Point(this.center().x, this.top()-50);
-    m.popup(this.world(), pos);
+    var pos = new Point(this.center().x, this.top()-50),
+        world = this.world();
+
+    // Display the caption
+    if (this.lastCaption) {
+        this.lastCaption.destroy();
+    }
+
+    menu.drawNew();
+    menu.setPosition(pos);
+    menu.addShadow(new Point(2, 2), 80);
+    menu.keepWithin(world);
+    world.add(menu);
+    menu.world = world; // optionally enable keyboard support
+    menu.fullChanged();
+    this.lastCaption = menu;
 
     intervalHandle = setInterval(function () {
-        m.destroy();
+        menu.destroy();
         clearInterval(intervalHandle);
     }, 4000);
 
-    return m;
+    return menu;
 };
 
 ReplayControls.prototype.play = function() {
@@ -8967,6 +9001,51 @@ ReplayControls.prototype.step = function() {
     }
 };
 
+ReplayControls.prototype.formatTime = function(time) {
+    var secs,
+        min,
+        hrs,
+        minInMs = 1000*60,
+        hourInMs = minInMs*60,
+        setDisplayLength = function(num, len) {
+            num = num.toString();
+            while (num.length < len) {
+                num = '0' + num;
+            }
+            return num;
+        };
+
+    if (time > hourInMs) {
+        hrs = Math.floor(time/hourInMs);
+        time = time - hrs*hourInMs;
+    }
+
+    min = Math.floor(time/minInMs);
+    time = time - min*minInMs;
+
+    secs = Math.floor(time/1000);
+    time = time - secs*1000;
+
+    secs = setDisplayLength(secs, 2);
+    if (hrs) {
+        min = setDisplayLength(min, 2);
+        return [hrs, min, secs].join(':');
+    } else {
+        return [min, secs].join(':');
+    }
+};
+
+ReplayControls.prototype.updateDisplayTime = function() {
+    var totalTime = this.slider.rangeSize(),
+        currentTime = this.slider.value - this.slider.start;
+
+    this.displayTime.text = this.formatTime(currentTime) + ' / ' +
+        this.formatTime(totalTime);
+
+    this.displayTime.drawNew();
+    this.displayTime.changed();
+};
+
 ReplayControls.prototype.playNext = function(dir) {
     // Get the position of the button in the slider and move it
     var myself = this,
@@ -9025,6 +9104,10 @@ ReplayControls.prototype.fixLayout = function() {
     this.stepForwardButton.setLeft(this.playButton.right() + 2.5*margin);
     this.stepForwardButton.drawNew();
 
+    this.displayTime.setCenter(this.playButton.center());
+    this.displayTime.setLeft(this.stepForwardButton.right() + 4*margin);
+    this.displayTime.drawNew();
+
     // Buttons on the right
     this.settingsButton.setTop(top + sliderHeight + margin);
     this.settingsButton.setRight(this.right() - 3*margin);
@@ -9050,6 +9133,7 @@ ReplayControls.prototype.setActions = function(actions) {
     this.slider.value = this.slider.start;
     this.slider.setStop(actions[actions.length-1].time + 1);
     this.isPlaying = false;
+    this.updateDisplayTime();
 };
 
 // apply any actions between 
@@ -9115,7 +9199,7 @@ ReplayControls.prototype.getInverseEvent = function(event) {
         var nestedPairsCnt = 0,
             iter;
 
-        for (var i = this.actionIndex-1; i--;) {
+        for (var i = this.actionIndex; i--;) {
             iter = this.actions[i];
             iter.replayType = iter.replayType || 0;
             if (iter.owner !== event.owner) {  // skip other event queues

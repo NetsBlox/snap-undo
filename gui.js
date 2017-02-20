@@ -2924,7 +2924,7 @@ IDE_Morph.prototype.projectMenu = function () {
             function() {
                 var inp = document.createElement('input');
                 if (SnapUndo.allEvents.length > 1) {
-                    return this.showMessage('events can only be replayed on empty project');
+                    myself.newProject();
                 }
 
                 if (myself.filePicker) {
@@ -3133,7 +3133,6 @@ IDE_Morph.prototype.replayEvents = function (actions) {
     this.replayControls.show();
     this.replayControls.setActions(actions);
     this.isReplayMode = true;
-    // TODO: Update this
 };
 
 IDE_Morph.prototype.exitReplayMode = function () {
@@ -3619,8 +3618,6 @@ IDE_Morph.prototype.newProject = function () {
     this.selectSprite(this.stage.children[0]);
     this.fixLayout();
     this.isReplayMode = false;
-    SnapActions.disableCollaboration();
-    SnapUndo.reset();
     SnapActions.loadProject(this);
 };
 
@@ -4800,6 +4797,8 @@ IDE_Morph.prototype.createNewProject = function () {
         function () {
             myself.exitReplayMode();
             myself.newProject();
+            SnapActions.disableCollaboration();
+            SnapUndo.reset();
         }
     );
 };
