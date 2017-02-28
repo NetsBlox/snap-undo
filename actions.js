@@ -570,7 +570,7 @@ ActionManager.prototype._getBlockState = function(id) {
 
     // Use the last connection unless the last connection was to the
     // top of a command block and it has a position set
-    if (target && !(target.loc === 'top' && position)) {
+    if (target && !(target.loc === 'top' && position) && !(target.loc === 'wrap' && position)) {
         state = [this._targetOf[id]];
     } else if (position) {
         state = [position.x, position.y];
@@ -1398,6 +1398,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
                 this.disconnectBlock(block, scripts);
             }
         }
+        target.point = new Point(target.point.x, target.point.y);
     } else if (block instanceof ReporterBlockMorph || block instanceof CommentMorph) {
         // Disconnect the given block
         this.disconnectBlock(block, scripts);
@@ -1440,7 +1441,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
             myself._positionOf[target.id] = myself.getStandardPosition(scripts, target.position());
         }
 
-        if (target.loc === 'top') {
+        if (target.loc === 'top' || target.loc === 'wrap') {
             var topBlock = block.topBlock();
             myself._positionOf[topBlock.id] = myself.getStandardPosition(scripts, topBlock.position());
         }
