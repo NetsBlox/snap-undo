@@ -5217,6 +5217,19 @@ IDE_Morph.prototype.promptCollaboration = function () {
     dialog.setCenter(world.center());
 };
 
+IDE_Morph.prototype.promptExitReplay = function (onExit) {
+    var myself = this;
+    this.confirm(
+        'The given action cannot be applied while in replay mode. \n' +
+        'Would you like to exit replay mode?',
+        'Exit Replay?',
+        function() {
+            myself.exitReplayMode();
+            onExit();
+        }
+    );
+};
+
 IDE_Morph.prototype.resetCloudPassword = function () {
     var myself = this,
         world = this.world();
