@@ -3166,6 +3166,8 @@ IDE_Morph.prototype.replayEvents = function (actions) {
 
 IDE_Morph.prototype.exitReplayMode = function () {
     this.isReplayMode = false;
+    SnapUndo.trimAll();  // trim the undo queues
+    this.activeEditor.onSetActive();
     this.replayControls.hide();
 };
 
