@@ -241,9 +241,7 @@ ActionManager.prototype.completeAction = function(result) {
     this.isApplyingAction = false;
     this.lastSeen = action.id;
     this.idCount = 0;
-    if (!this.ide().isReplayMode) {
-        SnapUndo.record(action);
-    }
+    SnapUndo.record(action);
 
     // Call 'success' or 'reject', if relevant
     if (action.user === this.id) {
