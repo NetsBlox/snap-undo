@@ -379,14 +379,18 @@ ActionManager.prototype._applyEvent = function(msg) {
         this.currentBatch = null;
         this._rawApplyEvent(msg);
     }
-    // TODO: handle exceptions...
 };
 
 ActionManager.prototype._rawApplyEvent = function(event) {
     var method = this._getMethodFor(event.type);
 
     this.currentEvent = event;
-    this[method].apply(this, event.args);
+    try {
+        this[method].apply(this, event.args);
+    } catch (e) {
+        this.completeAction(null);
+        throw e;
+    }
 };
 
 ActionManager.prototype.send = function(json) {
