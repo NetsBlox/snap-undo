@@ -6621,26 +6621,38 @@ SliderMorph.prototype.updateTarget = function () {
     }
 };
 
-SliderMorph.prototype.addTick = function (value, color, width) {
+SliderMorph.prototype.addTick = function (value, color, size) {
     // Create a tick mark on the slider at the given value
     var tickMark = new Morph(),
-        posX;
+        pos;
 
-    width = width || 3;
+    size = size || 2;
     color = color || this.color.darker();
-
-    posX = Math.min(
-        //Math.round((value - this.start) * this.unitSize()),
-        Math.round((value - this.start) * this.unitSize(width)),
-        this.width() - width
-    );
 
     tickMark.value = value;
     tickMark.color = color;
 
-    tickMark.setWidth(width);
-    tickMark.setHeight(this.height());
-    tickMark.setPosition(new Point(posX + this.left(), this.top()));
+    if (this.orientation === 'vertical') {
+        pos = Math.min(
+            Math.round((value - this.start) * this.unitSize(size)),
+            this.height() - size - this.width()/2
+        );
+        pos = Math.max(this.width()/2, pos);
+
+        tickMark.setWidth(this.width());
+        tickMark.setHeight(size);
+        tickMark.setPosition(new Point(this.left(), pos + this.top()));
+    } else {
+        pos = Math.min(
+            Math.round((value - this.start) * this.unitSize(size)),
+            this.width() - size - this.height()/2
+        );
+        pos = Math.max(this.height()/2, pos);
+
+        tickMark.setWidth(size);
+        tickMark.setHeight(this.height());
+        tickMark.setPosition(new Point(pos + this.left(), this.top()));
+    }
 
     this.addBack(tickMark);
     this.tickMarks.push(tickMark);
