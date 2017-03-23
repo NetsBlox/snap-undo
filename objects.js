@@ -9170,7 +9170,7 @@ ReplayControls.prototype.setActions = function(actions, atEnd) {
 
     // Add tickmarks for each action
     this.slider.clearTicks();
-    for (var i = 1; i < actions.length-1; i++) {
+    for (var i = 0; i < actions.length; i++) {
         this.slider.addTick(actions[i].time);
     }
 
