@@ -6539,12 +6539,12 @@ SliderMorph.prototype.init = function (
     this.button.color = new Color(200, 200, 200);
     this.button.highlightColor = new Color(210, 210, 255);
     this.button.pressColor = new Color(180, 180, 255);
+    this.tickMarks = [];
     SliderMorph.uber.init.call(this, orientation);
     this.add(this.button);
     this.alpha = 0.3;
     this.color = color || new Color(0, 0, 0);
     this.setExtent(new Point(20, 100));
-    this.tickMarks = [];
     // this.drawNew();
 };
 
@@ -6598,6 +6598,36 @@ SliderMorph.prototype.drawNew = function () {
     );
     this.button.drawNew();
     this.button.changed();
+
+    // Update the tick marks
+    var tickMark,
+        pos;
+
+    for (var i = this.tickMarks.length; i--;) {
+        tickMark = this.tickMarks[i];
+        if (this.orientation === 'vertical') {
+            pos = Math.min(
+                Math.round((tickMark.value - this.start) * this.unitSize(tickMark.size)),
+                this.height() - tickMark.size - this.width()/2
+            );
+            pos = Math.max(this.width()/2, pos);
+
+            tickMark.setWidth(this.width());
+            tickMark.setHeight(tickMark.size);
+            tickMark.setPosition(new Point(this.left(), pos + this.top()));
+        } else {
+            pos = Math.min(
+                Math.round((tickMark.value - this.start) * this.unitSize(tickMark.size)),
+                this.width() - tickMark.size - this.height()/2
+            );
+            pos = Math.max(this.height()/2, pos);
+
+            tickMark.setWidth(tickMark.size);
+            tickMark.setHeight(this.height());
+            tickMark.setPosition(new Point(pos + this.left(), this.top()));
+        }
+    }
+
 };
 
 SliderMorph.prototype.updateValue = function () {
@@ -6631,32 +6661,10 @@ SliderMorph.prototype.addTick = function (value, color, size) {
 
     tickMark.value = value;
     tickMark.color = color;
-
-    if (this.orientation === 'vertical') {
-        pos = Math.min(
-            Math.round((value - this.start) * this.unitSize(size)),
-            this.height() - size - this.width()/2
-        );
-        pos = Math.max(this.width()/2, pos);
-
-        tickMark.setWidth(this.width());
-        tickMark.setHeight(size);
-        tickMark.setPosition(new Point(this.left(), pos + this.top()));
-    } else {
-        pos = Math.min(
-            Math.round((value - this.start) * this.unitSize(size)),
-            this.width() - size - this.height()/2
-        );
-        pos = Math.max(this.height()/2, pos);
-
-        tickMark.setWidth(size);
-        tickMark.setHeight(this.height());
-        tickMark.setPosition(new Point(pos + this.left(), this.top()));
-    }
+    tickMark.size = size;
 
     this.addBack(tickMark);
     this.tickMarks.push(tickMark);
-    tickMark.drawNew();
 
     return tickMark;
 };

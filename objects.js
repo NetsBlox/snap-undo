@@ -9173,6 +9173,7 @@ ReplayControls.prototype.setActions = function(actions, atEnd) {
     for (var i = 0; i < actions.length; i++) {
         this.slider.addTick(actions[i].time);
     }
+    this.slider.drawNew();
 
     this.updateDisplayTime();
 };
