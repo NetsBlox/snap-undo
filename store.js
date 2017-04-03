@@ -138,6 +138,64 @@ XML_Serializer.prototype.mediaXML = function () {
     return xml + '</media>';
 };
 
+XML_Serializer.prototype.undoQueueXML = function (id) {
+    var events = SnapUndo.eventHistory[id] || [];
+
+    return this.format('<undo-queue id="@">%</undo-queue>',
+        id,
+        this.storeUndoEvents(events).join('')
+    );
+};
+
+XML_Serializer.prototype.undoEventsXML = function (events) {
+    var queue = [],
+        xml;
+
+    // TODO: cache some things...
+
+    // TODO: Store the queue of a single entity
+    for (var i = events.length; i--;) {
+        event = events[i];
+
+        // TODO: correct for nested lists
+        args = event.args.join('</arg><arg>');
+        if (args) {
+            args = '<arg>' + args + '</arg>';
+        }
+
+        xml = this.format(
+            '<event id="@" type="@" replayType="@" time="@" user="@">%</event>',
+            event.id,
+            event.type,
+            event.replayType || 0,
+            event.time,
+            event.user,
+            args
+        );
+        queue.unshift(xml);
+    }
+
+    return queue.join('');
+};
+
+XML_Serializer.prototype.historyXML = function (ownerId) {
+    var myself = this,
+        prefix = ownerId + '/',
+        queueIds = SnapUndo.allQueueIds().filter(function(queueId) {
+            return queueId.indexOf(prefix) === 0;
+        });
+
+    return '<history>' + queueIds.map(function(id) {
+        return myself.undoQueueXML(id);
+    }).join('') + '</history>';
+};
+
+XML_Serializer.prototype.replayHistory = function () {
+    return this.format('<replay>%</replay>',
+        this.storeUndoEvents(SnapUndo.allEvents)
+    );
+};
+
 XML_Serializer.prototype.add = function (object) {
     // private - mark the object with a serializationID property and add it
     if (object[this.idProperty]) { // already present
@@ -1546,6 +1604,7 @@ StageMorph.prototype.toXML = function (serializer) {
     }
 
     this.removeAllClones();
+    // TODO: Add undo queue
     return serializer.format(
         '<project collabStartIndex="@" name="@" app="@" version="@">' +
             '<notes>$</notes>' +
@@ -1570,6 +1629,7 @@ StageMorph.prototype.toXML = function (serializer) {
             '<code>%</code>' +
             '<blocks>%</blocks>' +
             '<variables>%</variables>' +
+            '<history>%</history>' +
             '</project>',
         SnapActions.lastSeen,
         (ide && ide.projectName) ? ide.projectName : localize('Untitled'),
@@ -1606,6 +1666,7 @@ StageMorph.prototype.toXML = function (serializer) {
         serializer.store(this.globalBlocks),
         (ide && ide.globalVariables) ?
                     serializer.store(ide.globalVariables) : ''
+        // TODO: Add the undo history
     );
 };
 
@@ -1613,6 +1674,8 @@ SpriteMorph.prototype.toXML = function (serializer) {
     var stage = this.parentThatIsA(StageMorph),
         ide = stage ? stage.parentThatIsA(IDE_Morph) : null,
         idx = ide ? ide.sprites.asArray().indexOf(this) + 1 : 0;
+
+    // TODO: Add undo queue
     return serializer.format(
         '<sprite name="@" collabId="@" idx="@" x="@" y="@"' +
             ' heading="@"' +
@@ -1628,6 +1691,7 @@ SpriteMorph.prototype.toXML = function (serializer) {
             '<variables>%</variables>' +
             '<blocks>%</blocks>' +
             '<scripts>%</scripts>' +
+            '<history>%</history>' +
             '</sprite>',
         this.name,
         this.id,
@@ -1672,6 +1736,7 @@ SpriteMorph.prototype.toXML = function (serializer) {
         !this.customBlocks ?
                     '' : serializer.store(this.customBlocks),
         serializer.store(this.scripts)
+        // TODO: Add the undo history
     );
 };
 
