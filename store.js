@@ -143,7 +143,7 @@ XML_Serializer.prototype.undoQueueXML = function (id) {
 
     return this.format('<undo-queue id="@">%</undo-queue>',
         id,
-        this.storeUndoEvents(events).join('')
+        this.undoEventsXML(events)
     );
 };
 
@@ -180,19 +180,20 @@ XML_Serializer.prototype.undoEventsXML = function (events) {
 
 XML_Serializer.prototype.historyXML = function (ownerId) {
     var myself = this,
-        prefix = ownerId + '/',
+        prefix = ownerId && ownerId + '/',
         queueIds = SnapUndo.allQueueIds().filter(function(queueId) {
-            return queueId.indexOf(prefix) === 0;
+            return prefix ? queueId.indexOf(prefix) === 0 :
+                queueId.indexOf('/') === -1;
         });
 
-    return '<history>' + queueIds.map(function(id) {
+    return queueIds.map(function(id) {
         return myself.undoQueueXML(id);
-    }).join('') + '</history>';
+    }).join('');
 };
 
 XML_Serializer.prototype.replayHistory = function () {
     return this.format('<replay>%</replay>',
-        this.storeUndoEvents(SnapUndo.allEvents)
+        this.undoEventsXML(SnapUndo.allEvents)
     );
 };
 
@@ -1604,7 +1605,6 @@ StageMorph.prototype.toXML = function (serializer) {
     }
 
     this.removeAllClones();
-    // TODO: Add undo queue
     return serializer.format(
         '<project collabStartIndex="@" name="@" app="@" version="@">' +
             '<notes>$</notes>' +
@@ -1665,8 +1665,9 @@ StageMorph.prototype.toXML = function (serializer) {
         code('codeMappings'),
         serializer.store(this.globalBlocks),
         (ide && ide.globalVariables) ?
-                    serializer.store(ide.globalVariables) : ''
-        // TODO: Add the undo history
+                    serializer.store(ide.globalVariables) : '',
+        serializer.historyXML(this.id)
+        // TODO: Add global replay stuff
     );
 };
 
@@ -1675,7 +1676,6 @@ SpriteMorph.prototype.toXML = function (serializer) {
         ide = stage ? stage.parentThatIsA(IDE_Morph) : null,
         idx = ide ? ide.sprites.asArray().indexOf(this) + 1 : 0;
 
-    // TODO: Add undo queue
     return serializer.format(
         '<sprite name="@" collabId="@" idx="@" x="@" y="@"' +
             ' heading="@"' +
@@ -1735,8 +1735,8 @@ SpriteMorph.prototype.toXML = function (serializer) {
         serializer.store(this.variables),
         !this.customBlocks ?
                     '' : serializer.store(this.customBlocks),
-        serializer.store(this.scripts)
-        // TODO: Add the undo history
+        serializer.store(this.scripts),
+        serializer.historyXML(this.id)
     );
 };
 
