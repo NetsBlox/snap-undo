@@ -256,9 +256,7 @@ XML_Serializer.prototype.historyXML = function (ownerId) {
 };
 
 XML_Serializer.prototype.replayHistory = function () {
-    return this.format('<replay>%</replay>',
-        this.undoEventsXML(SnapUndo.allEvents)
-    );
+    return this.undoEventsXML(SnapUndo.allEvents);
 };
 
 XML_Serializer.prototype.add = function (object) {
@@ -491,7 +489,7 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
     model.globalVariables = model.project.childNamed('variables');
     project.globalVariables = new VariableFrame();
     project.collabStartIndex = +(model.project.attributes.collabStartIndex || 0);
-    this.loadReplayHistory();
+    this.loadReplayHistory(xmlNode.childNamed('replay'));
 
     /* Stage */
 
@@ -708,9 +706,15 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
     return project;
 };
 
-SnapSerializer.prototype.loadReplayHistory = function (model) {
-    console.log('loading replay history!');
-    // TODO
+SnapSerializer.prototype.loadReplayHistory = function (xml) {
+    var queue = xml.children,
+        event;
+
+    for (var e = queue.length; e--;) {
+        // TODO: recover the ownerid
+        event = this.parseEvent(null, queue[e]);
+        SnapUndo.allEvents.unshift(event);
+    }
 };
 
 SnapSerializer.prototype.loadHistory = function (model) {
@@ -1742,6 +1746,7 @@ StageMorph.prototype.toXML = function (serializer) {
             '<blocks>%</blocks>' +
             '<variables>%</variables>' +
             '<history>%</history>' +
+            '<replay>%</replay>' +
             '</project>',
         SnapActions.lastSeen,
         (ide && ide.projectName) ? ide.projectName : localize('Untitled'),
@@ -1778,8 +1783,8 @@ StageMorph.prototype.toXML = function (serializer) {
         serializer.store(this.globalBlocks),
         (ide && ide.globalVariables) ?
                     serializer.store(ide.globalVariables) : '',
-        serializer.historyXML(this.id)
-        // TODO: Add global replay stuff
+        serializer.historyXML(this.id),
+        serializer.replayHistory()
     );
 };
 
