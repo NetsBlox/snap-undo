@@ -192,6 +192,9 @@ XML_Serializer.prototype.getArgumentXML = function (tag, item) {
                     return myself.getArgumentXML('_' + key, el);
                 });
             } else {
+                if (/^[^a-zA-Z].*/.test(key)) {
+                    return myself.getArgumentXML('_' + key, item[key]);
+                }
                 return myself.getArgumentXML(key, item[key]);
             }
         }).join('');
