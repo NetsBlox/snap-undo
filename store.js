@@ -188,7 +188,8 @@ XML_Serializer.prototype.getArgumentXML = function (tag, item) {
         xml = keys.map(function(key) {
             if (item[key] instanceof Array) {
                 return item[key].map(function(el) {
-                    return myself.getArgumentXML(key, el);
+                    // prefix index with '_' since xml can't start with a number
+                    return myself.getArgumentXML('_' + key, el);
                 });
             } else {
                 return myself.getArgumentXML(key, item[key]);
@@ -208,7 +209,8 @@ XML_Serializer.prototype.getArgumentXML = function (tag, item) {
 XML_Serializer.prototype.loadEventArg = function (xml) {
     var content,
         child,
-        isArrayLike;
+        isArrayLike,
+        tag;
 
     if (xml.children.length) {
         if (xml.children[0].tag === 'CDATA') {
@@ -220,6 +222,7 @@ XML_Serializer.prototype.loadEventArg = function (xml) {
 
         for (var i = xml.children.length; i--;) {
             child = xml.children[i];
+            tag = child.tag[0] === '_' ? child.tag.slice(1) : child.tag;
             if (isNaN(+child.tag)) {
                 isArrayLike = false;
             }
