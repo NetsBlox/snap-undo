@@ -141,8 +141,9 @@ XML_Serializer.prototype.mediaXML = function () {
 XML_Serializer.prototype.undoQueueXML = function (id) {
     var events = SnapUndo.eventHistory[id] || [];
 
-    return this.format('<undo-queue id="@">%</undo-queue>',
+    return this.format('<undo-queue id="@" undo-count="@">%</undo-queue>',
         id,
+        SnapUndo.undoCount[id],
         this.undoEventsXML(events)
     );
 };
@@ -427,6 +428,7 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
     model.globalVariables = model.project.childNamed('variables');
     project.globalVariables = new VariableFrame();
     project.collabStartIndex = +(model.project.attributes.collabStartIndex || 0);
+    this.loadReplayHistory();
 
     /* Stage */
 
@@ -528,6 +530,7 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
     model.sprites.childrenNamed('sprite').forEach(function (model) {
         myself.loadValue(model);
     });
+
 
     // restore inheritance and nesting associations
     myself.project.stage.children.forEach(function (sprite) {
@@ -639,6 +642,47 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
     });
     this.objects = {};
     return project;
+};
+
+SnapSerializer.prototype.loadReplayHistory = function (model) {
+    console.log('loading replay history!');
+    // TODO
+};
+
+SnapSerializer.prototype.loadHistory = function (model) {
+    var queues = model.children,
+        queue,
+        event,
+        id;
+
+    for (var i = queues.length; i--;) {
+        id = queues[i].attributes.id;
+        SnapUndo.undoCount[id] = +queues[i].attributes['undo-count'] || 0;
+        SnapUndo.eventHistory[id] = [];
+        queue = queues[i].children;
+        for (var e = queue.length; e--;) {
+            event = this.parseEvent(queue[e]);
+            SnapUndo.eventHistory[id].unshift(event);
+        }
+    }
+};
+
+SnapSerializer.prototype.parseEvent = function (xml) {
+    var args = [];
+
+    for (var i = xml.children.length; i--;) {
+        args.unshift(xml.children[i].children[0] ?
+            xml.children[i].children[0].toString() : xml.children[i].contents);
+    }
+
+    return {
+        id: xml.attributes.id,
+        type: xml.attributes.type,
+        replayType: xml.attributes.replayType,
+        time: xml.attributes.time,
+        user: xml.attributes.user,
+        args: args
+    };
 };
 
 SnapSerializer.prototype.loadBlocks = function (xmlString, targetStage) {
@@ -1359,6 +1403,7 @@ SnapSerializer.prototype.loadValue = function (model) {
         v.drawNew();
         v.gotoXY(+model.attributes.x || 0, +model.attributes.y || 0);
         myself.loadObject(v, model);
+        myself.loadHistory(model.childNamed('history'));
         return v;
     case 'context':
         v = new Context(null);
@@ -1558,6 +1603,7 @@ SnapSerializer.prototype.openProject = function (project, ide) {
     //})
 
     ide.world().keyboardReceiver = project.stage;
+
     return project;
 };
 

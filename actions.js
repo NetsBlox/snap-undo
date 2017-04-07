@@ -2272,6 +2272,7 @@ ActionManager.prototype.loadProject = function(ide, lastSeen, serialized) {
     if (serialized) {
         event.args.push(serialized);
     }
+    // TODO: only do this if SnapUndo is empty
     SnapUndo.record(event);
 
     // Update the id counter
