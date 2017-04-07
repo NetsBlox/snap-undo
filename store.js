@@ -158,11 +158,11 @@ XML_Serializer.prototype.undoEventsXML = function (events) {
     for (var i = events.length; i--;) {
         event = events[i];
 
-        // TODO: correct for nested lists
-        args = event.args.join('</arg><arg>');
-        if (args) {
-            args = '<arg>' + args + '</arg>';
+        args = [];
+        for (var a = event.args.length; a--;) {
+            args.unshift(this.getArgumentXML('arg', event.args[a]));
         }
+        args = args.join('');
 
         xml = this.format(
             '<event id="@" type="@" replayType="@" time="@" user="@">%</event>',
@@ -177,6 +177,69 @@ XML_Serializer.prototype.undoEventsXML = function (events) {
     }
 
     return queue.join('');
+};
+
+XML_Serializer.prototype.getArgumentXML = function (tag, item) {
+    var myself = this,
+        xml = item;
+
+    if (item instanceof Object) {
+        var keys = Object.keys(item);
+
+        xml = keys.map(function(key) {
+            if (item[key] instanceof Array) {
+                return item[key].map(function(el) {
+                    return myself.getArgumentXML(key, el);
+                });
+            } else {
+                return myself.getArgumentXML(key, item[key]);
+            }
+        }).join('');
+    }
+
+    return [
+        '<', tag, ' type="' + (typeof item) + '">',
+        xml,
+        '</', tag, '>'
+    ].join('');
+};
+
+XML_Serializer.prototype.loadEventArg = function (xml) {
+    var content,
+        child,
+        isArrayLike;
+
+    if (xml.children.length) {
+        if (xml.attributes.type === 'string') {
+            return xml.children[0].toString();
+        }
+
+        content = {};
+        isArrayLike = true;
+
+        for (var i = xml.children.length; i--;) {
+            child = xml.children[i];
+            if (isNaN(+child.tag)) {
+                isArrayLike = false;
+            }
+            if (content[child.tag] instanceof Array) {
+                content[child.tag].unshift(this.loadEventArg(child));
+            } else if (content[child.tag]) {
+                content[child.tag] = [this.loadEventArg(child), content[child.tag]];
+            } else {
+                content[child.tag] = this.loadEventArg(child);
+            }
+        }
+
+        if (isArrayLike) {
+            content.length = xml.children.length;
+            content = Array.prototype.slice.call(content);
+        }
+
+        return content;
+    } else {
+        return xml.contents;
+    }
 };
 
 XML_Serializer.prototype.historyXML = function (ownerId) {
@@ -661,25 +724,27 @@ SnapSerializer.prototype.loadHistory = function (model) {
         SnapUndo.eventHistory[id] = [];
         queue = queues[i].children;
         for (var e = queue.length; e--;) {
-            event = this.parseEvent(queue[e]);
+            event = this.parseEvent(id, queue[e]);
             SnapUndo.eventHistory[id].unshift(event);
         }
     }
 };
 
-SnapSerializer.prototype.parseEvent = function (xml) {
+SnapSerializer.prototype.parseEvent = function (owner, xml) {
     var args = [];
 
     for (var i = xml.children.length; i--;) {
-        args.unshift(xml.children[i].children[0] ?
-            xml.children[i].children[0].toString() : xml.children[i].contents);
+        // The argument is the children (if there is one) converted to a
+        // string or the string contents (like a string id)
+        args.unshift(this.loadEventArg(xml.children[i]));
     }
 
     return {
-        id: xml.attributes.id,
+        id: +xml.attributes.id,
+        owner: owner,
         type: xml.attributes.type,
-        replayType: xml.attributes.replayType,
-        time: xml.attributes.time,
+        replayType: +xml.attributes.replayType,
+        time: +xml.attributes.time,
         user: xml.attributes.user,
         args: args
     };
