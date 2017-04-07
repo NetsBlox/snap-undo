@@ -154,7 +154,6 @@ XML_Serializer.prototype.undoEventsXML = function (events) {
 
     // TODO: cache some things...
 
-    // TODO: Store the queue of a single entity
     for (var i = events.length; i--;) {
         event = events[i];
 
@@ -195,10 +194,12 @@ XML_Serializer.prototype.getArgumentXML = function (tag, item) {
                 return myself.getArgumentXML(key, item[key]);
             }
         }).join('');
+    } else if (typeof item === 'string' && item[0] === '<') {
+        xml = '<![CDATA[' + item + ']]>';
     }
 
     return [
-        '<', tag, ' type="' + (typeof item) + '">',
+        '<', tag, '>',
         xml,
         '</', tag, '>'
     ].join('');
@@ -210,8 +211,8 @@ XML_Serializer.prototype.loadEventArg = function (xml) {
         isArrayLike;
 
     if (xml.children.length) {
-        if (xml.attributes.type === 'string') {
-            return xml.children[0].toString();
+        if (xml.children[0].tag === 'CDATA') {
+            return xml.children[0].contents;
         }
 
         content = {};
