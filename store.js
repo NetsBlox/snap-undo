@@ -584,6 +584,7 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
         );
     }
     this.loadObject(project.stage, model.stage);
+    this.loadHistory(xmlNode.childNamed('history'));
 
     /* Sprites */
 
