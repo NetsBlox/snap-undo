@@ -1300,7 +1300,6 @@ ActionManager.prototype._getCustomBlockEditor = function(id, block) {
             return child instanceof BlockEditorMorph && child.definition.id === id;
         });
 
-    // TODO: This is inefficient
     if (!editor && blockDef) {  // Create new editor dialog
         if (block) {
             editor = block.parentThatIsA(BlockEditorMorph);
@@ -2455,7 +2454,6 @@ ActionManager.prototype.loadCustomBlocks = function(blocks, owner) {
         def.id = def.id || myself.newId();
         myself._customBlocks[def.id] = def;
         myself._customBlockOwner[def.id] = owner;
-        // TODO: Can I get around calling 'getCustomBlockEditor' here?
         editor = myself._getCustomBlockEditor(def.id);
         scripts = editor.body.contents;
         for (var j = scripts.children.length; j--;) {
