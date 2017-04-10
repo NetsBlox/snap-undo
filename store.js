@@ -190,7 +190,7 @@ XML_Serializer.prototype.getArgumentXML = function (tag, item) {
                 return item[key].map(function(el) {
                     // prefix index with '_' since xml can't start with a number
                     return myself.getArgumentXML('_' + key, el);
-                });
+                }).join('');
             } else {
                 if (/^[^a-zA-Z].*/.test(key)) {
                     return myself.getArgumentXML('_' + key, item[key]);
@@ -198,6 +198,7 @@ XML_Serializer.prototype.getArgumentXML = function (tag, item) {
                 return myself.getArgumentXML(key, item[key]);
             }
         }).join('');
+
     } else if (typeof item === 'string' && item[0] === '<') {
         xml = '<![CDATA[' + item + ']]>';
     }
@@ -213,7 +214,8 @@ XML_Serializer.prototype.loadEventArg = function (xml) {
     var content,
         child,
         isArrayLike,
-        tag;
+        tag,
+        largestIndex = -1;
 
     if (xml.children.length) {
         if (xml.children[0].tag === 'CDATA') {
@@ -226,20 +228,23 @@ XML_Serializer.prototype.loadEventArg = function (xml) {
         for (var i = xml.children.length; i--;) {
             child = xml.children[i];
             tag = child.tag[0] === '_' ? child.tag.slice(1) : child.tag;
-            if (isNaN(+child.tag)) {
+            if (isNaN(+tag)) {
                 isArrayLike = false;
             }
-            if (content[child.tag] instanceof Array) {
-                content[child.tag].unshift(this.loadEventArg(child));
-            } else if (content[child.tag]) {
-                content[child.tag] = [this.loadEventArg(child), content[child.tag]];
+            if (content[tag] instanceof Array) {
+                content[tag].unshift(this.loadEventArg(child));
+            } else if (content[tag]) {
+                content[tag] = [this.loadEventArg(child), content[tag]];
             } else {
-                content[child.tag] = this.loadEventArg(child);
+                content[tag] = this.loadEventArg(child);
+            }
+            if (isArrayLike) {
+                largestIndex = Math.max(largestIndex, +tag);
             }
         }
 
         if (isArrayLike) {
-            content.length = xml.children.length;
+            content.length = largestIndex + 1;
             content = Array.prototype.slice.call(content);
         }
 
