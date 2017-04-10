@@ -1300,14 +1300,15 @@ ActionManager.prototype._getCustomBlockEditor = function(id, block) {
             return child instanceof BlockEditorMorph && child.definition.id === id;
         });
 
+    // TODO: This is inefficient
     if (!editor && blockDef) {  // Create new editor dialog
         if (block) {
             editor = block.parentThatIsA(BlockEditorMorph);
         }
         if (!editor) {
             editor = new BlockEditorMorph(blockDef, owner);
-            editor.popUp();  // need to guarantee the correct pos
-            editor.setInitialDimensions();
+            editor.popUp(true);  // need to guarantee the correct pos
+            editor.setInitialDimensions(true);
             editor.cancel();
         }
     }
@@ -2444,20 +2445,25 @@ ActionManager.prototype.loadOwner = function(owner) {
 ActionManager.prototype.loadCustomBlocks = function(blocks, owner) {
     var myself = this,
         editor,
-        scripts;
+        scripts,
+        block,
+        def;
 
     owner = owner || this.ide().stage;
-    blocks.forEach(function(def) {
+    for (var i = blocks.length; i--;) {
+        def = blocks[i];
         def.id = def.id || myself.newId();
         myself._customBlocks[def.id] = def;
         myself._customBlockOwner[def.id] = owner;
+        // TODO: Can I get around calling 'getCustomBlockEditor' here?
         editor = myself._getCustomBlockEditor(def.id);
         scripts = editor.body.contents;
-        scripts.children.forEach(function(block) {
+        for (var j = scripts.children.length; j--;) {
+            block = scripts.children[j];
             myself.registerBlocks(block, def, true);
-        });
-        editor.updateDefinition();
-    });
+        }
+        editor.updateDefinition(true);
+    }
 };
 
 ActionManager.prototype.traverse = function(block, fn) {
