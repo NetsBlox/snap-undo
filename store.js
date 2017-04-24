@@ -219,7 +219,7 @@ XML_Serializer.prototype.loadEventArg = function (xml) {
 
     if (xml.children.length) {
         if (xml.children[0].tag === 'CDATA') {
-            return xml.children[0].contents.replace(/]]>/g, '&ncdata;]>');
+            return xml.children[0].contents.replace(/&ncdata;]>/g, ']]>');
         }
 
         content = {};
