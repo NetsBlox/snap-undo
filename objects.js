@@ -9076,7 +9076,7 @@ ReplayControls.prototype.playNext = function(dir) {
     nextAction = this.actions[this.actionIndex + Math.max(dir, 0)];
 
     if (nextAction) {
-        value = nextAction.time + dir;
+        value = this.getSliderPosition(nextAction) + dir;
 
         this.slider.button.setLeft(this.getSliderLeftFromValue(value));
         this.slider.updateValue();
@@ -9175,9 +9175,6 @@ ReplayControls.prototype.getCurrentHistory = function() {
     return this.actions.slice(0, this.actionIndex+1);
 };
 
-// TODO: condense long gaps
-//  - I will need a way to convert from slider position -> time
-//  - I will need a way to convert from time -> slider position
 ReplayControls.prototype.getSliderPosition = function(action) {
     return this.getSliderPositionFromTime(action.time);
 };
