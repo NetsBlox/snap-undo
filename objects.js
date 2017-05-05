@@ -9224,7 +9224,8 @@ ReplayControls.prototype.computeGapFolds = function() {
 };
 
 ReplayControls.prototype.setActions = function(actions, atEnd) {
-    var endTime, 
+    var endPosition,
+        endTime,
         i;
 
     this.slider.clearTicks();
@@ -9246,17 +9247,18 @@ ReplayControls.prototype.setActions = function(actions, atEnd) {
         );
     }
 
-    endTime = this.getSliderPosition(this.actions[this.actions.length-1]) + 1;
+    endTime = this.actions[this.actions.length-1].time;
+    endPosition = this.getSliderPosition(this.actions[this.actions.length-1]) + 1;
     this.slider.start = this.getSliderPosition(this.actions[0]) - 1;
 
     if (atEnd) {
-        this.slider.value = endTime;
+        this.slider.value = endPosition;
         this.actionIndex = this.actions.length - 1;
-        this.actionTime = endTime - 1;
+        this.actionTime = endTime;
     } else {
         this.slider.value = this.slider.start;
     }
-    this.slider.setStop(endTime);
+    this.slider.setStop(endPosition);
 
     // Add tickmarks for each action
     for (i = 0; i < this.actions.length; i++) {
