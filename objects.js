@@ -9054,10 +9054,10 @@ ReplayControls.prototype.formatTime = function(time) {
 };
 
 ReplayControls.prototype.updateDisplayTime = function() {
-    var totalTime = this.slider.rangeSize(),
-        currentTime = this.slider.value - this.slider.start;
+    var totalTime = this.actions[this.actions.length-1].time - this.actions[0].time,
+        currentTime = this.getTimeFromPosition(this.slider.value) -
+            this.getTimeFromPosition(this.slider.start);
 
-    // TODO: remove the inactive time gaps
     this.displayTime.text = this.formatTime(currentTime) + ' / ' +
         this.formatTime(totalTime);
 
@@ -9197,8 +9197,8 @@ ReplayControls.prototype.getSliderPositionFromTime = function(time) {
 
 ReplayControls.prototype.getTimeFromPosition = function(value) {
 
-    for (var i = this.gapFolds.length; i--;) {
-        if (this.gapFolds[i][1] >= value) {
+    for (var i = 0; i < this.gapFolds.length; i++) {
+        if (this.gapFolds[i][0] <= value) {
             value += this.gapFolds[i][1] - this.gapFolds[i][0];
         }
     }
