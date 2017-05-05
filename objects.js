@@ -8714,7 +8714,7 @@ ReplayControls.prototype.init = function(ide) {
     this.actionTime = 0;
     this.isApplyingAction = false;
     this.isPlaying = false;
-    this.maxGapDuration = 1000*2;  // 2 sec  // FIXME
+    this.maxGapDuration = 1000*60*2;  // compress gaps of longer than 2 min
     this.gapFolds = [];
 
     this.isShowingCaptions = false;
