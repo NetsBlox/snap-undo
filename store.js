@@ -100,7 +100,7 @@ XML_Serializer.prototype.serialize = function (object) {
     return xml;
 };
 
-XML_Serializer.prototype.store = function (object, mediaID) { // TODO:
+XML_Serializer.prototype.store = function (object, mediaID) {
     // private - mediaID is optional
     if (isNil(object) || !object.toXML) {
         // unsupported type, to be checked before calling store()
