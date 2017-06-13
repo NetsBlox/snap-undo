@@ -276,7 +276,7 @@ XML_Serializer.prototype.add = function (object) {
     if (object[this.idProperty]) { // already present
         return -1;
     }
-    this.contents.push(object);//TODO:
+    this.contents.push(object);
     object[this.idProperty] = this.contents.length;
     return this.contents.length;
 };
@@ -938,7 +938,7 @@ SnapSerializer.prototype.loadNestingInfo = function (object, model) {
     }
 };
 
-SnapSerializer.prototype.loadCostume = function (object, model) { //TODO:
+SnapSerializer.prototype.loadCostume = function (object, model) {
     var costume = model.childNamed('current-costume');
     if (costume) {
         var result;
@@ -1807,7 +1807,7 @@ StageMorph.prototype.toXML = function (serializer) {
         this.enableInheritance,
         this.enableSublistIDs,
         StageMorph.prototype.frameRate !== 0,
-        normalizeCanvas(this.trailsCanvas, true).toDataURL('image/png'), //TODO:
+        normalizeCanvas(this.trailsCanvas, true).toDataURL('image/png'),
         serializer.store(this.costumes, this.name + '_cst'),
         serializer.store(this.sounds, this.name + '_snd'),
         serializer.store(this.variables),
@@ -1833,7 +1833,7 @@ SpriteMorph.prototype.toXML = function (serializer) {
         ide = stage ? stage.parentThatIsA(IDE_Morph) : null,
         idx = ide ? ide.sprites.asArray().indexOf(this) + 1 : 0;
 
-    return serializer.format( // TODO:
+    return serializer.format(
         '<sprite name="@" collabId="@" idx="@" x="@" y="@"' +
             ' heading="@"' +
             ' scale="@"' +
