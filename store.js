@@ -100,7 +100,7 @@ XML_Serializer.prototype.serialize = function (object) {
     return xml;
 };
 
-XML_Serializer.prototype.store = function (object, mediaID) {
+XML_Serializer.prototype.store = function (object, mediaID) { // TODO:
     // private - mediaID is optional
     if (isNil(object) || !object.toXML) {
         // unsupported type, to be checked before calling store()
@@ -276,7 +276,7 @@ XML_Serializer.prototype.add = function (object) {
     if (object[this.idProperty]) { // already present
         return -1;
     }
-    this.contents.push(object);
+    this.contents.push(object);//TODO:
     object[this.idProperty] = this.contents.length;
     return this.contents.length;
 };
@@ -914,6 +914,7 @@ SnapSerializer.prototype.loadObject = function (object, model) {
     this.loadInheritanceInfo(object, model);
     this.loadNestingInfo(object, model);
     this.loadCostumes(object, model);
+    this.loadCostume(object, model);
     this.loadSounds(object, model);
     this.loadCustomBlocks(object, blocks);
     this.populateCustomBlocks(object, blocks);
@@ -936,6 +937,28 @@ SnapSerializer.prototype.loadNestingInfo = function (object, model) {
         object.nestingInfo = info.attributes;
     }
 };
+
+SnapSerializer.prototype.loadCostume = function (object, model) { //TODO:
+    var costume = model.childNamed('current-costume');
+    if (costume) {
+        var result;
+        if (costume.children.length !== 0) {
+            if (costume.children[0].tag === 'ref') {
+                result = this.loadValue(costume.require('ref'));
+            } else {
+                result = this.loadValue(costume.require('costume'));
+            }
+            if (result.loaded) {
+                object.wearCostume(result);
+            } else {
+                result.loaded = function () {
+                    object.wearCostume(result);
+                    this.loaded = true;
+                };
+            }
+        }
+    }
+}
 
 SnapSerializer.prototype.loadCostumes = function (object, model) {
     // private
@@ -1611,7 +1634,12 @@ SnapSerializer.prototype.loadValue = function (model) {
             }
             image.src = model.attributes.image;
         }
-        v.id = model.attributes.collabId;
+        if (Object.prototype.hasOwnProperty.call(
+            model.attributes,
+            'collabId'
+            )) {
+                v.id = model.attributes.collabId;                
+            }
         record();
         return v;
     case 'sound':
@@ -1779,7 +1807,7 @@ StageMorph.prototype.toXML = function (serializer) {
         this.enableInheritance,
         this.enableSublistIDs,
         StageMorph.prototype.frameRate !== 0,
-        normalizeCanvas(this.trailsCanvas, true).toDataURL('image/png'),
+        normalizeCanvas(this.trailsCanvas, true).toDataURL('image/png'), //TODO:
         serializer.store(this.costumes, this.name + '_cst'),
         serializer.store(this.sounds, this.name + '_snd'),
         serializer.store(this.variables),
@@ -1805,7 +1833,7 @@ SpriteMorph.prototype.toXML = function (serializer) {
         ide = stage ? stage.parentThatIsA(IDE_Morph) : null,
         idx = ide ? ide.sprites.asArray().indexOf(this) + 1 : 0;
 
-    return serializer.format(
+    return serializer.format( // TODO:
         '<sprite name="@" collabId="@" idx="@" x="@" y="@"' +
             ' heading="@"' +
             ' scale="@"' +
@@ -1815,6 +1843,7 @@ SpriteMorph.prototype.toXML = function (serializer) {
             ' costume="@" color="@,@,@" pen="@" ~>' +
             '%' + // inheritance info
             '%' + // nesting info
+            '<current-costume>%</current-costume>' +
             '<costumes>%</costumes>' +
             '<sounds>%</sounds>' +
             '<variables>%</variables>' +
@@ -1858,7 +1887,7 @@ SpriteMorph.prototype.toXML = function (serializer) {
 
                     + '"/>'
             : '',
-
+        this.getCostumeIdx() === 0? serializer.store(this.costume) : '',
         serializer.store(this.costumes, this.name + '_cst'),
         serializer.store(this.sounds, this.name + '_snd'),
         serializer.store(this.variables),
@@ -1881,6 +1910,7 @@ Costume.prototype.toXML = function (serializer) {
         this instanceof SVG_Costume ? this.contents.src
                 : normalizeCanvas(this.contents).toDataURL('image/png')
     );
+    
 };
 
 Sound.prototype[XML_Serializer.prototype.mediaDetectionProperty] = true;
