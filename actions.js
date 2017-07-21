@@ -1447,7 +1447,9 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         }
 
         block.snap(target);
-        scripts.drawNew();
+        if (scripts) {  // target block is not being dragged
+            scripts.drawNew();
+        }
 
         if (isNewBlock) {
             myself._positionOf[block.id] = myself.getStandardPosition(scripts, block.position());
@@ -1456,7 +1458,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
                 myself.registerBlocks(block, target.element.definition);
             } else {
                 myself.registerBlocks(block, scripts.owner);
-        }
+            }
         }
 
         if (target instanceof ReporterBlockMorph) {
