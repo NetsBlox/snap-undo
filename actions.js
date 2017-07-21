@@ -1396,8 +1396,10 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         block = this.deserializeBlock(id),
         isNewBlock = !this._blocks[block.id],
         target = copy(rawTarget),
+        isTargetDragging = false,
+        afterMove,
         scripts,
-        afterMove;
+        owner;
 
     this.__recordTarget(block.id, rawTarget);
 
@@ -1437,8 +1439,11 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         logger.error('Unsupported "onMoveBlock":', block);
     }
 
+    isTargetDragging = !scripts;
+    owner = this._owners[this._blockToOwnerId[target.element.id]];
+    scripts = scripts || owner.scripts;
     afterMove = function() {
-        if (isNewBlock) {
+        if (isNewBlock && !isTargetDragging) {
             scripts.add(block);
         } else {
             if (block.parent && block.parent.reactToGrabOf) {
@@ -1447,7 +1452,10 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         }
 
         block.snap(target);
-        if (scripts) {  // target block is not being dragged
+        if (isTargetDragging) {
+            target.element.cachedFullImage = null;
+            target.element.cachedFullBounds = null;
+        } else {
             scripts.drawNew();
         }
 
