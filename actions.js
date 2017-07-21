@@ -1231,6 +1231,7 @@ ActionManager.prototype._onAddBlock = function(block, ownerId, x, y, callback) {
             }
 
             myself.registerBlocks(firstBlock, owner);
+            myself.__updateScriptsMorph(block);
             myself.__updateActiveEditor(firstBlock.id);
             callback(firstBlock);
         };
@@ -1258,14 +1259,12 @@ ActionManager.prototype._onAddBlock = function(block, ownerId, x, y, callback) {
                 null,
                 function() {
                     owner.scripts.add(firstBlock);
-                    owner.scripts.drawNew();
                     afterAdd();
                 }
             );
         } else {
             firstBlock.setPosition(position);
             owner.scripts.add(firstBlock);
-            owner.scripts.changed();
             firstBlock.changed();
             owner.scripts.adjustBounds();
             afterAdd();
@@ -1671,6 +1670,16 @@ ActionManager.prototype.__canAnimate = function() {
         this.currentEvent.user !== this.id;
 };
 
+ActionManager.prototype.__updateScriptsMorph = function(block) {
+    var scripts = block.parentThatIsA(ScriptsMorph),
+        isDragging = !scripts;
+
+    if (!isDragging) {
+        scripts.drawNew();
+        scripts.changed();
+    }
+};
+
 ActionManager.prototype.__updateBlockDefinitions = function(block) {
     var editor = block.parentThatIsA(BlockEditorMorph);
     if (editor) {
@@ -1734,23 +1743,20 @@ ActionManager.prototype.disconnectBlock = function(block, scripts) {
 };
 
 ActionManager.prototype.onAddListInput = function(id, count) {
-    var block = this.getBlockFromId(id),
-        scripts = block.parentThatIsA(ScriptsMorph);
+    var block = this.getBlockFromId(id);
 
     count = count || 1;
     for (var i = 0; i < count; i++) {
         block.addInput();
     }
 
-    scripts.drawNew();
-    scripts.changed();
+    this.__updateScriptsMorph(block);
     this.__updateBlockDefinitions(block);
     this.completeAction();
 };
 
 ActionManager.prototype.onRemoveListInput = function(id, count) {
-    var block = this.getBlockFromId(id),
-        scripts = block.parentThatIsA(ScriptsMorph);
+    var block = this.getBlockFromId(id);
 
     count = count || 1;
     for (var i = 0; i < count; i++) {
@@ -1758,7 +1764,7 @@ ActionManager.prototype.onRemoveListInput = function(id, count) {
     }
 
     block.changed();
-    scripts.changed();
+    this.__updateScriptsMorph(block);
     this.__updateBlockDefinitions(block);
     this.completeAction();
 };
@@ -2589,7 +2595,6 @@ ActionManager.prototype.__clearOwnerRecords = function(ownerId) {
     var blockIds = Object.keys(this._blockToOwnerId),
         costumeIds = Object.keys(this._costumeToOwner),
         soundIds = Object.keys(this._soundToOwner),
-        owner = this._owners[ownerId],
         i;
 
     for (i = blockIds.length; i--;) {
