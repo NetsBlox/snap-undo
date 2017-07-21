@@ -1231,7 +1231,7 @@ ActionManager.prototype._onAddBlock = function(block, ownerId, x, y, callback) {
             }
 
             myself.registerBlocks(firstBlock, owner);
-            myself.__updateScriptsMorph(block);
+            myself.__updateScriptsMorph(firstBlock);
             myself.__updateActiveEditor(firstBlock.id);
             callback(firstBlock);
         };
@@ -1414,6 +1414,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         } else {  // basic connection for sprite/stage/etc
             target.element = this.getBlockFromId(target.element);
         }
+        owner = this._owners[this._blockToOwnerId[target.element.id]];
         scripts = target.element.parentThatIsA(ScriptsMorph);
         if (block.parent) {
             if (target.loc === 'bottom') {
@@ -1428,6 +1429,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         this.disconnectBlock(block, scripts);
 
         target = this.getBlockFromId(target);
+        owner = this._owners[this._blockToOwnerId[target.id]];
         scripts = target.parentThatIsA(ScriptsMorph);
 
         // If the target is a RingMorph, it will be overwritten rather than popped out
@@ -1439,7 +1441,6 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
     }
 
     isTargetDragging = !scripts;
-    owner = this._owners[this._blockToOwnerId[target.element.id]];
     scripts = scripts || owner.scripts;
     afterMove = function() {
         if (isNewBlock && !isTargetDragging) {
@@ -1451,10 +1452,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         }
 
         block.snap(target);
-        if (isTargetDragging) {
-            target.element.cachedFullImage = null;
-            target.element.cachedFullBounds = null;
-        } else {
+        if (!isTargetDragging) {
             scripts.drawNew();
         }
 
