@@ -3225,15 +3225,13 @@ IDE_Morph.prototype.exitReplayMode = function () {
     if (this.isReplayMode) {
         this.isReplayMode = false;
         // only trim the undo queues for the queues that have changed
-        var allIds = SnapUndo.allQueueIds(),
-            changedIds = [],
-            i;
+        var myself = this,
+            allIds = SnapUndo.allQueueIds(),
+            changedIds;
 
-        for (i = allIds.length; i--;) {
-            if (this.preReplayUndoState[allIds[i]] !== SnapUndo.undoCount[allIds[i]]) {
-                changedIds.push(allIds[i]);
-            }
-        }
+        changedIds = allIds.filter(function(id) {
+            return myself.preReplayUndoState[id] !== SnapUndo.undoCount[id];
+        });
 
         changedIds.forEach(function(id) {
             SnapUndo.trim(id);
