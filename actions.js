@@ -1034,7 +1034,6 @@ ActionManager.prototype._addSprite = function(sprite, costume) {
 };
 
 ActionManager.prototype._openProject = function(str) {
-    SnapUndo.reset();
     this.initializeRecords();
     return [str];
 };
@@ -2372,6 +2371,7 @@ ActionManager.prototype.onOpenProject = function(str) {
         project = null,
         ide = this.ide();
 
+    SnapUndo.reset();
     this.initializeRecords();
     if (str) {
         if (str.indexOf('<project') === 0) {
@@ -2379,9 +2379,7 @@ ActionManager.prototype.onOpenProject = function(str) {
         } else if (str.indexOf('<snapdata') === 0) {
             project = this.ide().rawOpenCloudDataString(str);
         }
-        if (project && project.collabStartIndex !== undefined) {
-            this.lastSeen = project.collabStartIndex;
-        }
+
     } else {
         this.ide().newProject();
     }
@@ -2391,7 +2389,24 @@ ActionManager.prototype.onOpenProject = function(str) {
         return myself.loadOwner(sprite);
     });
 
+    var event = this.currentEvent;
+
     this.completeAction();
+
+    // Load the replay and action manager state from project
+    var len = SnapUndo.allEvents.length;
+
+    // Remove the openProject event from the replay history.
+    // In the future, this information would be good to collect
+    // but it will not be recorded for now since it will exponentially
+    // inflate the project size...
+    if (event === SnapUndo.allEvents[len-1]) {
+        SnapUndo.allEvents.pop();
+    }
+
+    if (project && project.collabStartIndex !== undefined) {
+        this.lastSeen = project.collabStartIndex;
+    }
 };
 
 ActionManager.prototype._getCurrentTarget = function(block) {
