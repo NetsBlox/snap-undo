@@ -2393,19 +2393,21 @@ ActionManager.prototype.onOpenProject = function(str) {
 
     this.completeAction();
 
-    // Load the replay and action manager state from project
-    var len = SnapUndo.allEvents.length;
+    if (!this.ide().isReplayMode) {
+        // Load the replay and action manager state from project
+        var len = SnapUndo.allEvents.length;
 
-    // Remove the openProject event from the replay history.
-    // In the future, this information would be good to collect
-    // but it will not be recorded for now since it will exponentially
-    // inflate the project size...
-    if (event === SnapUndo.allEvents[len-1]) {
-        SnapUndo.allEvents.pop();
-    }
+        // Remove the openProject event from the replay history.
+        // In the future, this information would be good to collect
+        // but it will not be recorded for now since it will exponentially
+        // inflate the project size...
+        if (event === SnapUndo.allEvents[len-1]) {
+            SnapUndo.allEvents.pop();
+        }
 
-    if (project && project.collabStartIndex !== undefined) {
-        this.lastSeen = project.collabStartIndex;
+        if (project && project.collabStartIndex !== undefined) {
+            this.lastSeen = project.collabStartIndex;
+        }
     }
 };
 
