@@ -739,7 +739,13 @@ IDE_Morph.prototype.createControlBar = function () {
     // projectButton
     button = new PushButtonMorph(
         this,
-        'projectMenu',
+        function() {
+            var menu = myself.projectMenu(),
+                pos = myself.controlBar.projectButton.bottomLeft(),
+                world = myself.world();
+
+            menu.popup(world, pos);
+        },
         new SymbolMorph('file', 14)
         //'\u270E'
     );
@@ -763,7 +769,11 @@ IDE_Morph.prototype.createControlBar = function () {
     // settingsButton
     button = new PushButtonMorph(
         this,
-        'settingsMenu',
+        function() {
+            var menu = myself.settingsMenu(),
+            pos = myself.controlBar.settingsButton.bottomLeft();
+            menu.popup(myself.world(), pos);
+        },
         new SymbolMorph('gears', 14)
         //'\u2699'
     );
@@ -787,7 +797,11 @@ IDE_Morph.prototype.createControlBar = function () {
     // cloudButton
     button = new PushButtonMorph(
         this,
-        'cloudMenu',
+        function() {
+            var menu = myself.cloudMenu(),
+                pos = myself.controlBar.cloudButton.bottomLeft();
+            menu.popup(myself.world(), pos);
+        },
         new SymbolMorph('cloud', 11)
     );
     button.corner = 12;
@@ -2193,7 +2207,6 @@ IDE_Morph.prototype.cloudMenu = function () {
     var menu,
         myself = this,
         world = this.world(),
-        pos = this.controlBar.cloudButton.bottomLeft(),
         shiftClicked = (world.currentKey === 16);
 
     menu = new MenuMorph(this);
@@ -2322,7 +2335,8 @@ IDE_Morph.prototype.cloudMenu = function () {
             new Color(100, 0, 0)
         );
     }
-    menu.popup(world, pos);
+
+    return menu;
 };
 
 IDE_Morph.prototype.settingsMenu = function () {
@@ -2330,7 +2344,6 @@ IDE_Morph.prototype.settingsMenu = function () {
         stage = this.stage,
         world = this.world(),
         myself = this,
-        pos = this.controlBar.settingsButton.bottomLeft(),
         shiftClicked = (world.currentKey === 16);
 
     function addPreference(label, toggle, test, onHint, offHint, hide) {
@@ -2682,14 +2695,13 @@ IDE_Morph.prototype.settingsMenu = function () {
         'check to enable\nsaving linked sublist identities',
         true
     );
-    menu.popup(world, pos);
+    return menu;
 };
 
 IDE_Morph.prototype.projectMenu = function () {
     var menu,
         myself = this,
         world = this.world(),
-        pos = this.controlBar.projectButton.bottomLeft(),
         graphicsName = this.currentSprite instanceof SpriteMorph ?
                 'Costumes' : 'Backgrounds',
         shiftClicked = (world.currentKey === 16);
@@ -2877,7 +2889,7 @@ IDE_Morph.prototype.projectMenu = function () {
         'Select a sound from the media library'
     );
 
-    menu.popup(world, pos);
+    return menu;
 };
 
 IDE_Morph.prototype.resourceURL = function () {
