@@ -35,22 +35,37 @@ NetsBloxMorph.prototype.buildPanes = function () {
 NetsBloxMorph.prototype.openIn = function (world) {
     var myself = this,
         onConnect = this.sockets.onConnect,
+        hasUrlAnchors = location.href.indexOf('?') > -1 || location.hash,
         opened = false;
 
     this.projectName = 'myRole';
-    this.sockets.onConnect = function() {
-        opened = true;
-        myself.sockets.onConnect = onConnect;
-        NetsBloxMorph.uber.openIn.call(myself, world);
-        myself.sockets.onConnect();
-        return;
-    };
 
-    setTimeout(function() {
-        if (!opened) {  // Make sure it opens regardless
+    if (hasUrlAnchors) {
+        var m = new MenuMorph(null, 'Loading...');
+        m.popUpCenteredInWorld(world);
+
+        var startTime = Date.now();
+        this.sockets.onConnect = function() {
+            console.log('connection delay:', (Date.now()-startTime));
+            m.destroy();
+            opened = true;
+            myself.sockets.onConnect = onConnect;
             NetsBloxMorph.uber.openIn.call(myself, world);
-        }
-    }, 500);
+            myself.sockets.onConnect();
+            return;
+        };
+
+        setTimeout(function() {
+            if (!opened) {  // Make sure it opens regardless
+                m.destroy();
+                console.log('connection timeout! opening');
+                NetsBloxMorph.uber.openIn.call(myself, world);
+            }
+        }, 500);
+
+    } else {
+        NetsBloxMorph.uber.openIn.call(myself, world);
+    }
 };
 
 NetsBloxMorph.prototype.newRole = function (name) {
