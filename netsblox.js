@@ -46,7 +46,6 @@ NetsBloxMorph.prototype.openIn = function (world) {
 
         var startTime = Date.now();
         this.sockets.onConnect = function() {
-            console.log('connection delay:', (Date.now()-startTime));
             m.destroy();
             opened = true;
             myself.sockets.onConnect = onConnect;
@@ -58,7 +57,6 @@ NetsBloxMorph.prototype.openIn = function (world) {
         setTimeout(function() {
             if (!opened) {  // Make sure it opens regardless
                 m.destroy();
-                console.log('connection timeout! opening');
                 NetsBloxMorph.uber.openIn.call(myself, world);
             }
         }, 500);
