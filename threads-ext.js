@@ -220,16 +220,17 @@ NetsProcess.prototype.receiveSocketMessage = function (fields) {
     varFrame.deleteVar('__message__');
 };
 
-NetsProcess.prototype.createRPCUrl = function (rpc, params) {
+NetsProcess.prototype.createRPCUrl = function (rpc) {
     var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph),
         uuid = ide.sockets.uuid;
 
-    return ensureFullUrl('/rpc/'+rpc+'?uuid='+uuid+'&'+params);
+    return ensureFullUrl('/rpc/'+rpc+'?uuid='+uuid);
 };
 
 NetsProcess.prototype.callRPC = function (rpc, params, noCache) {
-    var url = this.createRPCUrl(rpc, params),
+    var url = this.createRPCUrl(rpc),
         response,
+        contentType,
         image;
 
     if (noCache) {
@@ -238,10 +239,15 @@ NetsProcess.prototype.callRPC = function (rpc, params, noCache) {
 
     if (!this.rpcRequest) {
         this.rpcRequest = new XMLHttpRequest();
-        this.rpcRequest.open('GET', url, true);
-        this.rpcRequest.send(null);
+        this.rpcRequest.open('POST', url, true);
+        this.rpcRequest.setRequestHeader('Content-Type', 'application/json');
+        this.rpcRequest.send(JSON.stringify(params));
     } else if (this.rpcRequest.readyState === 4) {
-        if (this.rpcRequest.getResponseHeader('content-type').indexOf('image') === 0) {
+        if (this.rpcRequest.status === 0) {
+            throw new Error('Request too large.');
+        }
+        contentType = this.rpcRequest.getResponseHeader('content-type');
+        if (contentType && contentType.indexOf('image') === 0) {
             image = this.getCostumeFromRPC(rpc, params);
             if (image) {
                 this.rpcRequest = null;
@@ -258,26 +264,21 @@ NetsProcess.prototype.callRPC = function (rpc, params, noCache) {
 };
 
 NetsProcess.prototype.getCostumeFromRPC = function (rpc, action, params) {
-    var image,
-        stage = this.homeContext.receiver.parentThatIsA(StageMorph),
-        paramItems;
+    var stage = this.homeContext.receiver.parentThatIsA(StageMorph),
+        image;
 
     if (arguments.length === 2) {
         params = action;
     } else {
         rpc = ['', rpc, action].join('/');
-        paramItems = params.length ? params.split('&') : [];
 
         // Add the width and height of the stage as default params
-        if (params.indexOf('width') === -1) {
-            paramItems.push('width=' + stage.width());
+        if (!params.width) {
+            params.width = stage.width();
         }
-
-        if (params.indexOf('height') === -1) {
-            paramItems.push('height=' + stage.height());
+        if (!params.height) {
+            params.height = stage.height();
         }
-
-        params = paramItems.join('&');
     }
 
     // Create the costume (analogous to reportURL)
@@ -338,9 +339,9 @@ NetsProcess.prototype.getJSFromRPCStruct = function (rpc, methodSignature) {
     var action = methodSignature[0],
         argNames = methodSignature[1],
         values = Array.prototype.slice.call(arguments, 2, argNames.length + 2),
-        query= {},
-        params;
-    //build a json obj
+        query= {};
+
+    // build a json obj
     var isPortable = SnapActions.serializer.isSavingPortable;
     SnapActions.serializer.flush();
     SnapActions.serializer.isSavingHistory = false;
@@ -358,8 +359,7 @@ NetsProcess.prototype.getJSFromRPCStruct = function (rpc, methodSignature) {
     SnapActions.serializer.isSavingPortable = isPortable;
     SnapActions.serializer.flush();
 
-    params = Qs.stringify(query, {encodeValuesOnly: true});
-    return this.getJSFromRPCDropdown(rpc, action, params);
+    return this.getJSFromRPCDropdown(rpc, action, query);
 };
 
 NetsProcess.prototype.getJSFromRPCDropdown = function (rpc, action, params) {
