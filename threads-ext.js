@@ -239,6 +239,7 @@ NetsProcess.prototype.callRPC = function (rpc, params, noCache) {
 
     if (!this.rpcRequest) {
         this.rpcRequest = new XMLHttpRequest();
+        this.rpcRequest.responseType = 'arraybuffer';
         this.rpcRequest.open('POST', url, true);
         this.rpcRequest.setRequestHeader('Content-Type', 'application/json');
         this.rpcRequest.send(JSON.stringify(params));
@@ -253,8 +254,8 @@ NetsProcess.prototype.callRPC = function (rpc, params, noCache) {
                 this.rpcRequest = null;
             }
             return image;
-        } else {
-            response = this.rpcRequest.responseText;
+        } else {  // assume text
+            response = String.fromCharCode.apply(null, new Uint8Array(this.rpcRequest.response));
             this.rpcRequest = null;
             return response;
         }
@@ -282,11 +283,18 @@ NetsProcess.prototype.getCostumeFromRPC = function (rpc, action, params) {
     }
 
     // Create the costume (analogous to reportURL)
-    if (!this.requestedImage) {
-        // Create new request
+    if (!this.rpcRequest || this.rpcRequest.readyState !== 4) {
+        var fullRPC = ['', rpc, action].join('/');
+        return this.callRPC(fullRPC, params, true);
+    } else if (!this.requestedImage) {
+        var rawPNG = this.rpcRequest.response;
+        var contentType = this.rpcRequest.getResponseHeader('content-type');
+        var blb = new Blob([rawPNG], {type: contentType});
+        var url = (window.URL || window.webkitURL).createObjectURL(blb);
+
         this.requestedImage = new Image();
         this.requestedImage.crossOrigin = 'Anonymous';
-        this.requestedImage.src = this.createRPCUrl(rpc, params);
+        this.requestedImage.src = url;
     } else if (this.requestedImage.complete && this.requestedImage.naturalWidth) {
         // Clear request
         image = this.requestedImage;
