@@ -1,5 +1,5 @@
 /* global ThreadManager, ensureFullUrl, Process, Context, IDE_Morph, Costume, StageMorph,
-   Qs, List, SnapActions, isObject*/
+   List, SnapActions, isObject*/
 
 ThreadManager.prototype.startProcess = function (
     block,
