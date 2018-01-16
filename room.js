@@ -1647,6 +1647,11 @@ RoomEditorMorph.prototype.toggleRecordMode = function() {
 };
 
 RoomEditorMorph.prototype.enterRecordMode = function() {
+    if (SnapActions.isCollaborating()) {
+        this.room.ide.showMessage(localize('Cannot trace network actions while collaborating'));
+        return;
+    }
+
     this.room.startTrace();
 };
 
@@ -1664,6 +1669,11 @@ RoomEditorMorph.prototype.exitReplayMode = function() {
 };
 
 RoomEditorMorph.prototype.enterReplayMode = function() {
+    if (SnapActions.isCollaborating()) {
+        this.room.ide.showMessage(localize('Cannot replay network actions while collaborating'));
+        return;
+    }
+
     this.replayControls.enable();
     this.room.startTraceReplay(this.replayControls);
     this.updateRoomControls();
