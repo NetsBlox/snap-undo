@@ -117,6 +117,8 @@ RoomMorph.prototype.init = function(ide) {
     // Set the initial values
     // Shared messages array for when messages are sent to unoccupied roles
     this.sharedMsgs = [];
+
+    this.blockHighlights = [];
 };
 
 RoomMorph.prototype.setReadOnly = function(value) {
@@ -896,6 +898,35 @@ RoomMorph.prototype.showSentMsg = function(msg, srcId, dstId) {
     this.addBack(msgMorph);
     this.displayedMsgMorphs.push(msgMorph);
     this.updateDisplayedMsg(msgMorph);
+
+    this.blockHighlights.forEach(function(highlight) {
+        var block = highlight.parent;
+        if (block && block.getHighlight() === highlight) {
+            block.removeHighlight();
+        }
+    });
+
+    // If the message is sent to the current role, highlight the blocks
+    // that handled the message
+
+    if (dstId === this.getCurrentRoleName()) {
+        var stage = this.ide.stage,
+            blocks = stage.children.concat(stage)
+                .map(function (morph) {
+                    var blocks = [];
+                    if (morph instanceof SpriteMorph || morph instanceof StageMorph) {
+                        blocks = morph.allHatBlocksForSocket(msg.msgType);
+                    }
+                    return blocks;
+                })
+                .reduce(function(l1, l2) {
+                    return l1.concat(l2);
+                }, []);
+
+        this.blockHighlights = blocks.map(function(block) {
+            return block.addHighlight();
+        });
+    }
 };
 
 RoomMorph.prototype.hideSentMsgs = function() {
@@ -1629,7 +1660,7 @@ RoomEditorMorph.prototype.isReplayMode = function() {
 
 RoomEditorMorph.prototype.exitReplayMode = function() {
     this.replayControls.disable();
-    this.room.exitTraceReplay();
+    this.room.stopTraceReplay();
 };
 
 RoomEditorMorph.prototype.enterReplayMode = function() {
