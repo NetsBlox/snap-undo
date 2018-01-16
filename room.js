@@ -829,7 +829,7 @@ RoomMorph.prototype.checkForSharedMsgs = function(role) {
     }
 };
 
-RoomMorph.prototype.showMessage = function(msg) {
+RoomMorph.prototype.showMessage = function(msg, sliderValue) {
     var myself = this;
 
     // Clear the last message(s)
@@ -861,6 +861,7 @@ RoomMorph.prototype.showMessage = function(msg) {
             myself.showSentMsg(msg, relSrcId, dstId);
         });
     }
+    this.trace.replayState = sliderValue;
 };
 
 RoomMorph.prototype.updateDisplayedMsg = function(msg) {
@@ -903,6 +904,20 @@ RoomMorph.prototype.hideSentMsgs = function() {
         msgMorph.destroy();
     });
     this.displayedMsgs = [];
+};
+
+RoomMorph.prototype.isCapturingTrace = function() {
+    return this.trace.startTime && !this.trace.endTime;
+};
+
+RoomMorph.prototype.isReplayingTrace = function() {
+    return !!this.trace.replayState;
+};
+
+RoomMorph.prototype.exitTraceReplay = function() {
+    this.hideSentMsgs();
+    this.setReadOnly(false);
+    this.trace.replayState = null;
 };
 
 RoomMorph.prototype.resetTrace = function() {
@@ -1082,7 +1097,7 @@ NetworkReplayControls.prototype.applyEvent = function(event, next) {
     var ide = this.parentThatIsA(IDE_Morph);
     var room = ide.room;
 
-    room.showMessage(event);
+    room.showMessage(event, this.slider.value);
     next();
 };
 
@@ -1406,6 +1421,7 @@ RoomEditorMorph.prototype.init = function(room, sliderColor) {
     this.palette = this.createMsgPalette();
     this.add(this.palette);
 
+    // TODO: Load the room state (if replaying, etc)
     this.room = room;
     this.add(room);
 
@@ -1508,7 +1524,9 @@ RoomEditorMorph.prototype.addToggleReplay = function() {
             },
             this.isReplayMode() ? exitSymbol : enterSymbol,
             null,
-            localize('View last network trace')
+
+            this.isReplayMode() ? localize('Exit network trace replayer') :
+                localize('View last network trace'),
         );
         replayButton.alpha = 0.2;
         replayButton.labelShadowColor = shade;
@@ -1571,8 +1589,7 @@ RoomEditorMorph.prototype.setExtent = function(point) {
 };
 
 RoomEditorMorph.prototype.isRecording = function() {
-    var trace = this.room.trace;
-    return trace.startTime && !trace.endTime;
+    return this.room.isCapturingTrace();
 };
 
 RoomEditorMorph.prototype.hasNetworkRecording = function() {
@@ -1602,8 +1619,7 @@ RoomEditorMorph.prototype.isReplayMode = function() {
 
 RoomEditorMorph.prototype.exitReplayMode = function() {
     this.replayControls.disable();
-    this.room.hideSentMsgs();
-    this.room.setReadOnly(false);
+    this.room.exitTraceReplay();
 };
 
 RoomEditorMorph.prototype.enterReplayMode = function() {
