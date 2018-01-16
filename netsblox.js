@@ -184,7 +184,7 @@ NetsBloxMorph.prototype.promptExitTraceReplay = function (onExit) {
             if (this.currentTab === 'room') {
                 this.spriteEditor.exitReplayMode();
             } else {
-                myself.room.exitTraceReplay();
+                myself.room.stopTraceReplay();
             }
             onExit();
         }

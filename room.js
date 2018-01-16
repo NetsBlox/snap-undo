@@ -861,7 +861,6 @@ RoomMorph.prototype.showMessage = function(msg, sliderValue) {
             myself.showSentMsg(msg, relSrcId, dstId);
         });
     }
-    this.trace.replayState = sliderValue;
 };
 
 RoomMorph.prototype.updateDisplayedMsg = function(msg) {
@@ -911,13 +910,20 @@ RoomMorph.prototype.isCapturingTrace = function() {
 };
 
 RoomMorph.prototype.isReplayingTrace = function() {
-    return !!this.trace.replayState;
+    return !!this.trace.replayer;
 };
 
-RoomMorph.prototype.exitTraceReplay = function() {
+RoomMorph.prototype.startTraceReplay = function(replayer) {
+    this.setReadOnly(true);
+
+    replayer.setMessages(this.trace.messages);
+    this.trace.replayer = replayer;
+};
+
+RoomMorph.prototype.stopTraceReplay = function() {
     this.hideSentMsgs();
     this.setReadOnly(false);
-    this.trace.replayState = null;
+    this.trace.replayer = null;
 };
 
 RoomMorph.prototype.resetTrace = function() {
@@ -1097,7 +1103,7 @@ NetworkReplayControls.prototype.applyEvent = function(event, next) {
     var ide = this.parentThatIsA(IDE_Morph);
     var room = ide.room;
 
-    room.showMessage(event, this.slider.value);
+    room.showMessage(event);
     next();
 };
 
@@ -1421,7 +1427,6 @@ RoomEditorMorph.prototype.init = function(room, sliderColor) {
     this.palette = this.createMsgPalette();
     this.add(this.palette);
 
-    // TODO: Load the room state (if replaying, etc)
     this.room = room;
     this.add(room);
 
@@ -1429,10 +1434,15 @@ RoomEditorMorph.prototype.init = function(room, sliderColor) {
     this.room.checkForSharedMsgs(this.room.getCurrentRoleName());
 
     // Replay Controls
-    this.replayControls = new NetworkReplayControls(this);
+    if (this.room.isReplayingTrace()) {
+        this.replayControls = this.room.trace.replayer;
+    } else {
+        this.replayControls = new NetworkReplayControls(this);
+        this.replayControls.hide();
+    }
+
     this.add(this.replayControls);
     this.replayControls.drawNew();
-    this.replayControls.hide();
 
     var button = new PushButtonMorph(
         this.room,
@@ -1623,11 +1633,8 @@ RoomEditorMorph.prototype.exitReplayMode = function() {
 };
 
 RoomEditorMorph.prototype.enterReplayMode = function() {
-    var messages = this.room.trace.messages;
-
     this.replayControls.enable();
-    this.replayControls.setMessages(messages);
-    this.room.setReadOnly(true);
+    this.room.startTraceReplay(this.replayControls);
     this.updateRoomControls();
 };
 
