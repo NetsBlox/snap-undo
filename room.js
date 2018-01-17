@@ -1119,6 +1119,56 @@ MessageMorph.prototype.fixLayout = function () {
     this.label.setBottom(this.bottom());
 };
 
+MessageMorph.prototype.getTableContents = function () {
+    var myself = this,
+        fields = Object.keys(this.contents),
+        table = new Table(1, fields.length),
+        tableMorph;
+
+    fields.forEach(function(field, index) {
+        table.colNames.push(field);
+        table.contents[0][index] = myself.contents[field];
+    });
+    table.colNames.push('field');
+    table.colNames.push('value');
+
+    table.get = function (col, row) {
+        if (!col) {
+            if (!row) {return this.colName(col+1); }
+            return this.rowName(row);
+        } else if (!row) {
+            return this.colName(col+1);
+        }
+        if (col > this.colCount || row > this.rowCount) {return null; }
+        return (this.contents[row - 1] || [])[col - 1];
+    };
+
+    return table;
+};
+
+
+MessageMorph.prototype.mouseClickLeft = function () {
+    var pos = this.rightCenter().add(new Point(2, 0)),
+        table = this.getTableContents(),
+        bubble;
+
+    var dialog = new TableDialogMorph(table);
+    dialog.labelString = localize('Message contents');
+    dialog.popUp(this.world());
+
+    //bubble = new SpeechBubbleMorph(
+        //new TableFrameMorph(table, true),
+        //null,
+        //6,
+        //0
+    //);
+
+    //bubble.popUp(
+        //this.world(),
+        //pos
+    //);
+};
+
 //////////// Network Replay Controls ////////////
 NetworkReplayControls.prototype = Object.create(ReplayControls.prototype);
 NetworkReplayControls.prototype.constructor = NetworkReplayControls;
