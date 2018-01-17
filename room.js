@@ -3,7 +3,7 @@
  TextMorph, MorphicPreferences, ScrollFrameMorph, ReporterBlockMorph,
  MessageOutputSlotMorph, MessageInputSlotMorph, SymbolMorph, PushButtonMorph, MenuMorph,
  SpeechBubbleMorph, ProjectDialogMorph, HandleMorph, ReplayControls, fontHeight,
- AlignmentMorph, copy*/
+ AlignmentMorph, copy, TableDialogMorph, Table*/
 /* * * * * * * * * RoomMorph * * * * * * * * */
 RoomMorph.prototype = new Morph();
 RoomMorph.prototype.constructor = RoomMorph;
@@ -1122,51 +1122,43 @@ MessageMorph.prototype.fixLayout = function () {
 MessageMorph.prototype.getTableContents = function () {
     var myself = this,
         fields = Object.keys(this.contents),
-        table = new Table(1, fields.length),
-        tableMorph;
+        table = new Table(2, fields.length);
 
     fields.forEach(function(field, index) {
-        table.colNames.push(field);
-        table.contents[0][index] = myself.contents[field];
+        table.contents[index][0] = field;
+        table.contents[index][1] = myself.contents[field];
     });
     table.colNames.push('field');
     table.colNames.push('value');
-
-    table.get = function (col, row) {
-        if (!col) {
-            if (!row) {return this.colName(col+1); }
-            return this.rowName(row);
-        } else if (!row) {
-            return this.colName(col+1);
-        }
-        if (col > this.colCount || row > this.rowCount) {return null; }
-        return (this.contents[row - 1] || [])[col - 1];
-    };
 
     return table;
 };
 
 
 MessageMorph.prototype.mouseClickLeft = function () {
-    var pos = this.rightCenter().add(new Point(2, 0)),
-        table = this.getTableContents(),
-        bubble;
+    var table = this.getTableContents(),
+        dialog = new TableDialogMorph(table),
+        margin = 10;
 
-    var dialog = new TableDialogMorph(table);
-    dialog.labelString = localize('Message contents');
+    dialog.labelString = localize('Contents of') + ' "' + this.msgType + '"';
+    dialog.createLabel();
+    dialog.setInitialDimensions = function() {
+        var world = this.world(),
+            mex = world.extent().subtract(new Point(this.padding, this.padding)),
+            th = fontHeight(this.titleFontSize) + this.titlePadding * 3, // hm...
+            minWidth = Math.max(100, dialog.label.width() + 2*margin),
+            bh = this.buttons.height();
+
+        this.setExtent(
+            this.tableView.globalExtent().add(
+                new Point(this.padding * 2, this.padding * 2 + th + bh)
+            ).min(mex).max(new Point(minWidth, 100))
+        );
+        this.setCenter(this.world().center());
+    };
     dialog.popUp(this.world());
 
-    //bubble = new SpeechBubbleMorph(
-        //new TableFrameMorph(table, true),
-        //null,
-        //6,
-        //0
-    //);
-
-    //bubble.popUp(
-        //this.world(),
-        //pos
-    //);
+    return dialog;
 };
 
 //////////// Network Replay Controls ////////////
