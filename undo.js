@@ -110,6 +110,7 @@ UndoManager.prototype.getInverseEvent = function(event) {
     var type = event.type,
         result;
     
+    if (event.isUserAction) return event;
     if (!UndoManager.Invert[type]) {
         throw Error('Cannot undo "' + type + '" event!');
     }

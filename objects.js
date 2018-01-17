@@ -9366,6 +9366,7 @@ ReplayControls.prototype.update = function() {
 };
 
 ReplayControls.prototype.applyEvent = function(event, next) {
+    if (event.isUserAction) return next();
     return SnapActions.applyEvent(event)
         .accept(next)
         .reject(function() {
