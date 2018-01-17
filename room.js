@@ -1266,6 +1266,10 @@ RoleMorph.prototype.init = function(name, users) {
     this.drawNew();
 };
 
+RoleMorph.prototype.wantsDropOf = function(aMorph) {
+    return aMorph instanceof ReporterBlockMorph && aMorph.forMsg;
+};
+
 RoleMorph.prototype.setOccupants = function(users) {
     this.users = users;
     // Update the contents of the caption
@@ -1501,7 +1505,6 @@ function RoomEditorMorph(room, sliderColor) {
 
 RoomEditorMorph.prototype.init = function(room, sliderColor) {
     RoomEditorMorph.uber.init.call(this, null, null, sliderColor);
-    this.acceptsDrops = false;
 
     this.palette = this.createMsgPalette();
     this.add(this.palette);
@@ -1549,6 +1552,9 @@ RoomEditorMorph.prototype.init = function(room, sliderColor) {
 
     this.room.drawNew();
     this.updateControlButtons();
+
+    this.acceptsDrops = false;
+    this.contents.acceptsDrops = false;
 };
 
 RoomEditorMorph.prototype.step = function() {
@@ -1743,6 +1749,8 @@ RoomEditorMorph.prototype.createMsgPalette = function() {
     var palette = new ScrollFrameMorph();
     palette.setColor(new Color(0, 0, 0, 0));
     palette.padding = 12;
+    palette.acceptsDrops = false;
+    palette.contents.acceptsDrops = false;
 
     return palette;
 };
