@@ -8975,6 +8975,13 @@ ReplayControls.prototype.displayCaption = function(action, originalEvent) {
     return menu;
 };
 
+ReplayControls.prototype.getCaptionFor = function(action) {
+    if (action.type === 'annotate') {
+        return action.args[0];
+    }
+    return action.type;
+};
+
 ReplayControls.prototype.play = function() {
     var myself = this;
 

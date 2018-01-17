@@ -153,7 +153,15 @@ ActionManager.prototype.initializeEventMethods = function() {
         'setColorField',
         'setField',
 
-        'openProject'  // for replaying
+        'openProject',
+
+        // Additional record-only actions
+        'annotate'
+    );
+
+    this.addUserActions(
+        'pressStart',
+        'togglePause'
     );
 };
 
@@ -2595,6 +2603,8 @@ ActionManager.prototype.onOpenProject = function(str) {
     }
 };
 
+ActionManager.prototype.onAnnotate = nop;
+
 ActionManager.prototype._getCurrentTarget = function(block) {
     var parent = block.parent,
         target,
@@ -3079,6 +3089,7 @@ ActionManager.OwnerFor.setCustomBlockType = function(id) {
 };
 
 // Can't undo
+ActionManager.OwnerFor.annotate =
 ActionManager.OwnerFor.addCustomBlock =
 
 ActionManager.OwnerFor.renameSprite =
