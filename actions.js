@@ -1696,11 +1696,10 @@ ActionManager.prototype.blockInitPosition = function() {
 
 ActionManager.prototype.ensureNotDragging = function(block) {
     var hand = block.parentThatIsA(HandMorph);
-    // What if block is a child of some of the edited blocks
-    // TODO
     if (hand) {  // drop the item back on the world
         var situation = hand.grabOrigin;
 
+        block = hand.children[0];  // get the top block
         block.cachedFullImage = null;
         block.cachedFullBounds = null;
         block.changed();
