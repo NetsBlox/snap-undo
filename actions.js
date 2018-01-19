@@ -1515,6 +1515,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
     // Resolve the target
     if (block instanceof CommandBlockMorph) {
         target.element = this.getBlockFromId(target.element);
+        this.ensureNotDragging(target.element);
         owner = this.getBlockOwner(target.element);
         scripts = target.element.parentThatIsA(ScriptsMorph);
         if (block.parent) {
@@ -1530,6 +1531,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
         this.disconnectBlock(block, scripts);
 
         target = this.getBlockFromId(target);
+        this.ensureNotDragging(target);
         owner = this.getBlockOwner(target);
         scripts = target.parentThatIsA(ScriptsMorph);
 
