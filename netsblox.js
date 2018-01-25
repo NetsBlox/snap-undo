@@ -1326,7 +1326,6 @@ NetsBloxMorph.prototype.collabResponse = function (invite, response) {
                             SnapCloud.callService(
                                 'joinActiveProject',
                                 function (response) {
-                                    // TODO: make it open the same one!
                                     myself.rawLoadCloudProject(response[0]);
                                 },
                                 myself.cloudError(),
