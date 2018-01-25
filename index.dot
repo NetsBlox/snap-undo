@@ -21,14 +21,18 @@
 
 		<script type="text/javascript">
 			var world;
+            {{ if (it.username) { }}
+                SnapCloud.username = '{{= it.username }}';
+                SnapCloud.password = true;
+            {{ } }}
 			window.onload = function () {
 				world = new WorldMorph(document.getElementById('world'));
                 world.worldCanvas.focus();
 				new NetsBloxMorph().openIn(world);
-        loop();
+                loop();
 			};
 			function loop() {
-        requestAnimationFrame(loop);
+                requestAnimationFrame(loop);
 				world.doOneCycle();
 			}
 		</script>
