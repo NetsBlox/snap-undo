@@ -523,7 +523,6 @@ IDE_Morph.prototype.openIn = function (world) {
             this.shield.setExtent(this.parent.extent());
             this.parent.add(this.shield);
 
-            // TODO: Test this
             var projectData = myself.getURL(myself.resourceURL('Examples', example));
 
             myself.nextSteps([
@@ -547,8 +546,6 @@ IDE_Morph.prototype.openIn = function (world) {
         } else if (location.hash.substr(0, 9) === '#private:' || dict.action === 'private') {
             var name = dict ? dict.ProjectName : location.hash.substr(9),
                 isLoggedIn = SnapCloud.username !== null;
-
-            // TODO: Test this
 
             if (!isLoggedIn) {
                 myself.showMessage('You are not logged in. Cannot open ' + name);
