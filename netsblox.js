@@ -1290,7 +1290,6 @@ NetsBloxMorph.prototype.promptCollabInvite = function (params) {  // id, room, r
 
     dialog = new DialogBoxMorph(null, function() {
         myself.collabResponse(params, true);
-        // Ask if the user would like to open the room now?
         dialog.destroy();
     });
 
