@@ -183,7 +183,7 @@ NetsProcess.prototype.doSocketResponse = function (resource) {
         srcId = this.context.variables.getVar('__srcId__');
     } catch (e) {
         // Clean the error message
-        throw new Error('Cannot find message to which to respond!');
+        throw new Error(localize('Cannot find message to which to respond!'));
     }
 
     // Create the message
