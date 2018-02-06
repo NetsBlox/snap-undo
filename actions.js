@@ -161,6 +161,7 @@ ActionManager.prototype.initializeEventMethods = function() {
 
     this.addUserActions(
         'pressStart',
+        'stopAllScripts',
         'togglePause'
     );
 };
