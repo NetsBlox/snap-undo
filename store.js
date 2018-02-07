@@ -176,7 +176,7 @@ XML_Serializer.prototype.undoEventsXML = function (events, isReplay) {
                 event.replayType || 0,
                 event.time,
                 event.user,
-                event.username,
+                event.username || '',
                 args
             );
         }
@@ -783,7 +783,7 @@ SnapSerializer.prototype.parseEvent = function (owner, xml) {
         replayType: +xml.attributes.replayType,
         time: +xml.attributes.time,
         user: xml.attributes.user,
-        username: xml.attributes.username,
+        username: xml.attributes.username || undefined,
         args: args
     };
 };
