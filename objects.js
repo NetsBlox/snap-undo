@@ -3819,6 +3819,7 @@ SpriteMorph.prototype.isCorrectingOutsideDrag = function () {
 SpriteMorph.prototype.justDropped = function () {
     var stage = this.parentThatIsA(StageMorph);
     if (stage) {
+        SnapActions.setSpritePosition(this);
         stage.enableCustomHatBlocks = true;
     }
     this.restoreLayers();
