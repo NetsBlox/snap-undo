@@ -505,10 +505,6 @@ UndoManager.Invert.openProject = function(args) {
     return [args[1]];
 };
 
-UndoManager.Invert.annotate = function(args) {
-    return args;
-};
-
 UndoManager.Invert.renameSprite =
 
 UndoManager.Invert.updateCostume =

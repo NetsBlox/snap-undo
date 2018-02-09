@@ -153,10 +153,7 @@ ActionManager.prototype.initializeEventMethods = function() {
         'setColorField',
         'setField',
 
-        'openProject',
-
-        // Additional record-only actions
-        'annotate'
+        'openProject'
     );
 
     this.addUserActions(
@@ -2604,8 +2601,6 @@ ActionManager.prototype.onOpenProject = function(str) {
     }
 };
 
-ActionManager.prototype.onAnnotate = nop;
-
 ActionManager.prototype._getCurrentTarget = function(block) {
     var parent = block.parent,
         target,
@@ -3090,7 +3085,6 @@ ActionManager.OwnerFor.setCustomBlockType = function(id) {
 };
 
 // Can't undo
-ActionManager.OwnerFor.annotate =
 ActionManager.OwnerFor.addCustomBlock =
 
 ActionManager.OwnerFor.renameSprite =
