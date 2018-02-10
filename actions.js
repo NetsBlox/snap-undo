@@ -159,6 +159,7 @@ ActionManager.prototype.initializeEventMethods = function() {
     this.addUserActions(
         'pressStart',
         'stopAllScripts',
+        'startScript',
         'setSpritePosition',
         'togglePause'
     );
@@ -817,6 +818,14 @@ ActionManager.prototype._updateBlockLabel = function(definition, label, fragment
         label.fragment.defaultValue,
         label.fragment.options,
         label.fragment.isReadOnly
+    ];
+};
+
+ActionManager.prototype._startScript = function(topBlock, isActive) {
+    var isStart = !isActive;
+    return [
+        topBlock.id,
+        isStart
     ];
 };
 
