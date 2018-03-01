@@ -1274,20 +1274,20 @@ NetworkReplayControls.prototype.updateDisplayedMessages = function() {
     // Clear the last message(s)
     room.hideSentMsgs();
 
+    if (!event) return;
+
     if (this.displayedMsgCount > 1) {
-        var index = this.actionIndex,
-            displayedMsgCount = Math.min(this.displayedMsgCount, index+1);
+        var displayedMsgCount = Math.min(this.displayedMsgCount, this.actionIndex+1),
+            startIndex = this.actionIndex - displayedMsgCount + 1;
 
         // Show each message
         for (var i = 0; i < displayedMsgCount; i++) {
-            event = this.actions[index-i];
+            event = this.actions[startIndex+i];
             room.showMessage(event, i+1);
         }
     } else {
         room.showMessage(event);
     }
-
-    next();
 };
 
 NetworkReplayControls.prototype.settingsMenu = function() {
