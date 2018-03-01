@@ -1276,6 +1276,12 @@ NetworkReplayControls.prototype.updateDisplayedMessages = function() {
 
     if (!event) return;
 
+    // Make sure that the slider position is at the current event
+    var value = this.getSliderPosition(event);
+
+    this.slider.button.setLeft(this.getSliderLeftFromValue(value));
+    this.slider.updateValue();
+
     if (this.displayedMsgCount > 1) {
         var displayedMsgCount = Math.min(this.displayedMsgCount, this.actionIndex+1),
             startIndex = this.actionIndex - displayedMsgCount + 1;
