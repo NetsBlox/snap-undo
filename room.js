@@ -1039,7 +1039,7 @@ SentMessageMorph.prototype.constructor = SentMessageMorph;
 SentMessageMorph.uber = Morph.prototype;
 
 function SentMessageMorph(msg, srcId, dstId, endpoint, label) {
-    this.init(msg, srcId, dstId, endpoint);
+    this.init(msg, srcId, dstId, endpoint, label);
 }
 
 SentMessageMorph.prototype.init = function(msg, srcId, dstId, endpoint, label) {
@@ -1049,10 +1049,12 @@ SentMessageMorph.prototype.init = function(msg, srcId, dstId, endpoint, label) {
 
     this.endpoint = endpoint;
     this.message = new MessageMorph(msg.type, msg.content);
+    SentMessageMorph.uber.init.call(this);
+
     this.label = null;
     if (label) {
         this.label = new StringMorph(
-            label,
+            label.toString(),
             12,
             null,
             null,
@@ -1060,8 +1062,8 @@ SentMessageMorph.prototype.init = function(msg, srcId, dstId, endpoint, label) {
         );
         this.label.color = white;
         this.label.drawNew();
+        this.add(this.label);
     }
-    SentMessageMorph.uber.init.call(this);
     this.color = white;
     this.add(this.message);
 };
