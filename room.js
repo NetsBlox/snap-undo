@@ -1235,8 +1235,123 @@ NetworkReplayControls.prototype.applyEvent = function(event, next) {
     var ide = this.parentThatIsA(IDE_Morph);
     var room = ide.room;
 
+    // Clear the last message(s)
+    room.hideSentMsgs();
+
+    // Show the last n messages?
+    // TODO
+
     room.showMessage(event);
     next();
+};
+
+NetworkReplayControls.prototype.settingsMenu = function() {
+    var myself = this,
+        minute = 1000 * 60,
+        menu = new MenuMorph(this),
+        replaySpeedMenu = new MenuMorph(this),
+        speeds = {
+            'slow': 0.5,
+            'normal': 1,
+            'slightly faster': 3,
+            'fast': 5,
+            'really fast': 10,
+            'ludicrous speed': 20
+        },
+        durations = {
+            'no acceleration': 0,
+            'tiny': 0.5,
+            'small': 1,
+            'medium': 2,
+            'long': 5
+        },
+        gapSizes = {
+            '1 minute': 1*minute,
+            '2 minute': 2*minute,
+            '5 minutes': 5*minute,
+            '10 minutes': 10*minute,
+            '20 minutes': 20*minute
+        },
+        createSubMenu = function(dict, key, opts) {
+            var menu = new MenuMorph(myself);
+            // add the number (w/ the suffix) to the text names
+            var skip = opts.skip || [];
+
+            Object.keys(dict).forEach(function(name) {
+                var value = dict[name],
+                    preserveName = contains(skip, name);
+
+                delete dict[name];
+                if (!preserveName) {
+                    name = localize(name) + ' (' + value + opts.suffix + ')';
+                } else {
+                    name = localize(name);
+                }
+
+                dict[name] = value;
+                menu.addItem(preserveName ? name : value + opts.suffix, function() {
+                    myself[key] = value;
+                    if (opts.refresh) {
+                        // TODO: preserve the current slider position
+                        var time = myself.getTimeFromPosition(myself.slider.value);
+                        myself.setActions(myself.actions);
+                        myself.slider.value = myself.getSliderPositionFromTime(time);
+                        myself.slider.drawNew();
+                        myself.updateDisplayTime();
+                    }
+                }, null, null, myself[key] === value);
+            });
+            return menu;
+        };
+
+    // Skip empty gaps
+    menu.addMenu(
+        'Max inactive duration...',
+        createSubMenu(durations, 'maxInactiveDuration', {
+            suffix: 's',
+            skip: ['no acceleration']
+        })
+    );
+
+    // Replay Speed
+    replaySpeedMenu = createSubMenu(speeds, 'replaySpeed', {suffix: 'x'});
+    replaySpeedMenu.addItem('other...', function() {
+        new DialogBoxMorph(
+            null,
+            function (num) {
+                myself.replaySpeed = Math.max(+num, 0) || 1;
+            }
+        ).withKey('replaySpeed').prompt(
+            'Replay Speed',
+            myself.replaySpeed.toString(),
+            myself.world(),
+            null, // pic
+            speeds,
+            false, // read only?
+            true // numeric
+        );
+    });
+
+    menu.addMenu('Replay speed...', replaySpeedMenu);
+
+    // Customize the maxGapDuration
+    menu.addMenu(
+        'Auto-condense gap size...',
+        createSubMenu(gapSizes, 'maxGapDuration', {
+            skip: Object.keys(gapSizes),
+            refresh: true
+        })
+    );
+
+    // TODO: Add option for displaying multiple messages
+    var submenu = new MenuMorph(myself);
+    menu.addMenu(
+        'Displayed Message Count...',
+        createSubMenu(counts, 'displayedMsgCount');
+    );
+
+    menu.drawNew();
+    return menu;
 };
 
 NetworkReplayControls.prototype.getColorForTick = function(event) {
