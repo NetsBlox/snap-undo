@@ -1262,13 +1262,18 @@ NetworkReplayControls.prototype.setMessages = function(messages) {
 };
 
 NetworkReplayControls.prototype.applyEvent = function(event, next) {
-    var ide = this.parentThatIsA(IDE_Morph);
-    var room = ide.room;
+    this.updateDisplayedMessages();
+    next();
+};
+
+NetworkReplayControls.prototype.updateDisplayedMessages = function() {
+    var ide = this.parentThatIsA(IDE_Morph),
+        room = ide.room,
+        event = this.actions[this.actionIndex];
 
     // Clear the last message(s)
     room.hideSentMsgs();
 
-    console.log('displayedMsgCount', this.displayedMsgCount);
     if (this.displayedMsgCount > 1) {
         var index = this.actionIndex,
             displayedMsgCount = Math.min(this.displayedMsgCount, index+1);
@@ -1295,6 +1300,7 @@ NetworkReplayControls.prototype.settingsMenu = function() {
         var suffix = count === 1 ? 'message' : 'messages';
         submenu.addItem(count + ' ' + localize(suffix), function() {
             myself.displayedMsgCount = count;
+            myself.updateDisplayedMessages();
         }, null, null, myself.displayedMsgCount === count);
     });
     menu.addMenu('Displayed Message Count...', submenu);
