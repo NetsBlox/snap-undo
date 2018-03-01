@@ -1300,7 +1300,7 @@ NetworkReplayControls.prototype.settingsMenu = function() {
     var myself = this,
         menu = NetworkReplayControls.uber.settingsMenu.call(this),
         submenu = new MenuMorph(myself),
-        counts = [1, 2, 5];
+        counts = [1, 2, 3, 4, 5];
 
     counts.forEach(function(count) {
         var suffix = count === 1 ? 'message' : 'messages';
