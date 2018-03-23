@@ -1,5 +1,5 @@
 /* global SnapSerializer, MessageType, MessageFrame, HintInputSlotMorph,
-   InputSlotMorph
+   InputSlotMorph, Context, StageMorph, SnapActions
    */
 NetsBloxSerializer.prototype = new SnapSerializer();
 NetsBloxSerializer.prototype.constructor = NetsBloxSerializer;
@@ -102,7 +102,7 @@ Context.prototype.toXML = function (serializer) {
             if (block.selector === 'reportGetVar' && !isScriptVar[name]) {
                 usedVars[block.blockSpec] = true;
             } else if (block.selector === 'doDeclareVariables') {
-                // Detect the declared script variables?
+                // Detect the declared script variables
                 block.inputs()[0].inputs().forEach(function(slot) {
                     var name = slot.labelString;
                     isScriptVar[name] = true;
@@ -118,8 +118,10 @@ Context.prototype.toXML = function (serializer) {
         // Check for any global variables
         usedVars = Object.keys(usedVars);
         for (var i = usedVars.length; i--;) {
+            // receiver is already serialized. If there is a global variable
+            // (not shadowed by any sprite or script variables) then include
+            // the global project state
             if (!isSpriteVar[usedVars[i]]) {
-                // serialize the project...
                 return data + serializer.store(stage);
             }
         }
