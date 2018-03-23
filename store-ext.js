@@ -88,3 +88,22 @@ HintInputSlotMorph.prototype.toXML = function(serializer) {
     return InputSlotMorph.prototype.toXML.call(this, serializer);
 };
 
+Context.prototype._toXML = Context.prototype.toXML;
+Context.prototype.toXML = function (serializer) {
+    var data = this._toXML(serializer);
+
+    if (serializer.isSavingPortable && this.expression) {
+        var usedVars = {};
+        SnapActions.traverse(this.expression, function(block) {
+            if (block.selector === 'reportGetVar') {
+                usedVars[block.blockSpec] = true;
+            }
+        });
+        data += serializer.store(this.receiver);
+        // Check for enclosed variables
+        // TODO
+    }
+
+    return data;
+};
+
