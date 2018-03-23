@@ -92,16 +92,37 @@ Context.prototype._toXML = Context.prototype.toXML;
 Context.prototype.toXML = function (serializer) {
     var data = this._toXML(serializer);
 
-    if (serializer.isSavingPortable && this.expression) {
-        var usedVars = {};
+    if (serializer.isSavingPortable && this.expression && this.receiver) {
+        var stage = this.receiver.parentThatIsA(StageMorph),
+            usedVars = {},
+            isScriptVar = {},
+            isSpriteVar = {};
+
         SnapActions.traverse(this.expression, function(block) {
-            if (block.selector === 'reportGetVar') {
+            if (block.selector === 'reportGetVar' && !isScriptVar[name]) {
                 usedVars[block.blockSpec] = true;
+            } else if (block.selector === 'doDeclareVariables') {
+                // Detect the declared script variables?
+                block.inputs()[0].inputs().forEach(function(slot) {
+                    var name = slot.labelString;
+                    isScriptVar[name] = true;
+                });
             }
         });
-        data += serializer.store(this.receiver);
-        // Check for enclosed variables
-        // TODO
+
+        // Get the sprite variables
+        this.receiver.variables.names().forEach(function(name) {
+            isSpriteVar[name] = true;
+        });
+
+        // Check for any global variables
+        usedVars = Object.keys(usedVars);
+        for (var i = usedVars.length; i--;) {
+            if (!isSpriteVar[usedVars[i]]) {
+                // serialize the project...
+                return data + serializer.store(stage);
+            }
+        }
     }
 
     return data;
