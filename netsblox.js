@@ -412,6 +412,7 @@ NetsBloxMorph.prototype.projectMenu = function () {
         return true;
     });
 
+    var isSavingToCloud = this.source.indexOf('cloud') > -1;
     if (SnapCloud.username && !this.room.isOwner()) {
         item = ['Save a Copy', 'saveACopy'];
         var itemIndex = menu.items.map(function(item) {
@@ -419,6 +420,12 @@ NetsBloxMorph.prototype.projectMenu = function () {
         }).indexOf('save');
 
         menu.items.splice(itemIndex+1, 0, item);
+    } else if (isSavingToCloud && this.room.getRoleCount() > 1) {
+        // Change the label to 'Save Role' if multiple roles
+        var saveItem = menu.items.find(function(item) {
+            return item[1] === 'save';
+        });
+        saveItem[0] = localize('Save Role');
     }
 
     item = [
