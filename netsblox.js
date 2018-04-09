@@ -261,7 +261,7 @@ NetsBloxMorph.prototype.createControlBar = function () {
 NetsBloxMorph.prototype.loadNextRoom = function () {
     if (this.room.nextRoom) {
         var next = this.room.nextRoom;
-        this.room.setRoomName(next.roomName);
+        this.room.silentSetRoomName(next.roomName);
         this.room.ownerId = next.ownerId;
         this.silentSetProjectName(next.roleId);
 
