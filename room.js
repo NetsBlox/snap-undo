@@ -1611,24 +1611,38 @@ EditRoleMorph.prototype.moveToRole = function() {
     var myself = this,
         callback = function() {
             myself.room.moveToRole(myself.name);
-            myself.destroy();
         };
+
+    myself.destroy();
 
     if (SnapActions.lastSeen > 0) {  // Prompt about saving the current role
         var ide = this.room.ide,
-            contentName = this.room.hasMultipleRoles() ?
-                this.room.getCurrentRoleName() : this.room.name;
+            dialog = new DialogBoxMorph(null),
+            currentRole = this.room.getCurrentRoleName();
 
         // Prompt the user about saving the role...
-        // TODO
-        //SnapCloud.saveProject(
-            //ide,
-            //function () {
-                //ide.showMessage('Saved ' + contentName + ' to cloud!', 2);
-                callback();
-            //},
-            //ide.cloudError()
-        //);
+        dialog.accept = function() {
+            SnapCloud.saveProject(
+                ide,
+                function () {
+                    ide.showMessage('Saved ' + currentRole + ' to cloud!', 2);
+                    callback();
+                },
+                ide.cloudError()
+            );
+            dialog.destroy();
+        };
+
+        dialog.cancel = function() {  // don't overwrite
+            callback();
+            dialog.destroy();
+        };
+        dialog.askYesNo(
+            localize('Save Current Role'),
+            localize('Would you like to save changes to') + ' ' + currentRole +
+                ' ' + localize('before moving to') + ' ' + myself.name + '?',
+            myself.world()
+        );
     } else {
         callback();
     }
