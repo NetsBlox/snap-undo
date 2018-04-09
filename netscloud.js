@@ -297,19 +297,26 @@ NetCloud.prototype.socketId = function () {
 
 // Override
 NetCloud.prototype.saveProject = function (ide, callBack, errorCall, overwrite, name) {
-    var myself = this;
+    var myself = this,
+        serialized = ide.sockets.getSerializedProject();
+
     myself.reconnect(
         function () {
             myself.callService(
                 'saveProject',
                 function (response, url) {
+                    console.log('Response completed!');
                     callBack.call(null, response, url);
                 },
                 errorCall,
                 [
-                    myself.socketId(),
+                    ide.room.getCurrentRoleName(),
+                    name || ide.room.name,
+                    ide.room.name,
+                    ide.room.ownerId,
                     overwrite === true,
-                    name || ide.room.name
+                    serialized.SourceCode,
+                    serialized.Media
                 ]
             );
         },
