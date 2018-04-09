@@ -573,9 +573,9 @@ RoomMorph.prototype.editRoleName = function(role) {
 };
 
 RoomMorph.prototype.moveToRole = function(dstId) {
-    var myself = this,
-        myRole = this.ide.projectName;
+    var myself = this;
 
+    myself.ide.showMessage('moving to ' + dstId);
     SnapCloud.moveToRole(
         function(args) {
             myself.ide.showMessage('moved to ' + dstId + '!');
@@ -603,7 +603,7 @@ RoomMorph.prototype.moveToRole = function(dstId) {
         function (err, lbl) {
             myself.ide.cloudError().call(null, err, lbl);
         },
-        [dstId, myRole, this.ownerId, this.name]
+        [dstId, this.ownerId, this.name]
     );
 };
 
@@ -1608,8 +1608,30 @@ EditRoleMorph.prototype.deleteRole = function() {
 };
 
 EditRoleMorph.prototype.moveToRole = function() {
-    this.room.moveToRole(this.name);
-    this.destroy();
+    var myself = this,
+        callback = function() {
+            myself.room.moveToRole(myself.name);
+            myself.destroy();
+        };
+
+    if (SnapActions.lastSeen > 0) {  // Prompt about saving the current role
+        var ide = this.room.ide,
+            contentName = this.room.hasMultipleRoles() ?
+                this.room.getCurrentRoleName() : this.room.name;
+
+        // Prompt the user about saving the role...
+        // TODO
+        //SnapCloud.saveProject(
+            //ide,
+            //function () {
+                //ide.showMessage('Saved ' + contentName + ' to cloud!', 2);
+                callback();
+            //},
+            //ide.cloudError()
+        //);
+    } else {
+        callback();
+    }
 };
 
 EditRoleMorph.prototype.evictUser = function() {
