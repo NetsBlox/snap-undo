@@ -1609,6 +1609,9 @@ EditRoleMorph.prototype.deleteRole = function() {
 
 EditRoleMorph.prototype.moveToRole = function() {
     var myself = this,
+        ide = this.room.ide,
+        dialog,
+        currentRole = this.room.getCurrentRoleName(),
         callback = function() {
             myself.room.moveToRole(myself.name);
         };
@@ -1616,9 +1619,7 @@ EditRoleMorph.prototype.moveToRole = function() {
     myself.destroy();
 
     if (SnapActions.lastSeen > 0) {  // Prompt about saving the current role
-        var ide = this.room.ide,
-            dialog = new DialogBoxMorph(null),
-            currentRole = this.room.getCurrentRoleName();
+        dialog = new DialogBoxMorph(null);
 
         // Prompt the user about saving the role...
         dialog.accept = function() {
