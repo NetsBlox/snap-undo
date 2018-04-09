@@ -305,7 +305,6 @@ NetCloud.prototype.saveProject = function (ide, callBack, errorCall, overwrite, 
             myself.callService(
                 'saveProject',
                 function (response, url) {
-                    console.log('Response completed!');
                     callBack.call(null, response, url);
                 },
                 errorCall,
