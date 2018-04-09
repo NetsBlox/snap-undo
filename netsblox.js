@@ -420,7 +420,7 @@ NetsBloxMorph.prototype.projectMenu = function () {
         }).indexOf('save');
 
         menu.items.splice(itemIndex+1, 0, item);
-    } else if (isSavingToCloud && this.room.getRoleCount() > 1) {
+    } else if (isSavingToCloud && this.room.hasMultipleRoles()) {
         // Change the label to 'Save Role' if multiple roles
         var saveItem = menu.items.find(function(item) {
             return item[1] === 'save';
