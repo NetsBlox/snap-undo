@@ -637,11 +637,12 @@ RoomMorph.prototype.role = function() {
 };
 
 RoomMorph.prototype.setRoleName = function(role) {
+    var currentRole = this.getCurrentRoleName();
     role = role || 'untitled';
-    if (role !== this.getCurrentRoleName()) {
+    if (role !== currentRole) {
         this.ide.sockets.sendMessage({
             type: 'rename-role',
-            role: this.ide.projectName,
+            role: currentRole,
             name: role
         });
     }
