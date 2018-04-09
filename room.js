@@ -151,6 +151,10 @@ RoomMorph.prototype.getRoleCount = function() {
     return this.getRoles().length;
 };
 
+RoomMorph.prototype.hasMultipleRoles = function() {
+    return this.getRoleCount() > 1;
+};
+
 RoomMorph.prototype.getCurrentOccupants = function(name) {
     name = name || this.getCurrentRoleName();
     var role = this.getRole(name);

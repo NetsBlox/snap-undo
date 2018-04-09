@@ -684,16 +684,19 @@ NetsBloxMorph.prototype.saveACopy = function () {
 };
 
 IDE_Morph.prototype.saveProjectToCloud = function (name) {
-    var myself = this;
+    var myself = this,
+        contentName = this.room.hasMultipleRoles() ?
+            this.room.getCurrentRoleName() : this.room.name;
+
     if (name) {
-        this.showMessage('Saving project\nto the cloud...');
+        this.showMessage('Saving ' + contentName + '\nto the cloud...');
         // Netsblox addition: start
         this.room.name = name;
         // Netsblox addition: end
         SnapCloud.saveProject(
             this,
             // Netsblox addition: start
-            function () {myself.showMessage('Saved to cloud!', 2); },
+            function () {myself.showMessage('Saved ' + contentName + ' to cloud!', 2); },
             // Netsblox addition: end
             this.cloudError()
         );
@@ -709,13 +712,15 @@ NetsBloxMorph.prototype.saveProjectToCloud = function (name) {
     }
 
     overwriteExisting = function(overwrite) {
+        var contentName = myself.room.hasMultipleRoles() ?
+            myself.room.getCurrentRoleName() : myself.room.name;
         if (name) {
-            myself.showMessage('Saving project\nto the cloud...');
+            myself.showMessage('Saving ' + contentName + '\nto the cloud...');
             SnapCloud.saveProject(
                 myself,
                 function () {
                     if (overwrite) {
-                        myself.showMessage('Saved to cloud!', 2);
+                        myself.showMessage('Saved ' + contentName + ' to cloud!', 2);
                     } else {
                         myself.showMessage('Saved as ' + myself.room.name, 2);
                     }
