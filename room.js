@@ -112,7 +112,7 @@ RoomMorph.prototype.setReadOnly = function(value) {
     }
 };
 
-RoomMorph.prototype.setRoomName = function(name) {
+RoomMorph.prototype.silentSetRoomName = function(name) {
     this.name = name;
     this.roomName.text = name;
     this.roomName.changed();
@@ -120,6 +120,18 @@ RoomMorph.prototype.setRoomName = function(name) {
     this.roomName.changed();
 
     this.ide.controlBar.updateLabel();
+};
+
+RoomMorph.prototype.setRoomName = function(name) {
+    var changed = this.name !== name;
+
+    if (changed) {
+        this.ide.sockets.sendMessage({
+            type: 'rename-room',
+            name: name
+        });
+    }
+
 };
 
 RoomMorph.prototype.getDefaultRoles = function() {
@@ -172,15 +184,6 @@ RoomMorph.prototype.myUuid = function() {
 
 RoomMorph.prototype.myUserId = function() {
     return SnapCloud.username || localize('guest');
-};
-
-RoomMorph.prototype._onNameChanged = function(newName) {
-    if (this.name !== newName) {
-        this.ide.sockets.sendMessage({
-            type: 'rename-room',
-            name: newName
-        });
-    }
 };
 
 RoomMorph.prototype.isOwner = function(user) {
@@ -239,7 +242,7 @@ RoomMorph.prototype.update = function(ownerId, name, roles, collaborators) {
 
     changed = name && this.name !== name;
     if (changed) {
-        this.setRoomName(name);
+        this.silentSetRoomName(name);
     }
 
     // Check if it has changed in a meaningful way
@@ -638,11 +641,12 @@ RoomMorph.prototype.role = function() {
 };
 
 RoomMorph.prototype.setRoleName = function(role) {
+    var currentRole = this.getCurrentRoleName();
     role = role || 'untitled';
-    if (role !== this.getCurrentRoleName()) {
+    if (role !== currentRole) {
         this.ide.sockets.sendMessage({
             type: 'rename-role',
-            role: this.ide.projectName,
+            role: currentRole,
             name: role
         });
     }
