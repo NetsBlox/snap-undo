@@ -3937,7 +3937,7 @@ IDE_Morph.prototype.exportProject = function (name, plain, newWindow) {
 };
 
 IDE_Morph.prototype.exportGlobalBlocks = function () {
-    if (this.stage.globalBlocks.length > 0) {
+    if (this.stage.globalBlocks.length > 0 || this.stage.deletableMessageNames().length) {
         new BlockExportDialogMorph(
             this.serializer,
             this.stage.globalBlocks,
@@ -3945,9 +3945,9 @@ IDE_Morph.prototype.exportGlobalBlocks = function () {
         ).popUp(this.world());
     } else {
         this.inform(
-            'Export blocks',
+            'Export blocks/msg types',
             'this project doesn\'t have any\n'
-                + 'custom global blocks yet'
+                + 'custom global blocks or message types yet'
         );
     }
 };
@@ -6624,12 +6624,10 @@ ProjectDialogMorph.prototype.saveProject = function () {
                 ) + '\n"' + name + '"?',
                 'Replace Project',
                 function () {
-                    myself.ide.setProjectName(name);
                     myself.saveCloudProject(name);
                 }
             );
         } else {
-            this.ide.setProjectName(name);
             myself.saveCloudProject(name);
         }
     } else { // 'local'
