@@ -5535,14 +5535,17 @@ IDE_Morph.prototype.logout = function () {
 };
 
 IDE_Morph.prototype.saveProjectToCloud = function (name) {
-    var myself = this;
+    var myself = this,
+        contentName = this.room.hasMultipleRoles() ?
+            this.room.getCurrentRoleName() : this.room.name;
+
     if (name) {
-        this.showMessage('Saving project\nto the cloud...');
-        this.setProjectName(name);
+        this.showMessage('Saving ' + contentName + '\nto the cloud...');
+        this.room.name = name;
         SnapCloud.saveProject(
             this,
-            function () {myself.showMessage('saved.', 2); },
-            this.cloudError()
+            function () {myself.showMessage('Saved ' + contentName + ' to cloud!', 2); },
+            this.cloudSaveError()
         );
     }
 };
