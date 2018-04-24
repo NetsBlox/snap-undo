@@ -207,14 +207,18 @@ WebSocketManager.prototype.isConnected = function() {
     return this.websocket.readyState === this.websocket.OPEN;
 };
 
-WebSocketManager.prototype.checkAlive = function(once) {
+WebSocketManager.prototype.isStale = function() {
     var sinceLastMsg = Date.now() - this.lastSocketActivity;
-    if (sinceLastMsg > 2*WebSocketManager.HEARTBEAT_INTERVAL) {
-        // stale connection. Assume that we have disconnected
+    // if stale, assume that the connection has broken
+    return sinceLastMsg > 2*WebSocketManager.HEARTBEAT_INTERVAL;
+};
+
+WebSocketManager.prototype.checkAlive = function() {
+    if (this.isStale()) {
         if (this.isConnected()) {
             this.websocket.close();  // reconnection should start automatically
         }
-    } else if (!once) {
+    } else {
         setTimeout(this.checkAlive.bind(this), WebSocketManager.HEARTBEAT_INTERVAL);
     }
 };
@@ -298,9 +302,7 @@ WebSocketManager.prototype.sendJSON = function(message) {
 };
 
 WebSocketManager.prototype.send = function(message) {
-    var state = this.websocket.readyState;
-    if (state === this.websocket.OPEN) {
-        this.checkAlive(true);
+    if (this.isConnected() && !this.isStale()) {
         this.websocket.send(message);
     } else {
         this.messages.push(message);
