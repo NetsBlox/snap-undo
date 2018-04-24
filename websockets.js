@@ -11,7 +11,7 @@ var WebSocketManager = function (ide) {
     this.processes = [];  // Queued processes to start
     this._protocol = SERVER_URL.substring(0,5) === 'https' ? 'wss:' : 'ws:';
     this.url = this._protocol + '//' + SERVER_ADDRESS;
-    this.lastPingAt = Date.now();
+    this.lastMsgTime = Date.now();
     this._connectWebSocket();
     this.version = Date.now();
     this.serverVersion = null;
@@ -23,7 +23,7 @@ var WebSocketManager = function (ide) {
     this.serializer = new NetsBloxSerializer();
 };
 
-WebSocketManager.HEARTBEAT_INTERVAL = 55*1000;  // 55 seconds
+WebSocketManager.HEARTBEAT_INTERVAL = 25*1000;  // 25 seconds
 WebSocketManager.MessageHandlers = {
     'request-actions-complete': function() {
         this.inActionRequest = false;
@@ -196,7 +196,6 @@ WebSocketManager.MessageHandlers = {
         }
     },
     'ping': function() {
-        this.lastPingAt = Date.now();
         this.sendMessage({type: 'pong'});
     },
     'user-action': function(msg) {
@@ -209,11 +208,10 @@ WebSocketManager.prototype.isConnected = function() {
 };
 
 WebSocketManager.prototype.checkAlive = function() {
-    var sinceLastPing = Date.now() - this.lastPingAt;
-    if (sinceLastPing > 3*WebSocketManager.HEARTBEAT_INTERVAL) {
+    var sinceLastMsg = Date.now() - this.lastMsgTime;
+    if (sinceLastMsg > 2*WebSocketManager.HEARTBEAT_INTERVAL) {
         // stale connection. Assume that we have disconnected
         if (this.isConnected()) {
-            console.log('forcing reconnect');
             this.websocket.close();  // reconnection should start automatically
         }
     } else {
@@ -262,6 +260,7 @@ WebSocketManager.prototype._connectWebSocket = function() {
         var msg = JSON.parse(rawMsg.data),
             type = msg.type;
 
+        this.lastMsgTime = Date.now();
         if (WebSocketManager.MessageHandlers[type]) {
             WebSocketManager.MessageHandlers[type].call(self, msg);
         } else {
