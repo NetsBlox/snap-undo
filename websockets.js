@@ -207,14 +207,14 @@ WebSocketManager.prototype.isConnected = function() {
     return this.websocket.readyState === this.websocket.OPEN;
 };
 
-WebSocketManager.prototype.checkAlive = function() {
+WebSocketManager.prototype.checkAlive = function(once) {
     var sinceLastMsg = Date.now() - this.lastMsgTime;
     if (sinceLastMsg > 2*WebSocketManager.HEARTBEAT_INTERVAL) {
         // stale connection. Assume that we have disconnected
         if (this.isConnected()) {
             this.websocket.close();  // reconnection should start automatically
         }
-    } else {
+    } else if (!once) {
         setTimeout(this.checkAlive.bind(this), WebSocketManager.HEARTBEAT_INTERVAL);
     }
 };
@@ -306,7 +306,7 @@ WebSocketManager.prototype.send = function(message) {
 };
 
 WebSocketManager.prototype.sendMessage = function(message) {
-    message.namespace = 'netsblox';
+    this.checkAlive(true);
     message = this.serializeMessage(message);
     this.send(message);
 };
