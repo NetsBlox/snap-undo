@@ -11,7 +11,7 @@ var WebSocketManager = function (ide) {
     this.processes = [];  // Queued processes to start
     this._protocol = SERVER_URL.substring(0,5) === 'https' ? 'wss:' : 'ws:';
     this.url = this._protocol + '//' + SERVER_ADDRESS;
-    this.lastMsgTime = Date.now();
+    this.lastSocketActivity = Date.now();
     this._connectWebSocket();
     this.version = Date.now();
     this.serverVersion = null;
@@ -208,7 +208,7 @@ WebSocketManager.prototype.isConnected = function() {
 };
 
 WebSocketManager.prototype.checkAlive = function(once) {
-    var sinceLastMsg = Date.now() - this.lastMsgTime;
+    var sinceLastMsg = Date.now() - this.lastSocketActivity;
     if (sinceLastMsg > 2*WebSocketManager.HEARTBEAT_INTERVAL) {
         // stale connection. Assume that we have disconnected
         if (this.isConnected()) {
@@ -242,6 +242,7 @@ WebSocketManager.prototype._connectWebSocket = function() {
             self.ide.showMessage((self.hasConnected ? 're' : '') + 'connected!', 2);
             self.errored = false;
         }
+        self.lastSocketActivity = Date.now();
         self.hasConnected = true;
         self.connected = true;
 
@@ -260,7 +261,7 @@ WebSocketManager.prototype._connectWebSocket = function() {
         var msg = JSON.parse(rawMsg.data),
             type = msg.type;
 
-        this.lastMsgTime = Date.now();
+        this.lastSocketActivity = Date.now();
         if (WebSocketManager.MessageHandlers[type]) {
             WebSocketManager.MessageHandlers[type].call(self, msg);
         } else {
@@ -299,6 +300,7 @@ WebSocketManager.prototype.sendJSON = function(message) {
 WebSocketManager.prototype.send = function(message) {
     var state = this.websocket.readyState;
     if (state === this.websocket.OPEN) {
+        this.checkAlive(true);
         this.websocket.send(message);
     } else {
         this.messages.push(message);
@@ -306,7 +308,6 @@ WebSocketManager.prototype.send = function(message) {
 };
 
 WebSocketManager.prototype.sendMessage = function(message) {
-    this.checkAlive(true);
     message = this.serializeMessage(message);
     this.send(message);
 };
