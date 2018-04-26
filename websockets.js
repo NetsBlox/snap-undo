@@ -215,12 +215,18 @@ WebSocketManager.prototype.isStale = function() {
 
 WebSocketManager.prototype.checkAlive = function() {
     if (this.isStale()) {
-        if (this.isConnected()) {
-            this.websocket.close();  // reconnection should start automatically
+        if (this.websocket.readyState !== this.websocket.CONNECTING) {
+            this.lastSocketActivity = Date.now();
+            this.disconnect();  // reconnect should start automatically
         }
-    } else {
-        setTimeout(this.checkAlive.bind(this), WebSocketManager.HEARTBEAT_INTERVAL);
+        return false;
     }
+    return true;
+};
+
+WebSocketManager.prototype.disconnect = function() {
+    this.websocket.close();
+    this.onClose();  // ensure onClose is called
 };
 
 WebSocketManager.prototype._connectWebSocket = function() {
@@ -256,7 +262,7 @@ WebSocketManager.prototype._connectWebSocket = function() {
         } else {
             self.sendMessage({type: 'request-uuid'});
         }
-        setTimeout(self.checkAlive.bind(self), WebSocketManager.HEARTBEAT_INTERVAL);
+        setInterval(self.checkAlive.bind(self), WebSocketManager.HEARTBEAT_INTERVAL);
     };
 
     // Set up message events
@@ -274,27 +280,31 @@ WebSocketManager.prototype._connectWebSocket = function() {
     };
 
     this.websocket.onclose = function() {
-        var errMsg;
-
-        if (self.connected) {
-            self.version = Date.now();
-            self.connected = false;
-        }
-
-        if (!self.errored && Date.now() - self.version > 5000) {  // tried connecting for 5 seconds
-            errMsg = self.hasConnected ?
-                'Temporarily disconnected.\nSome network functionality may be ' +
-                'nonfunctional.\nTrying to reconnect...' :
-
-                'Could not fully connect to NetsBlox.\nPlease try refreshing ' +
-                'your browser or try a different browser';
-
-            self.ide.showMessage(errMsg);
-            self.errored = true;
-        }
-
-        setTimeout(self._connectWebSocket.bind(self), 500);
+        self.onClose();
     };
+};
+
+WebSocketManager.prototype.onClose = function(message) {
+    var errMsg;
+
+    if (this.connected) {
+        this.version = Date.now();
+        this.connected = false;
+    }
+
+    if (!this.errored && Date.now() - this.version > 5000) {  // tried connecting for 5 seconds
+        errMsg = this.hasConnected ?
+            'Temporarily disconnected.\nSome network functionality may be ' +
+            'nonfunctional.\nTrying to reconnect...' :
+
+            'Could not fully connect to NetsBlox.\nPlease try refreshing ' +
+            'your browser or try a different browser';
+
+        this.ide.showMessage(errMsg);
+        this.errored = true;
+    }
+
+    setTimeout(this._connectWebSocket.bind(this), 500);
 };
 
 WebSocketManager.prototype.sendJSON = function(message) {
@@ -302,7 +312,8 @@ WebSocketManager.prototype.sendJSON = function(message) {
 };
 
 WebSocketManager.prototype.send = function(message) {
-    if (this.isConnected() && !this.isStale()) {
+    this.checkAlive();
+    if (this.isConnected()) {
         this.websocket.send(message);
     } else {
         this.messages.push(message);
