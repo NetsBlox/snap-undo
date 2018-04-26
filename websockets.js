@@ -287,7 +287,7 @@ WebSocketManager.prototype._connectWebSocket = function() {
     };
 };
 
-WebSocketManager.prototype.onClose = function(message) {
+WebSocketManager.prototype.onClose = function() {
     var errMsg;
 
     if (this.connected) {
