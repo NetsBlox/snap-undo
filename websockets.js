@@ -252,6 +252,10 @@ WebSocketManager.prototype._connectWebSocket = function() {
             self.ide.showMessage((self.hasConnected ? 're' : '') + 'connected!', 2);
             self.errored = false;
         }
+        if (!self.hasConnected) {
+            setInterval(self.checkAlive.bind(self), WebSocketManager.HEARTBEAT_INTERVAL);
+        }
+
         self.lastSocketActivity = Date.now();
         self.hasConnected = true;
         self.connected = true;
@@ -262,7 +266,6 @@ WebSocketManager.prototype._connectWebSocket = function() {
         } else {
             self.sendMessage({type: 'request-uuid'});
         }
-        setInterval(self.checkAlive.bind(self), WebSocketManager.HEARTBEAT_INTERVAL);
     };
 
     // Set up message events
