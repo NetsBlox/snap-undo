@@ -11183,7 +11183,7 @@ ColorSlotMorph.prototype.getUserColor = function () {
     hand.processMouseUp = function () {
         if (myself.parentThatIsA(ScriptsMorph)) {
             SnapActions.setColorField(myself, myself.color)
-                .reject(function() {
+                .catch(function() {
                     myself.setColor(oldClr);
                 });
         } else {

@@ -9580,8 +9580,8 @@ ReplayControls.prototype.applyEvent = function(event, next) {
     }
 
     return SnapActions.applyEvent(event)
-        .accept(next)
-        .reject(function() {
+        .then(next)
+        .catch(function() {
             throw Error('Could not apply event: ' + JSON.stringify(event, null, 2));
         });
 };
