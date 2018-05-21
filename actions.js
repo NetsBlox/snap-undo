@@ -288,7 +288,7 @@ ActionManager.prototype.completeAction = function(err, result) {
         SnapUndo.record(action);
     }
 
-    // Call 'success' or 'reject', if relevant
+    // Resolve/reject actions
     if (action.user === this.id) {
         // Ensure that the handlers are removed
         action = this._pendingLocalActions[action.id] || action;
@@ -298,18 +298,18 @@ ActionManager.prototype.completeAction = function(err, result) {
         var earlierAction;
         for (var i = action.id; i--;) {
             earlierAction = this._pendingLocalActions[i];
-            if (earlierAction && earlierAction.onreject) {
-                earlierAction.onreject(result);
+            if (earlierAction && earlierAction.reject) {
+                earlierAction.reject(result);
                 delete this._pendingLocalActions[i];
             }
         }
 
         if (err) {
-            if (action.onreject) {
-                action.onreject(err);
+            if (action.reject) {
+                action.reject(err);
             }
-        } else if (action.onaccept){
-            action.onaccept(result);
+        } else if (action.resolve){
+            action.resolve(result);
         }
     }
     this.afterActionApplied(action);
@@ -359,13 +359,13 @@ ActionManager.prototype._joinSession = function(sessionId, error) {
 
 function Action(event) {
     this.id = event.id;
-    this.onaccept = null;
-    this.onreject = null;
+    this.resolve = null;
+    this.reject = null;
 
     var self = this;
     this.promise = new Promise(function(resolve, reject) {
-        self.onaccept = resolve;
-        self.onreject = reject;
+        self.resolve = resolve;
+        self.reject = reject;
     });
 }
 
@@ -376,9 +376,6 @@ Action.prototype.then = function(fn) {
 Action.prototype.catch = function(fn) {
     return this.promise.catch(fn);
 };
-
-Action.prototype.accept = Action.prototype.then;
-Action.prototype.reject = Action.prototype.catch;
 
 ActionManager.prototype.applyEvent = function(event) {
     event.user = this.id;

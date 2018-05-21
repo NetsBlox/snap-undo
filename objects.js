@@ -2248,7 +2248,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
                     function (definition) {
                         if (definition.spec !== '') {
                             SnapActions.addCustomBlock(definition, myself)
-                                .accept(function(def) {
+                                .then(function(def) {
                                     var editor = new BlockEditorMorph(def, myself);
                                     editor.popUp();
                                 });
@@ -2276,7 +2276,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
                     function (definition) {
                         if (definition.spec !== '') {
                             SnapActions.addCustomBlock(definition, myself)
-                                .accept(function(def) {
+                                .then(function(def) {
                                     var editor = new BlockEditorMorph(def, myself);
                                     editor.popUp();
                                 });
@@ -6589,7 +6589,7 @@ StageMorph.prototype.blockTemplates = function (category) {
                     function (definition) {
                         if (definition.spec !== '') {
                             SnapActions.addCustomBlock(definition, myself)
-                                .accept(function(def) {
+                                .then(function(def) {
                                     var editor = new BlockEditorMorph(def, myself);
                                     editor.popUp();
                                 });
@@ -6614,7 +6614,7 @@ StageMorph.prototype.blockTemplates = function (category) {
                     function (definition) {
                         if (definition.spec !== '') {
                             SnapActions.addCustomBlock(definition, myself)
-                                .accept(function(def) {
+                                .then(function(def) {
                                     var editor = new BlockEditorMorph(def, myself);
                                     editor.popUp();
                                 });
