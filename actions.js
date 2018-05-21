@@ -305,10 +305,8 @@ ActionManager.prototype.completeAction = function(err, result) {
         }
 
         if (err) {
-            if (action.reject) {
-                action.reject(err);
-            }
-        } else if (action.resolve){
+            action.reject(err);
+        } else {
             action.resolve(result);
         }
     }
