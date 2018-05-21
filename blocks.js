@@ -11369,8 +11369,10 @@ MultiArgMorph.prototype.init = function (
 
     this.add(arrows);
 
-    // create the minimum number of inputs
-    for (i = 0; i < this.minInputs; i += 1) {
+    // create atleast one input
+    this.addInput();
+    // ensure the minimum number of inputs
+    for (i = 1; i < this.minInputs; i += 1) {
         this.addInput();
     }
 };
