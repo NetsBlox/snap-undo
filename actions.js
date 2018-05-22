@@ -395,7 +395,7 @@ ActionManager.prototype.applyEvent = function(event) {
 
     var action = new Action(event);
     this._pendingLocalActions[action.id] = action;
-    return action;
+    return action.promise;
 };
 
 ActionManager.prototype.submitIfAllowed = function(event) {
