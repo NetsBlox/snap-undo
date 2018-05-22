@@ -367,14 +367,6 @@ function Action(event) {
     });
 }
 
-Action.prototype.then = function(fn) {
-    return this.promise.then(fn);
-};
-
-Action.prototype.catch = function(fn) {
-    return this.promise.catch(fn);
-};
-
 ActionManager.prototype.applyEvent = function(event) {
     event.user = this.id;
     event.username = SnapCloud.username;
