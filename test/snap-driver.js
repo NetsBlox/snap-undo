@@ -158,6 +158,13 @@ SnapDriver.prototype.waitUntil = function(fn, maxWait) {
     return promise;
 };
 
+SnapDriver.prototype.expect = function(fn, msg) {
+    return this.waitUntil(fn)
+        .catch(() => {
+            throw new Error(msg);
+        });
+};
+
 // Wait for the client to have a websocket id
 SnapDriver.prototype.waitUntilReady = function() {
     return this.waitUntil(() => this.ide().sockets.uuid);
