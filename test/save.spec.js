@@ -9,7 +9,7 @@ describe('save', function() {
 
     function showingSaveMsg() {
         const menu = driver.dialog();
-        return menu && menu.title.includes('cloud');
+        return menu && menu.title && menu.title.includes('cloud');
     }
 
     function saveProject() {
