@@ -79,7 +79,6 @@ MessageCreatorMorph.uber = DialogBoxMorph.prototype;
 
 function MessageCreatorMorph(target, action) {
     this.init(target, action);
-    this.minWidth = this.width();
 }
 
 MessageCreatorMorph.prototype.init = function(target, action) {
@@ -121,6 +120,7 @@ MessageCreatorMorph.prototype.init = function(target, action) {
     this.addButton('cancel', 'Cancel');
     this.fixLayout();
     this.drawNew();
+    this.minWidth = this.width();
 };
 
 MessageCreatorMorph.prototype.popUp = function () {
