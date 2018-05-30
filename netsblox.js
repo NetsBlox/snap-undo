@@ -398,6 +398,12 @@ NetsBloxMorph.prototype.projectMenu = function () {
             'save "' + myself.projectName + '" as XML\nto your downloads folder',
             new Color(100, 0, 0)
         ]);
+        menu.items.splice(10, 0, [
+            localize('Import replay mode...'),
+            'loadReplayMode',
+            'save "' + myself.projectName + '" as XML\nto your downloads folder',
+            new Color(100, 0, 0)
+        ]);
     }
 
     if (this.stage.deletableMessageNames().length && !this.stage.globalBlocks.length) {
@@ -791,6 +797,9 @@ NetsBloxMorph.prototype.droppedText = function (aString, name) {
                 }
                 msg.destroy();
             });
+    } else if (aString.indexOf('<replay') === 0) {
+        console.log('importing replay', aString);
+        // TODO
     } else {
         return IDE_Morph.prototype.droppedText.call(this, aString, name);
     }
@@ -1162,6 +1171,61 @@ NetsBloxMorph.prototype.showBugReportScreenshot = function (report) {
     };
     pic.src = report.screenshot;
     return;
+};
+
+NetsBloxMorph.prototype.loadReplayMode = function () {
+    var myself = this,
+        inp = document.createElement('input');
+
+    if (myself.filePicker) {
+        document.body.removeChild(myself.filePicker);
+        myself.filePicker = null;
+    }
+    inp.type = 'file';
+    inp.style.color = 'transparent';
+    inp.style.backgroundColor = 'transparent';
+    inp.style.border = 'none';
+    inp.style.outline = 'none';
+    inp.style.position = 'absolute';
+    inp.style.top = '0px';
+    inp.style.left = '0px';
+    inp.style.width = '0px';
+    inp.style.height = '0px';
+    inp.addEventListener(
+        'change',
+        function () {
+            var reader = new FileReader();
+            document.body.removeChild(inp);
+            myself.filePicker = null;
+
+            reader.onloadend = function(result) {
+                // Parse the xml
+                // TODO
+                // Load the first event
+                // TODO
+                // Set the history and stuff
+                // TODO
+                var txt = result.target.result,
+                    xml = myself.serializer.parse(txt);
+                console.log(xml);
+                if (xml.tag === 'room') {
+                    // grab the first role for now
+                    xml = xml.children[0].childNamed('project');
+                }
+
+                if (xml.tag === 'project') {
+                    xml = xml.childNamed('replay');
+                }
+
+                return myself.droppedText(xml.toString());
+            };
+            reader.readAsText(inp.files[0]);
+        },
+        false
+    );
+    document.body.appendChild(inp);
+    myself.filePicker = inp;
+    inp.click();
 };
 
 NetsBloxMorph.prototype.loadBugReport = function () {
