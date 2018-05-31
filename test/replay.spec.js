@@ -32,7 +32,7 @@ describe('replay', function() {
         });
     });
 
-    describe.only('user actions', function() {
+    describe('user actions', function() {
         it('should still undo after current user actions during replay', function() {
             const replayer = driver.ide().replayControls;
             replayer.jumpToEnd();
