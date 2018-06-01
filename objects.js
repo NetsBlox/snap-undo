@@ -9546,7 +9546,6 @@ ReplayControls.prototype.update = function() {
         action.isReplay = true;
         this.actionIndex += dir;
         this.actionTime = originalEvent.time;
-        console.log('dir', dir);
         this.applyEvent(action, function() {
             myself.isApplyingAction = false;
 
