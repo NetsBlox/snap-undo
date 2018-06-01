@@ -9546,6 +9546,7 @@ ReplayControls.prototype.update = function() {
         action.isReplay = true;
         this.actionIndex += dir;
         this.actionTime = originalEvent.time;
+        console.log('dir', dir);
         this.applyEvent(action, function() {
             myself.isApplyingAction = false;
 
@@ -9554,15 +9555,16 @@ ReplayControls.prototype.update = function() {
             }
 
             setTimeout(myself.update.bind(myself), 10);
-        });
+        }, dir);
     } else {
         setTimeout(this.update.bind(this), 100);
     }
 };
 
-ReplayControls.prototype.applyEvent = function(event, next) {
+ReplayControls.prototype.applyEvent = function(event, next, dir) {
     if (event.isUserAction) return next();
-    var ide = this.parentThatIsA(IDE_Morph),
+    var myself = this,
+        ide = this.parentThatIsA(IDE_Morph),
         chunks,
         ownerId,
         tabName,
@@ -9583,9 +9585,28 @@ ReplayControls.prototype.applyEvent = function(event, next) {
 
     return SnapActions.applyEvent(event)
         .then(next)
-        .catch(function() {
-            throw Error('Could not apply event: ' + JSON.stringify(event, null, 2));
+        .catch(function(err) {
+            myself.onReplayError(err, event, dir);
         });
+};
+
+ReplayControls.prototype.onReplayError = function(err, event, dir) {
+    console.log(dir);
+    var actionText = dir === 1 ? 'apply' : 'revert',
+        msg = localize('Something went wrong ') + ':\n\n' + err.message + 
+        '\n\n' + localize('The error has been reported. Reloading the page is recommended.');
+
+    // Restore the project from before the replay?
+    // TODO
+
+    this.pause();
+    new DialogBoxMorph().inform(
+        localize('Could not ' + actionText + ' action'),
+        msg,
+        this.world()
+    );
+    console.error('Could not apply event: ' + JSON.stringify(event, null, 2));
+    console.error(err);
 };
 
 ReplayControls.prototype.getInverseEvent = function(event) {
