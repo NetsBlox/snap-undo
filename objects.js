@@ -9587,17 +9587,24 @@ ReplayControls.prototype.applyEvent = function(event, next, dir) {
         .then(next)
         .catch(function(err) {
             myself.onReplayError(err, event, dir);
+            next();
         });
 };
 
 ReplayControls.prototype.onReplayError = function(err, event, dir) {
-    console.log(dir);
     var actionText = dir === 1 ? 'apply' : 'revert',
-        msg = localize('Something went wrong ') + ':\n\n' + err.message + 
-        '\n\n' + localize('The error has been reported. Reloading the page is recommended.');
+        desc = '.';
 
     // Restore the project from before the replay?
     // TODO
+    if (event) {
+        desc = ' ' + localize('when trying to ') + event.type;
+    }
+    if (err) {
+        desc += ':\n\n' + err.message;
+    }
+    var msg = localize('Something went wrong') + desc +
+    '\n\n' + localize('The error has been reported. Reloading the page is recommended.');
 
     this.pause();
     new DialogBoxMorph().inform(
