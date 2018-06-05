@@ -80,94 +80,55 @@ MessageCreatorMorph.uber = DialogBoxMorph.prototype;
 
 
 function MessageCreatorMorph(target, action) {
-    this.minWidth = 0;
     this.init(target, action);
-    MessageCreatorMorph.prototype._fixLayout = DialogBoxMorph.prototype.fixLayout;
-    MessageCreatorMorph.prototype.fixLayout = function() {
-        var th = fontHeight(this.titleFontSize) + this.titlePadding * 2, w;
-
-        if (this.head) {
-            this.head.setPosition(this.position().add(new Point(
-                this.padding,
-                th + this.padding
-            )));
-            this.silentSetWidth(this.head.width() + this.padding * 2);
-            this.silentSetHeight(
-                this.head.height()
-                + this.padding * 2
-                + th
-            );
-        }
-
-        if (this.body) {
-            if (this.head) {
-                this.body.setPosition(this.head.bottomLeft().add(new Point(
-                    0,
-                    this.padding
-                )));
-                this.silentSetWidth(Math.max(
-                    this.width(),
-                    this.body.width() + this.padding * 2
-                ));
-                this.silentSetHeight(
-                    this.height()
-                    + this.body.height()
-                    + this.padding
-                );
-                w = this.width();
-                this.head.setLeft(
-                    this.left()
-                    + Math.round((w - this.head.width()) / 2)
-                );
-                this.body.setLeft(
-                    this.left()
-                    + Math.round((w - this.body.width()) / 2)
-                );
-            } else {
-                this.body.setPosition(this.position().add(new Point(
-                    this.padding,
-                    th + this.padding
-                )));
-                this.minWidth = this.minWidth || 0;
-                var originalWidth = this.body.width() + this.padding * 2;
-                // this.silentSetWidth(originalWidth);
-                this.silentSetWidth(Math.max(originalWidth, this.minWidth));
-                this.silentSetHeight(
-                    this.body.height()
-                    + this.padding * 2
-                    + th
-                );
-                this.body.setLeft(this.left() + Math.round((this.width() - this.body.width()) / 2));
-            }
-        }
-
-        if (this.label) {
-            this.label.setCenter(this.center());
-            this.label.setTop(this.top() + (th - this.label.height()) / 2);
-        }
-
-        if (this.buttons && (this.buttons.children.length > 0)) {
-            this.buttons.fixLayout();
-            this.silentSetHeight(
-                this.height()
-                + this.buttons.height()
-                + this.padding
-            );
-            this.silentSetWidth(Math.max(
-                this.width(),
-                this.buttons.width()
-                + (2 * this.padding)
-            )
-            );
-            this.buttons.setCenter(this.center());
-            this.buttons.setBottom(this.bottom() - this.padding);
-        }
-    };
 }
+
+MessageCreatorMorph.prototype.fixLayout = function() {
+    var th = fontHeight(this.titleFontSize) + this.titlePadding * 2;
+
+    if (this.body) {
+        this.body.setPosition(this.position().add(new Point(
+            this.padding,
+            th + this.padding
+        )));
+        this.minWidth = this.minWidth || 0;
+        var originalWidth = this.body.width() + this.padding * 2;
+        this.silentSetWidth(Math.max(originalWidth, this.minWidth));
+        this.silentSetHeight(
+            this.body.height()
+            + this.padding * 2
+            + th
+        );
+        this.body.setLeft(this.left() + Math.round((this.width() - this.body.width()) / 2));
+    }
+
+    if (this.label) {
+        this.label.setCenter(this.center());
+        this.label.setTop(this.top() + (th - this.label.height()) / 2);
+    }
+
+    if (this.buttons && (this.buttons.children.length > 0)) {
+        this.buttons.fixLayout();
+        this.silentSetHeight(
+            this.height()
+            + this.buttons.height()
+            + this.padding
+        );
+        this.silentSetWidth(Math.max(
+            this.width(),
+            this.buttons.width()
+            + (2 * this.padding)
+        )
+        );
+        this.buttons.setCenter(this.center());
+        this.buttons.setBottom(this.bottom() - this.padding);
+    }
+};
 
 MessageCreatorMorph.prototype.init = function(target, action) {
     var myself = this;
 
+    this.minWidth = 0;
     MessageCreatorMorph.uber.init.call(this, target);
 
     this.key = 'createNewMsgType';
