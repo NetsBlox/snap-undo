@@ -66,10 +66,13 @@
                 SnapCloud.username = '{{= it.username }}';
                 SnapCloud.password = true;
             {{ } }}
+            SnapCloud.clientId = '{{= it.clientId }}';
 			window.onload = function () {
 				world = new WorldMorph(document.getElementById('world'));
                 world.worldCanvas.focus();
 				new NetsBloxMorph().openIn(world);
+                /* set the projectId, roleId */
+                /* TODO */
                 loop();
 			};
 			function loop() {
