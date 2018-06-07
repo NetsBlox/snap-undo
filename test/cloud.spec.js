@@ -13,11 +13,9 @@ describe('cloud', function() {
         it('should set projectId on fail', function(done) {
             const oldProjectId = SnapCloud.projectId;
             SnapCloud.callService = (name, cb, err) => err('ERROR');
-            SnapCloud.setClientState(
-                'SomeProjectName',
+            SnapCloud.newProject(
                 'myRole',
-                SnapCloud.clientId,
-                SnapActions.lastSeen,
+                () => done('Service did not fail'),
                 () => {
                     if (oldProjectId === SnapCloud.projectId) {
                         return done('Did not update id');

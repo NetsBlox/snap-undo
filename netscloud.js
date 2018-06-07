@@ -539,7 +539,10 @@ NetCloud.prototype.newProject = function (name, callBack, errorCall) {
                     callBack(response[0]);
                     myself.disconnect();
                 },
-                errorCall,
+                function() {
+                    myself.projectId = myself.clientId + '-' + Date.now();
+                    errorCall.apply(null, arguments);
+                },
                 [
                     SnapCloud.clientId,
                     name || ''
@@ -560,10 +563,7 @@ NetCloud.prototype.setClientState = function (room, role, owner, actionId, error
                     myself.projectId = response[0].projectId;
                     myself.disconnect();
                 },
-                function() {
-                    myself.projectId = myself.clientId + '-' + Date.now();
-                    errorCall.apply(null, arguments);
-                },
+                errorCall,
                 [
                     SnapCloud.clientId,
                     SnapCloud.projectId || '',
