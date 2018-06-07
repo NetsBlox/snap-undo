@@ -560,7 +560,10 @@ NetCloud.prototype.setClientState = function (room, role, owner, actionId, error
                     myself.projectId = response[0].projectId;
                     myself.disconnect();
                 },
-                errorCall,
+                function() {
+                    myself.projectId = myself.clientId + '-' + Date.now();
+                    errorCall.apply(null, arguments);
+                },
                 [
                     SnapCloud.clientId,
                     SnapCloud.projectId || '',

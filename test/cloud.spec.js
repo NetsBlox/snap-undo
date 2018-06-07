@@ -8,4 +8,23 @@ describe('cloud', function() {
         const ws = driver.ide().sockets;
         expect(ws.uuid).toBe(SnapCloud.clientId);
     });
+
+    describe('newProject', function () {
+        it('should set projectId on fail', function(done) {
+            const oldProjectId = SnapCloud.projectId;
+            SnapCloud.callService = (name, cb, err) => err('ERROR');
+            SnapCloud.setClientState(
+                'SomeProjectName',
+                'myRole',
+                SnapCloud.clientId,
+                SnapActions.lastSeen,
+                () => {
+                    if (oldProjectId === SnapCloud.projectId) {
+                        return done('Did not update id');
+                    }
+                    done();
+                }
+            );
+        });
+    });
 });
