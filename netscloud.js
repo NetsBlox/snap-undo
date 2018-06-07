@@ -1,4 +1,4 @@
-/* global localize, SERVER_URL, nop, IDE_Morph, Cloud, detect, SnapActions, world*/
+/* global localize, SERVER_URL, nop, Cloud, SnapActions */
 NetCloud.prototype = new Cloud();
 
 function NetCloud(url) {
@@ -294,6 +294,7 @@ NetCloud.prototype.saveProject = function (ide, callBack, errorCall, overwrite, 
             myself.callService(
                 'saveProject',
                 function (response, url) {
+                    myself.projectId = response[0].projectId;
                     callBack.call(null, response, url);
                 },
                 errorCall,
@@ -513,12 +514,60 @@ NetCloud.prototype.saveProjectCopy = function(callBack, errorCall) {
             myself.callService(
                 'saveProjectCopy',
                 function (response, url) {
+                    myself.projectId = response[0].projectId;
                     callBack.call(null, response, url);
                     myself.disconnect();
                 },
                 errorCall,
                 [
                     SnapCloud.clientId
+                ]
+            );
+        },
+        errorCall
+    );
+};
+
+NetCloud.prototype.newProject = function (name, callBack, errorCall) {
+    var myself = this;
+    this.reconnect(
+        function () {
+            myself.callService(
+                'newProject',
+                function (response) {
+                    myself.projectId = response[0].projectId;
+                    callBack(response[0]);
+                    myself.disconnect();
+                },
+                errorCall,
+                [
+                    SnapCloud.clientId,
+                    name || ''
+                ]
+            );
+        },
+        errorCall
+    );
+};
+
+NetCloud.prototype.setClientState = function (room, role, owner, actionId, errorCall) {
+    var myself = this;
+    this.reconnect(
+        function () {
+            myself.callService(
+                'setClientState',
+                function (response) {
+                    myself.projectId = response[0].projectId;
+                    myself.disconnect();
+                },
+                errorCall,
+                [
+                    SnapCloud.clientId,
+                    SnapCloud.projectId || '',
+                    room || '',
+                    role || '',
+                    owner || '',
+                    actionId || ''
                 ]
             );
         },
