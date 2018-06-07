@@ -528,54 +528,76 @@ NetCloud.prototype.saveProjectCopy = function(callBack, errorCall) {
     );
 };
 
-NetCloud.prototype.newProject = function (name, callBack, errorCall) {
-    var myself = this;
-    this.reconnect(
-        function () {
-            myself.callService(
-                'newProject',
-                function (response) {
-                    myself.projectId = response[0].projectId;
-                    callBack(response[0]);
-                    myself.disconnect();
-                },
-                function() {
-                    myself.projectId = myself.clientId + '-' + Date.now();
-                    errorCall.apply(null, arguments);
-                },
-                [
-                    SnapCloud.clientId,
-                    name || ''
-                ]
-            );
-        },
-        errorCall
+NetCloud.prototype.request = function (url, dict) {
+    var resolve,
+        reject,
+        promise = new Promise(function(res, rej) {
+            resolve = res;
+            reject = rej;
+        }),
+        data = this.encodeDict(dict);
+
+    url = SERVER_URL + url;
+    var request = new XMLHttpRequest();
+
+    request.open('POST', url, true);
+    request.setRequestHeader(
+        'Content-Type',
+        'application/x-www-form-urlencoded'
     );
+    request.withCredentials = true;
+    request.onreadystatechange = function () {
+        if (request.readyState === 4) {
+            var badStatusCode = request.status > 299 || request.status < 200;
+            if (badStatusCode || request.responseText &&
+                    request.responseText.indexOf('ERROR') === 0) {
+                return reject(request);
+            }
+            resolve(JSON.parse(request.responseText));
+        }
+    };
+
+    request.send(data);
+    return promise;
 };
 
-NetCloud.prototype.setClientState = function (room, role, owner, actionId, errorCall) {
-    var myself = this;
-    this.reconnect(
-        function () {
-            myself.callService(
-                'setClientState',
-                function (response) {
-                    myself.projectId = response[0].projectId;
-                    myself.disconnect();
-                },
-                errorCall,
-                [
-                    SnapCloud.clientId,
-                    SnapCloud.projectId || '',
-                    room || '',
-                    role || '',
-                    owner || '',
-                    actionId || ''
-                ]
-            );
-        },
-        errorCall
-    );
+NetCloud.prototype.newProject = function (name) {
+    var myself = this,
+        data = {
+            clientId: SnapCloud.clientId,
+            name: name || ''
+        };
+
+    return this.request('/api/newProject', data)
+        .then(function(result) {
+            myself.projectId = result.projectId;
+        })
+        .catch(function(req) {
+            myself.projectId = myself.clientId + '-' + Date.now();
+            throw new Error(req.responseText);
+        });
+};
+
+NetCloud.prototype.setClientState = function (room, role, owner, actionId) {
+    var myself = this,
+        data = {
+            clientId: this.clientId,
+            projectId: this.projectId,
+            roomName: room,
+            roleName: role,
+            owner: owner,
+            actionId: actionId
+
+        };
+
+    return this.request('/api/setClientState', data)
+        .then(function(result) {
+            myself.projectId = result.projectId;
+        })
+        .catch(function(req) {
+            myself.projectId = myself.clientId + '-' + Date.now();
+            throw new Error(req.responseText);
+        });
 };
 
 var SnapCloud = new NetCloud(SERVER_URL + '/api/');
