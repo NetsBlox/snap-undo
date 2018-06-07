@@ -257,15 +257,16 @@ WebSocketManager.prototype._connectWebSocket = function() {
         }
 
         self.lastSocketActivity = Date.now();
-        self.hasConnected = true;
         self.connected = true;
 
         if (self.uuid) {
             self.sendMessage({type: 'set-uuid', body: self.uuid});
-            self.onConnect(!self.hasConnected);
+            self.onConnect(self.hasConnected);
         } else {
             self.sendMessage({type: 'request-uuid'});
         }
+
+        self.hasConnected = true;
     };
 
     // Set up message events
