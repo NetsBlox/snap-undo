@@ -145,17 +145,17 @@ NetsBloxMorph.prototype.newProject = function (projectName) {
     });
 
     // Get new room name
-    this.sockets.sendMessage({
-        type: 'create-room',
-        role: projectName || RoomMorph.DEFAULT_ROLE
-    });
-
-    this.silentSetProjectName(projectName || RoomMorph.DEFAULT_ROLE);
-    this.createRoom();
-    this.selectSprite(this.stage.children[0]);
-    if (!projectName) {
-        this.updateUrlQueryString();
-    }
+    var myself = this;
+    return SnapCloud.newProject(
+        projectName,
+        function(info) {
+            myself.silentSetProjectName(info.roleName);
+            myself.createRoom();
+            myself.selectSprite(myself.stage.children[0]);
+            if (!projectName) {
+                myself.updateUrlQueryString();
+            }
+        }, myself.cloudError());
 };
 
 NetsBloxMorph.prototype.createRoom = function() {
@@ -258,20 +258,6 @@ NetsBloxMorph.prototype.createControlBar = function () {
     };
 };
 
-NetsBloxMorph.prototype.loadNextRoom = function () {
-    if (this.room.nextRoom) {
-        var next = this.room.nextRoom;
-        this.room.silentSetRoomName(next.roomName);
-        this.room.ownerId = next.ownerId;
-        this.silentSetProjectName(next.roleId);
-
-        // Send the message to the server
-        this.sockets.updateRoomInfo();
-
-        this.room.nextRoom = null;
-    }
-};
-
 NetsBloxMorph.prototype.rawOpenCloudDataString = function (model, parsed) {
     var project;
     StageMorph.prototype.hiddenPrimitives = {};
@@ -296,10 +282,6 @@ NetsBloxMorph.prototype.rawOpenCloudDataString = function (model, parsed) {
                 ),
                 this
             );
-            // NetsBlox addition: start
-            // Join the room
-            this.loadNextRoom();
-            // NetsBlox addition: end
         } catch (err) {
             this.showMessage('Load failed: ' + err);
         }
@@ -315,10 +297,6 @@ NetsBloxMorph.prototype.rawOpenCloudDataString = function (model, parsed) {
             ),
             this
         );
-        // NetsBlox addition: start
-        // Join the room
-        this.loadNextRoom();
-        // NetsBlox addition: end
     }
     this.stopFastTracking();
     return project;
@@ -884,20 +862,25 @@ NetsBloxMorph.prototype.initializeCloud = function () {
 NetsBloxMorph.prototype.rawLoadCloudProject = function (project, isPublic) {
     var newRoom = project.RoomName,
         isNewRole = project.NewRole === 'true',
-        roleId = project.ProjectName;  // src proj name
+        roleName = project.ProjectName,
+        projectId = project.ProjectID;  // src proj name
 
     this.source = 'cloud';
     project.Owner = project.Owner || SnapCloud.username;
     this.updateUrlQueryString(newRoom, isPublic === 'true');
     if (project.SourceCode) {
-        this.room.nextRoom = {
-            ownerId: project.Owner,
-            roomName: newRoom,
-            roleId: roleId
-        };
-        return SnapActions.openProject(project.SourceCode);
+        return SnapActions.openProject(project.SourceCode)
+            .then(() => {
+                SnapCloud.projectId = projectId;
+                this.room.silentSetRoomName(newRoom);
+                this.room.ownerId = project.Owner;
+                this.silentSetProjectName(roleName);
+
+                // Send the message to the server
+                this.sockets.updateRoomInfo();
+            });
     } else {  // initialize an empty code base
-        this.newRole(roleId);
+        this.newRole(roleName);
         this.room.name = newRoom;  // silent set name
         // FIXME: this could cause problems later
         this.room.ownerId = project.Owner;
