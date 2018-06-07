@@ -593,6 +593,7 @@ RoomMorph.prototype.moveToRole = function(dstId) {
 
     myself.ide.showMessage('moving to ' + dstId);
     SnapCloud.moveToRole(
+        dstId,
         function(args) {
             myself.ide.showMessage('moved to ' + dstId + '!');
             myself.ide.projectName = dstId;
@@ -618,8 +619,7 @@ RoomMorph.prototype.moveToRole = function(dstId) {
         },
         function (err, lbl) {
             myself.ide.cloudError().call(null, err, lbl);
-        },
-        [dstId, this.ownerId, this.name]
+        }
     );
 };
 

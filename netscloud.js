@@ -94,9 +94,8 @@ NetCloud.prototype.cloneRole = function(onSuccess, onFail, args) {
     );
 };
 
-NetCloud.prototype.moveToRole = function(onSuccess, onFail, args) {
+NetCloud.prototype.moveToRole = function(dstId, onSuccess, onFail) {
     var myself = this;
-    args.push(SnapCloud.clientId);
 
     this.reconnect(
         function () {
@@ -104,7 +103,7 @@ NetCloud.prototype.moveToRole = function(onSuccess, onFail, args) {
                 'moveToRole',
                 onSuccess,
                 onFail,
-                args
+                [myself.projectId, dstId, myself.clientId]
             );
         },
         function(err) {
@@ -300,8 +299,8 @@ NetCloud.prototype.saveProject = function (ide, callBack, errorCall, overwrite, 
                 errorCall,
                 [
                     ide.room.getCurrentRoleName(),
-                    name || ide.room.name,
                     ide.room.name,
+                    SnapCloud.projectId,
                     ide.room.ownerId,
                     overwrite === true,
                     serialized.SourceCode,
