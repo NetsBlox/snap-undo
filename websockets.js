@@ -262,7 +262,7 @@ WebSocketManager.prototype._connectWebSocket = function() {
 
         if (self.uuid) {
             self.sendMessage({type: 'set-uuid', body: self.uuid});
-            self.onConnect();
+            self.onConnect(!self.hasConnected);
         } else {
             self.sendMessage({type: 'request-uuid'});
         }
@@ -401,19 +401,13 @@ WebSocketManager.prototype.deserializeData = function(dataList) {
     });
 };
 
-WebSocketManager.prototype.onConnect = function() {
-    var myself = this,
-        afterConnect = function() {
-            myself.updateRoomInfo();
-            while (myself.messages.length) {
-                myself.websocket.send(myself.messages.shift());
-            }
-        };
+WebSocketManager.prototype.onConnect = function(isReconnect) {
+    if (isReconnect) {
+        this.updateRoomInfo();
+    }
 
-    if (SnapCloud.username) {  // Reauthenticate if needed
-        SnapCloud.reconnect(afterConnect, afterConnect);
-    } else {
-        afterConnect();
+    while (this.messages.length) {
+        this.websocket.send(this.messages.shift());
     }
     this.inActionRequest = false;
 };
@@ -437,16 +431,19 @@ WebSocketManager.prototype.getClientState = function() {
 };
 
 WebSocketManager.prototype.updateRoomInfo = function() {
-    var state = this.getClientState();
+    var myself = this,
+        state = this.getClientState();
 
     this.inActionRequest = true;
-    // TODO: error handling here!
     SnapCloud.setClientState(
         state.room,
         state.role,
         state.owner,
         state.actionId,
-        this.ide.cloudError()
+        function() {
+            myself.inActionRequest = false;
+            this.ide.cloudError().apply(null, arguments);
+        }
     );
 };
 
