@@ -120,7 +120,13 @@ NetCloud.prototype.invitationResponse = function (id, accepted, onSuccess, onFai
         function () {
             myself.callService(
                 'invitationResponse',
-                onSuccess,
+                function(response) {
+                    var project = response[0];
+                    if (accepted) {
+                        myself.projectId = project.ProjectID;
+                    }
+                    onSuccess(project);
+                },
                 onFail,
                 args
             );
@@ -159,7 +165,7 @@ NetCloud.prototype.inviteToCollaborate = function () {
                 'inviteToCollaborate',
                 nop,
                 nop,
-                args
+                args.concat(myself.projectId)
             );
         },
         nop
