@@ -305,7 +305,7 @@ NetCloud.prototype.saveProject = function (ide, callBack, errorCall, overwrite, 
                 errorCall,
                 [
                     ide.room.getCurrentRoleName(),
-                    ide.room.name,
+                    name || ide.room.name,
                     SnapCloud.projectId,
                     ide.room.ownerId,
                     overwrite === true,
