@@ -10,19 +10,18 @@ describe('cloud', function() {
     });
 
     describe('newProject', function () {
-        it('should set projectId on fail', function(done) {
+        before(() => SnapCloud.request = () => Promise.reject());
+        after(() => delete SnapCloud.request);
+
+        it('should set projectId on fail', function() {
             const oldProjectId = SnapCloud.projectId;
-            SnapCloud.callService = (name, cb, err) => err('ERROR');
-            SnapCloud.newProject(
-                'myRole',
-                () => done('Service did not fail'),
-                () => {
+            return SnapCloud.newProject('myRole')
+                .then(() => {throw new Error('request did not fail');})
+                .catch(() => {
                     if (oldProjectId === SnapCloud.projectId) {
-                        return done('Did not update id');
+                        throw new Error('Did not update id');
                     }
-                    done();
-                }
-            );
+                });
         });
     });
 });
