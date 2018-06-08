@@ -32,7 +32,7 @@ SnapDriver.prototype.reset = function() {
 
     this.ide().exitReplayMode();
     return this.waitUntilReady()
-        .then(() => SnapActions.openProject());
+        .then(() => this.ide().newProject());
 };
 
 SnapDriver.prototype.selectCategory = function(cat) {
