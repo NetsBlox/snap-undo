@@ -574,6 +574,7 @@ NetCloud.prototype.newProject = function (name) {
     return this.request('/api/newProject', data)
         .then(function(result) {
             myself.projectId = result.projectId;
+            return result;
         })
         .catch(function(req) {
             myself.projectId = myself.clientId + '-' + Date.now();
@@ -596,6 +597,7 @@ NetCloud.prototype.setClientState = function (room, role, owner, actionId) {
     return this.request('/api/setClientState', data)
         .then(function(result) {
             myself.projectId = result.projectId;
+            return result;
         })
         .catch(function(req) {
             myself.projectId = myself.clientId + '-' + Date.now();
