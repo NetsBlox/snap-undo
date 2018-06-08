@@ -146,16 +146,15 @@ NetsBloxMorph.prototype.newProject = function (projectName) {
 
     // Get new room name
     var myself = this;
-    return SnapCloud.newProject(
-        projectName,
-        function(info) {
+    return SnapCloud.newProject(projectName)
+        .then(function(info) {
             myself.silentSetProjectName(info.roleName);
             myself.createRoom();
             myself.selectSprite(myself.stage.children[0]);
             if (!projectName) {
                 myself.updateUrlQueryString();
             }
-        }, myself.cloudError());
+        });
 };
 
 NetsBloxMorph.prototype.createRoom = function() {
