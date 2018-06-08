@@ -25,7 +25,7 @@ describe('room', function() {
                 driver.moveToRole(name);
             });
 
-            it.only('should be able to move to new role', function() {
+            it('should be able to move to new role', function() {
                 // wait for the project name to change
                 return driver
                     .expect(() => {
@@ -48,10 +48,11 @@ describe('room', function() {
         before(() => {
             return driver.reset()
                 .then(()=> {
-                    driver.selectTab('Room');
+                    driver.selectTab('room');
 
-                    const roleName = driver.ide().projectName;
-                    const role = driver.ide().room.getRole(roleName);
+                    const room = driver.ide().room;
+                    const roleName = room.getCurrentRoleName();
+                    const role = room.getRole(roleName);
 
                     // rename the role
                     driver.click(role.label);
