@@ -299,7 +299,7 @@ NetCloud.prototype.saveProject = function (ide, callBack, errorCall, overwrite, 
             myself.callService(
                 'saveProject',
                 function (response, url) {
-                    myself.projectId = response[0].projectId;
+                    myself.projectId = response.projectId;
                     callBack.call(null, response, url);
                 },
                 errorCall,
