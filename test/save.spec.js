@@ -10,7 +10,10 @@ describe('save', function() {
     function showingSaveMsg() {
         const menu = driver.dialog();
         const message = menu && menu.title.toLowerCase();
-        return message.includes('saved') && message.includes('cloud');
+        if (message) {
+            return message.includes('saved') && message.includes('cloud');
+        }
+        return false;
     }
 
     function saveProject() {
