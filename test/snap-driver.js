@@ -31,8 +31,7 @@ SnapDriver.prototype.reset = function() {
     dialogs.forEach(dialog => dialog.destroy());
 
     this.ide().exitReplayMode();
-    return this.waitUntilReady()
-        .then(() => this.ide().newProject());
+    return this.ide().newProject();
 };
 
 SnapDriver.prototype.selectCategory = function(cat) {
@@ -181,11 +180,6 @@ SnapDriver.prototype.expect = function(fn, msg) {
         .catch(() => {
             throw new Error(msg);
         });
-};
-
-// Wait for the client to have a websocket id
-SnapDriver.prototype.waitUntilReady = function() {
-    return this.waitUntil(() => this.ide().sockets.uuid);
 };
 
 // netsblox additions
