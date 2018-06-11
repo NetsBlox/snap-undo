@@ -90,7 +90,13 @@ describe('save', function() {
             .then(() => openSavedProject(projectName));
     });
 
-    it('should make a copy on save as', function() {
+    // Should not save a copy if not already saved
+    // TODO
+
+    // Should change the name of the current project
+    // TODO
+
+    it.only('should make a copy on save as', function() {
         // Get the project name
         const projectName = driver.ide().room.name;
         let saveAsName;
@@ -202,4 +208,7 @@ describe('save', function() {
                 });
         });
     });
+
+    // Should be able to save without a ws connection
+    // TODO
 });
