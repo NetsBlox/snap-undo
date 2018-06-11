@@ -1,10 +1,10 @@
 /*globals driver, expect, SnapCloud*/
-describe('save', function() {
+describe.only('save', function() {
     this.timeout(10000);
 
     function showingSaveMsg() {
         const menu = driver.dialog();
-        const message = menu && menu.title.toLowerCase();
+        const message = menu && menu.title && menu.title.toLowerCase();
         if (message) {
             return message.includes('saved') && message.includes('cloud');
         }
@@ -43,8 +43,11 @@ describe('save', function() {
 
         // Open the saved project
         const projectDialog = driver.dialog();
-        return driver.waitUntil(() => getProjectList(projectDialog).length > 1)
-            .then(() => projectDialog);
+        return driver.expect(
+            () => getProjectList(projectDialog)[0] !== '(empty)',
+            'Open project dialog did not populate with projects'
+        )
+        .then(() => projectDialog);
     }
 
     function openSavedProject(projectName) {
@@ -68,13 +71,27 @@ describe('save', function() {
                 return driver.expect(
                     () => {
                         const blockCount = driver.ide().currentSprite.scripts.children.length;
-                        return blockCount === 1;
+                        return blockCount > 0;
                     },
                     `Did not see blocks after loading saved project`
                 );
             });
 
     }
+
+    describe.skip('w/o ws conn', function() {
+        before(function() {
+        });
+
+        after(function() {
+        });
+
+        it('should be able to save and reload the project (no ws conn)', function() {
+            // Should be able to save without a ws connection
+            // TODO
+        });
+
+    });
 
     describe('basic tests', function() {
         beforeEach(() => {
@@ -85,30 +102,21 @@ describe('save', function() {
 
         it('should be able to save and reload the project', function() {
             // Get the project name
-            const projectName = driver.ide().room.name;
+            const projectName = `can-reload-${Date.now()}`;
 
-            return saveProject()
+            return driver.setProjectName(projectName)
+                .then(() => saveProject())
                 .then(() => driver.reset())
                 .then(() => openSavedProject(projectName));
         });
 
-        it('should overwrite on rename and save', function() {
-            const projectName = driver.ide().room.name;
-            let newName;
+        it('should overwrite on rename', function() {
+            const projectName = `rename-test-${Date.now()}`
+            const newName = `RENAMED-${projectName}`;
 
-            return saveProject()
-                .then(() => {
-                    // rename from the room tab
-                    driver.selectTab('room');
-                    const room = driver.ide().room;
-                    driver.click(room.roomName);
-
-                    newName = `rename-${projectName}`;
-                    driver.keys(newName);
-                    driver.dialog().accept();
-                    return driver.waitUntil(() => driver.ide().room.name !== projectName);
-                })
+            return driver.setProjectName(projectName)
                 .then(() => saveProject())
+                .then(() => driver.setProjectName(newName))
                 .then(() => openProjectsBrowser())
                 .then(projectDialog => {
                     let projectList = projectDialog.listField.listContents
@@ -129,15 +137,15 @@ describe('save', function() {
 
     // Should not save a copy if not already saved
     // TODO
-
-    describe.only('save as', function() {
+    describe('save as', function() {
         let projectName;
         let saveAsName;
 
         before(function() {
-            projectName = driver.ide().room.name;
+            projectName = `save-as-${Date.now()}`;
 
-            return driver.addBlock('doIfElse')
+            return driver.setProjectName(projectName)
+                .then(() => driver.addBlock('doIfElse'))
                 .then(() => saveProject())
                 .then(() => driver.reset())
                 .then(() => openSavedProject(projectName))
@@ -222,7 +230,4 @@ describe('save', function() {
                 });
         });
     });
-
-    // Should be able to save without a ws connection
-    // TODO
 });

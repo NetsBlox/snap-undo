@@ -34,6 +34,20 @@ SnapDriver.prototype.reset = function() {
     return this.ide().newProject();
 };
 
+SnapDriver.prototype.setProjectName = function(name) {
+    // rename from the room tab
+    this.selectTab('room');
+    const room = this.ide().room;
+    this.click(room.roomName);
+
+    this.keys(name);
+    this.dialog().accept();
+    return this.expect(
+        () => this.ide().room.name === name,
+        `Project name did not update after setProjectName (${this.ide().room.name} vs ${name})`
+    );
+};
+
 SnapDriver.prototype.selectCategory = function(cat) {
     var categories = this.ide().categories.children;
     var category = categories.find(btn => btn.labelString.toLowerCase() === cat.toLowerCase());
