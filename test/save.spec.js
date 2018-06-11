@@ -96,51 +96,64 @@ describe('save', function() {
     // Should change the name of the current project
     // TODO
 
-    it.only('should make a copy on save as', function() {
-        // Get the project name
-        const projectName = driver.ide().room.name;
+    describe.only('save as', function() {
+        let projectName;
         let saveAsName;
 
-        return saveProject()
-            .then(() => driver.reset())
-            .then(() => openSavedProject(projectName))
-            .then(() => {
-                // save as
-                const controlBar = driver.ide().controlBar;
-                driver.click(controlBar.projectButton);
+        before(function() {
+            projectName = driver.ide().room.name;
 
-                const menu = driver.dialog();
-                const saveBtnIndex = menu.children
-                    .findIndex(child => child.action === 'save');
-                const saveAsBtn = menu.children[saveBtnIndex+1];
-                driver.click(saveAsBtn);
+            return saveProject()
+                .then(() => driver.reset())
+                .then(() => openSavedProject(projectName))
+                .then(() => {
+                    // save as
+                    const controlBar = driver.ide().controlBar;
+                    driver.click(controlBar.projectButton);
 
-                // Enter the new project name
-                saveAsName = `new${projectName}-saveAs`;
-                driver.keys(saveAsName);
-                driver.dialog().accept();
+                    const menu = driver.dialog();
+                    const saveBtnIndex = menu.children
+                        .findIndex(child => child.action === 'save');
+                    const saveAsBtn = menu.children[saveBtnIndex+1];
+                    driver.click(saveAsBtn);
 
-                return driver.expect(
-                    showingSaveMsg,
-                    `Did not see save message after "Save As"`
-                );
-            })
-            .then(() => openProjectsBrowser())
-            .then(projectDialog => {
-                // Check that both projects show up in the project list
-                return driver.waitUntil(() => {
-                    // Click the cloud icon
-                    const cloudSrc = projectDialog.srcBar.children[0];
-                    driver.click(cloudSrc);
+                    // Enter the new project name
+                    saveAsName = `new${projectName}-saveAs`;
+                    driver.keys(saveAsName);
+                    driver.dialog().accept();
 
-                    const projectList = projectDialog.listField.listContents
-                        .children.map(child => child.labelString);
-                    const hasOriginal = projectList.includes(projectName);
-                    const hasSaveAsVersion = projectList.includes(saveAsName);
-
-                    return hasOriginal && hasSaveAsVersion;
+                    return driver.expect(
+                        showingSaveMsg,
+                        `Did not see save message after "Save As"`
+                    );
                 });
-            });
+        });
+
+        it('should change name of current project', function() {
+            return driver.expect(
+                () => driver.ide().room.name === saveAsName,
+                `Project name not updated (expected ${saveAsName})`
+            );
+        });
+
+        it('should make a copy on save as', function() {
+            return openProjectsBrowser()
+                .then(projectDialog => {
+                    // Check that both projects show up in the project list
+                    return driver.waitUntil(() => {
+                        // Click the cloud icon
+                        const cloudSrc = projectDialog.srcBar.children[0];
+                        driver.click(cloudSrc);
+
+                        const projectList = projectDialog.listField.listContents
+                            .children.map(child => child.labelString);
+                        const hasOriginal = projectList.includes(projectName);
+                        const hasSaveAsVersion = projectList.includes(saveAsName);
+
+                        return hasOriginal && hasSaveAsVersion;
+                    });
+                });
+        });
     });
 
     it('should overwrite on rename and save', function() {
