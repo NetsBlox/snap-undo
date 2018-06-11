@@ -1,11 +1,6 @@
 /*globals driver, expect, SnapCloud*/
 describe('save', function() {
     this.timeout(10000);
-    beforeEach(() => {
-        return driver.reset()
-            .then(() => driver.addBlock('doIfElse'))
-            .then(() => driver.selectCategory('control'));
-    });
 
     function showingSaveMsg() {
         const menu = driver.dialog();
@@ -81,19 +76,58 @@ describe('save', function() {
 
     }
 
-    it('should be able to save and reload the project', function() {
-        // Get the project name
-        const projectName = driver.ide().room.name;
+    describe('basic tests', function() {
+        beforeEach(() => {
+            return driver.reset()
+                .then(() => driver.addBlock('doIfElse'))
+                .then(() => driver.selectCategory('control'));
+        });
 
-        return saveProject()
-            .then(() => driver.reset())
-            .then(() => openSavedProject(projectName));
+        it('should be able to save and reload the project', function() {
+            // Get the project name
+            const projectName = driver.ide().room.name;
+
+            return saveProject()
+                .then(() => driver.reset())
+                .then(() => openSavedProject(projectName));
+        });
+
+        it('should overwrite on rename and save', function() {
+            const projectName = driver.ide().room.name;
+            let newName;
+
+            return saveProject()
+                .then(() => {
+                    // rename from the room tab
+                    driver.selectTab('room');
+                    const room = driver.ide().room;
+                    driver.click(room.roomName);
+
+                    newName = `rename-${projectName}`;
+                    driver.keys(newName);
+                    driver.dialog().accept();
+                    return driver.waitUntil(() => driver.ide().room.name !== projectName);
+                })
+                .then(() => saveProject())
+                .then(() => openProjectsBrowser())
+                .then(projectDialog => {
+                    let projectList = projectDialog.listField.listContents
+                        .children.map(child => child.labelString);
+                    return driver
+                        .expect(
+                            () => {
+                                projectList = projectDialog.listField.listContents
+                                    .children.map(child => child.labelString);
+                                return projectList.includes(newName);
+                            },
+                            `Could not find ${newName} in project list`
+                        )
+                        .then(() => expect(projectList.includes(projectName)).toBe(false));
+                });
+        });
     });
 
     // Should not save a copy if not already saved
-    // TODO
-
-    // Should change the name of the current project
     // TODO
 
     describe.only('save as', function() {
@@ -103,7 +137,8 @@ describe('save', function() {
         before(function() {
             projectName = driver.ide().room.name;
 
-            return saveProject()
+            return driver.addBlock('doIfElse')
+                .then(() => saveProject())
                 .then(() => driver.reset())
                 .then(() => openSavedProject(projectName))
                 .then(() => {
@@ -154,40 +189,6 @@ describe('save', function() {
                     });
                 });
         });
-    });
-
-    it('should overwrite on rename and save', function() {
-        const projectName = driver.ide().room.name;
-        let newName;
-
-        return saveProject()
-            .then(() => {
-                // rename from the room tab
-                driver.selectTab('room');
-                const room = driver.ide().room;
-                driver.click(room.roomName);
-
-                newName = `rename-${projectName}`;
-                driver.keys(newName);
-                driver.dialog().accept();
-                return driver.waitUntil(() => driver.ide().room.name !== projectName);
-            })
-            .then(() => saveProject())
-            .then(() => openProjectsBrowser())
-            .then(projectDialog => {
-                let projectList = projectDialog.listField.listContents
-                    .children.map(child => child.labelString);
-                return driver
-                    .expect(
-                        () => {
-                            projectList = projectDialog.listField.listContents
-                                .children.map(child => child.labelString);
-                            return projectList.includes(newName);
-                        },
-                        `Could not find ${newName} in project list`
-                    )
-                    .then(() => expect(projectList.includes(projectName)).toBe(false));
-            });
     });
 
     describe('saveACopy', function() {
