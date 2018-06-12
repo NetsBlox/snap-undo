@@ -571,31 +571,42 @@ NetCloud.prototype.newProject = function (name) {
             name: name || ''
         };
 
-    return this.request('/api/newProject', data)
-        .then(function(result) {
-            myself.projectId = result.projectId;
-            return result;
-        })
-        .catch(function(req) {
-            myself.projectId = myself.clientId + '-' + Date.now();
-            throw new Error(req.responseText);
-        });
+    if (!this.newProjectRequest) {
+        this.newProjectRequest = this.request('/api/newProject', data)
+            .then(function(result) {
+                myself.projectId = result.projectId;
+                console.log('>>> newProject ', myself.projectId);
+                myself.newProjectRequest = null;
+                return result;
+            })
+            .catch(function(req) {
+                myself.projectId = myself.clientId + '-' + Date.now();
+                myself.newProjectRequest = null;
+                throw new Error(req.responseText);
+            });
+    }
+
+    return this.newProjectRequest;
 };
 
 NetCloud.prototype.setClientState = function (room, role, owner, actionId) {
     var myself = this,
-        data = {
-            clientId: this.clientId,
-            projectId: this.projectId,
-            roomName: room,
-            roleName: role,
-            owner: owner,
-            actionId: actionId
+        newProjectRequest = this.newProjectRequest || Promise.resolve();
 
-        };
-
-    return this.request('/api/setClientState', data)
+    return newProjectRequest
+        .then(() => {
+            var data = {
+                clientId: myself.clientId,
+                projectId: myself.projectId,
+                roomName: room,
+                roleName: role,
+                owner: owner,
+                actionId: actionId
+            };
+            return myself.request('/api/setClientState', data);
+        })
         .then(function(result) {
+            console.log('>>> setClientState ', myself.projectId);
             myself.projectId = result.projectId;
             return result;
         })
