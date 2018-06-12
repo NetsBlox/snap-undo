@@ -1,5 +1,5 @@
 /*globals driver, expect, SnapCloud*/
-describe.only('save', function() {
+describe('save', function() {
     this.timeout(10000);
 
     function showingSaveMsg() {
