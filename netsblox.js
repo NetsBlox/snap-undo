@@ -554,7 +554,7 @@ NetsBloxMorph.prototype.openRoomString = function (str) {
 
     this.showMessage('Opening project...', 3);
     // Create a room with the new name
-    this.newProject(role);
+    this.newRole(role);
 
     // Send 'import-room' message
     this.sockets.sendMessage({
