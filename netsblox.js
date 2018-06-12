@@ -556,23 +556,19 @@ NetsBloxMorph.prototype.openRoomString = function (str) {
     // Create a room with the new name
     this.newRole(role);
 
-    // Send 'import-room' message
-    this.sockets.sendMessage({
-        type: 'import-room',
-        name: room.attributes.name,
-        role: role,
-        roles: roles
-    });
-
-    // load the given project
-    role = room.children[0];
-    var projectXml = [
-        '<snapdata>',
-        role.childNamed('project').toString(),
-        role.childNamed('media').toString(),
-        '</snapdata>'
-    ].join('');
-    return SnapActions.openProject(projectXml);
+    var name = room.attributes.name;
+    return SnapCloud.importProject(name, role, roles)
+        .then(function() {
+            // load the given project
+            role = room.children[0];
+            var projectXml = [
+                '<snapdata>',
+                role.childNamed('project').toString(),
+                role.childNamed('media').toString(),
+                '</snapdata>'
+            ].join('');
+            return SnapActions.openProject(projectXml);
+        });
 };
 
 NetsBloxMorph.prototype.openCloudDataString = function (model, parsed) {

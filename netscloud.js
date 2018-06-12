@@ -616,4 +616,25 @@ NetCloud.prototype.setClientState = function (room, role, owner, actionId) {
         });
 };
 
+NetCloud.prototype.importProject = function (name, role, roles) {
+    var myself = this,
+        data = {
+            projectId: this.projectId,
+            clientId: this.clientId,
+            name: name,
+            role: role,
+            roles: roles
+        };
+
+    return this.request('/api/importProject', data)
+        .then(function(result) {
+            myself.projectId = result.projectId;
+            return result;
+        })
+        .catch(function(req) {
+            myself.projectId = myself.clientId + '-' + Date.now();
+            throw new Error(req.responseText);
+        });
+};
+
 var SnapCloud = new NetCloud(SERVER_URL + '/api/');
