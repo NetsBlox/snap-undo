@@ -5,7 +5,7 @@ describe('url anchors', function () {
     describe('examples', function() {
         before(() => {
             const loc = {
-                href: location.origin + '?action=example&ProjectName=Dice',
+                href: location.origin + '?action=example&ProjectName=Dice&editMode=true',
                 hash: ''
             };
             return driver.reset()
@@ -18,7 +18,7 @@ describe('url anchors', function () {
                     const blockCount = driver.ide().currentSprite.scripts.children.length;
                     return blockCount > 0;
                 },
-                'No blocks showed up for Battleship'
+                'No blocks showed up for example'
             );
         });
 
@@ -29,6 +29,29 @@ describe('url anchors', function () {
                 },
                 `Found ${driver.ide().room.getRoleCount()} role(s) (expected 2)`
             );
+        });
+
+        it('should load code for the other role', function () {
+            const room = driver.ide().room;
+            const roleNames = room.getRoleNames();
+            const roleName = room.getCurrentRoleName();
+            const name = roleNames.find(name => name !== roleName);
+
+            driver.moveToRole(name);
+            return driver.expect(
+                () => room.getCurrentRoleName() === name,
+                `Did not load role ${name}`
+            )
+                .then(() => driver.selectTab('scripts'))
+                .then(() => {
+                    return driver.expect(
+                        () => {
+                            const blockCount = driver.ide().currentSprite.scripts.children.length;
+                            return blockCount > 0;
+                        },
+                        `No blocks showed up for ${name}`
+                    );
+                });
         });
     });
 });
