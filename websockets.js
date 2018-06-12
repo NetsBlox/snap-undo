@@ -403,15 +403,15 @@ WebSocketManager.prototype.deserializeData = function(dataList) {
     });
 };
 
-WebSocketManager.prototype.onConnect = function(isReconnect) {
-    if (isReconnect) {
-        this.updateRoomInfo();
-    }
-
-    while (this.messages.length) {
-        this.websocket.send(this.messages.shift());
-    }
-    this.inActionRequest = false;
+WebSocketManager.prototype.onConnect = function() {
+    var myself = this;
+    return this.updateRoomInfo()
+        .then(function() {
+            while (myself.messages.length) {
+                myself.websocket.send(myself.messages.shift());
+            }
+            myself.inActionRequest = false;
+        });
 };
 
 WebSocketManager.prototype.getClientState = function() {
