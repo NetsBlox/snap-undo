@@ -325,6 +325,7 @@ WebSocketManager.prototype.send = function(message) {
 };
 
 WebSocketManager.prototype.sendMessage = function(message) {
+    message.projectId = SnapCloud.projectId;
     message = this.serializeMessage(message);
     this.send(message);
 };
