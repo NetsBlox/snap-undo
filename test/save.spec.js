@@ -100,20 +100,6 @@ describe('save', function() {
 
     }
 
-    describe.skip('w/o ws conn', function() {
-        before(function() {
-        });
-
-        after(function() {
-        });
-
-        it('should be able to save and reload the project (no ws conn)', function() {
-            // Should be able to save without a ws connection
-            // TODO
-        });
-
-    });
-
     describe('basic tests', function() {
         beforeEach(() => {
             return driver.reset()
@@ -156,8 +142,6 @@ describe('save', function() {
         });
     });
 
-    // Should not save a copy if not already saved
-    // TODO
     describe('save as', function() {
         let projectName;
         let saveAsName;
@@ -165,7 +149,8 @@ describe('save', function() {
         before(function() {
             projectName = `save-as-${Date.now()}`;
 
-            return driver.setProjectName(projectName)
+            return driver.reset()
+                .then(() => driver.setProjectName(projectName))
                 .then(() => driver.addBlock('doIfElse'))
                 .then(() => saveProject())
                 .then(() => driver.reset())
