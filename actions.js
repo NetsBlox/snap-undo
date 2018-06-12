@@ -2642,7 +2642,7 @@ ActionManager.prototype.onOpenProject = function(str) {
         }
 
     } else {
-        this.ide().newProject();
+        this.ide().newRole();
     }
 
     // Load the owners

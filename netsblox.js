@@ -66,15 +66,6 @@ NetsBloxMorph.prototype.openIn = function (world) {
     }
 };
 
-NetsBloxMorph.prototype.newRole = function (name) {
-    // Initialize a new role locally
-    this.clearProject();
-    this.sprites.asArray().concat(this.stage).forEach(function(sprite) {
-        return SnapActions.loadOwner(sprite);
-    });
-    this.silentSetProjectName(name);
-};
-
 NetsBloxMorph.prototype.clearProject = function () {
     this.source = SnapCloud.username ? 'cloud' : 'local';
     if (this.stage) {
@@ -139,11 +130,6 @@ NetsBloxMorph.prototype.settingsMenu = function () {
 };
 
 NetsBloxMorph.prototype.newProject = function (projectName) {
-    this.clearProject();
-    this.sprites.asArray().concat(this.stage).forEach(function(sprite) {
-        return SnapActions.loadOwner(sprite);
-    });
-
     // Get new room name
     var myself = this;
     return SnapCloud.newProject(projectName)
@@ -154,7 +140,16 @@ NetsBloxMorph.prototype.newProject = function (projectName) {
             if (!projectName) {
                 myself.updateUrlQueryString();
             }
+            return SnapActions.openProject();
         });
+};
+
+NetsBloxMorph.prototype.newRole = function (name) {
+    // Initialize a new role locally
+    this.clearProject();
+    if (name) {
+        this.silentSetProjectName(name);
+    }
 };
 
 NetsBloxMorph.prototype.createRoom = function() {
