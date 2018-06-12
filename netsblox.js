@@ -63,6 +63,7 @@ NetsBloxMorph.prototype.openIn = function (world) {
 
     } else {
         NetsBloxMorph.uber.openIn.call(myself, world);
+        return this.newProject();
     }
 };
 

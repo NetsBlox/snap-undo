@@ -583,7 +583,7 @@ IDE_Morph.prototype.openIn = function (world) {
             ]);
 
         } else {
-            SnapActions.openProject();
+            myself.newProject();
         }
     }
 
@@ -5034,7 +5034,7 @@ IDE_Morph.prototype.createNewProject = function () {
             myself.exitReplayMode();
             SnapActions.disableCollaboration();
             SnapUndo.reset();
-            SnapActions.openProject();
+            myself.newProject();
         }
     );
 };
@@ -5111,7 +5111,7 @@ IDE_Morph.prototype.reflectLanguage = function (lang, callback) {
     this.createCorralBar();
     this.fixLayout();
     if (this.loadNewProject) {
-        SnapActions.openProject();
+        this.newProject();
         location.hash = urlBar;
     } else {
         SnapUndo.reset();
