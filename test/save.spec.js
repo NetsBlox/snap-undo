@@ -11,6 +11,27 @@ describe('save', function() {
         return false;
     }
 
+    function saveProjectAs(name) {
+        // save as
+        const controlBar = driver.ide().controlBar;
+        driver.click(controlBar.projectButton);
+
+        const menu = driver.dialog();
+        const saveBtnIndex = menu.children
+            .findIndex(child => child.action === 'save');
+        const saveAsBtn = menu.children[saveBtnIndex+1];
+        driver.click(saveAsBtn);
+
+        // Enter the new project name
+        driver.keys(name);
+        driver.dialog().accept();
+
+        return driver.expect(
+            showingSaveMsg,
+            `Did not see save message after "Save As"`
+        );
+    }
+
     function saveProject() {
         // Get the save button
         const controlBar = driver.ide().controlBar;
@@ -150,25 +171,8 @@ describe('save', function() {
                 .then(() => driver.reset())
                 .then(() => openSavedProject(projectName))
                 .then(() => {
-                    // save as
-                    const controlBar = driver.ide().controlBar;
-                    driver.click(controlBar.projectButton);
-
-                    const menu = driver.dialog();
-                    const saveBtnIndex = menu.children
-                        .findIndex(child => child.action === 'save');
-                    const saveAsBtn = menu.children[saveBtnIndex+1];
-                    driver.click(saveAsBtn);
-
-                    // Enter the new project name
                     saveAsName = `new${projectName}-saveAs`;
-                    driver.keys(saveAsName);
-                    driver.dialog().accept();
-
-                    return driver.expect(
-                        showingSaveMsg,
-                        `Did not see save message after "Save As"`
-                    );
+                    return saveProjectAs(saveAsName);
                 });
         });
 
@@ -194,6 +198,30 @@ describe('save', function() {
                         const hasSaveAsVersion = projectList.includes(saveAsName);
 
                         return hasOriginal && hasSaveAsVersion;
+                    });
+                });
+        });
+
+        it('should not make a copy if not saved', function() {
+            const name = `save-as-unsaved-${Date.now()}`;
+            const saveAs = `${name}-SAVE-AS`;
+            return driver.reset()
+                .then(() => driver.setProjectName(name))
+                .then(() => driver.addBlock('forward'))
+                .then(() => saveProjectAs(saveAs))
+                .then(() => openProjectsBrowser())
+                .then(dialog => {
+                    return driver.waitUntil(() => {
+                        // Click the cloud icon
+                        const cloudSrc = dialog.srcBar.children[0];
+                        driver.click(cloudSrc);
+
+                        const projectList = dialog.listField.listContents
+                            .children.map(child => child.labelString);
+                        const hasOriginal = projectList.includes(name);
+                        const hasSaveAsVersion = projectList.includes(saveAs);
+
+                        return !hasOriginal && hasSaveAsVersion;
                     });
                 });
         });
