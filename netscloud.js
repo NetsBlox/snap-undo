@@ -538,7 +538,7 @@ NetCloud.prototype.request = function (url, dict) {
             resolve = res;
             reject = rej;
         }),
-        data = this.encodeDict(dict);
+        data = JSON.stringify(dict);
 
     url = SERVER_URL + url;
     var request = new XMLHttpRequest();
@@ -546,7 +546,7 @@ NetCloud.prototype.request = function (url, dict) {
     request.open('POST', url, true);
     request.setRequestHeader(
         'Content-Type',
-        'application/x-www-form-urlencoded'
+        'application/json'
     );
     request.withCredentials = true;
     request.onreadystatechange = function () {
