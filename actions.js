@@ -327,11 +327,11 @@ ActionManager.prototype.isOwnAction = function(action) {
 };
 
 ActionManager.prototype.isNextAction = function(action) {
-    return action.id === (this.lastSeen + 1) || this.isAlwaysAllowed(action);
+    return action.id === (this.lastSeen + 1);
 };
 
 ActionManager.prototype.isPreviousAction = function(action) {
-    return action.id < (this.lastSeen + 1) && !this.isAlwaysAllowed(action);
+    return action.id < (this.lastSeen + 1);
 };
 
 ActionManager.prototype.isAlwaysAllowed = function(action) {
@@ -456,7 +456,7 @@ ActionManager.prototype._isBatchEvent = function(msg) {
 };
 
 ActionManager.prototype.onReceiveAction = function(msg) {
-    if (this.isPreviousAction(msg)) return;
+    if (this.isPreviousAction(msg) && !this.isAlwaysAllowed(msg)) return;
     if (this.isUserAction(msg)) {
         if (!SnapUndo.contains(msg)) {
             SnapUndo.record(msg);
@@ -475,7 +475,7 @@ ActionManager.prototype.onReceiveAction = function(msg) {
         }
     }
 
-    if (this.isNextAction(msg) && !this.isApplyingAction) {
+    if ((this.isNextAction(msg) || this.isAlwaysAllowed(msg)) && !this.isApplyingAction) {
         this._applyEvent(msg);
     } else {
         this.addActionToQueue(msg);
