@@ -440,7 +440,7 @@ WebSocketManager.prototype.updateRoomInfo = function() {
     return SnapCloud.setClientState(state.room, state.role, state.owner, state.actionId)
         .catch(function() {
             myself.inActionRequest = false;
-            this.ide.cloudError().apply(null, arguments);
+            myself.ide.cloudError().apply(null, arguments);
         });
 };
 
