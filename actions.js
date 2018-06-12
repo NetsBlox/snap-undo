@@ -327,11 +327,15 @@ ActionManager.prototype.isOwnAction = function(action) {
 };
 
 ActionManager.prototype.isNextAction = function(action) {
-    return action.id === (this.lastSeen + 1);
+    return action.id === (this.lastSeen + 1) || this.isAlwaysAllowed(action);
 };
 
 ActionManager.prototype.isPreviousAction = function(action) {
-    return action.id < (this.lastSeen + 1);
+    return action.id < (this.lastSeen + 1) && !this.isAlwaysAllowed(action);
+};
+
+ActionManager.prototype.isAlwaysAllowed = function(action) {
+    return action.type === 'openProject';
 };
 
 ActionManager.prototype.joinSession = function(sessionId, error) {
@@ -417,7 +421,7 @@ ActionManager.prototype.submitIfAllowed = function(event) {
     var myself = this,
         ide = this.ide();
 
-    if (event.type === 'openProject') {
+    if (this.isAlwaysAllowed(event)) {
         return this.submitAction(event);
     } else if (ide.isReplayMode && !event.isReplay) {
         ide.promptExitReplay(function() {
@@ -536,7 +540,7 @@ ActionManager.prototype._rawApplyEvent = function(event) {
 
 ActionManager.prototype.submitAction = function(event) {
 
-    if (this.isLeader || !this.isCollaborating() || event.type === 'openProject') {
+    if (this.isLeader || !this.isCollaborating() || this.isAlwaysAllowed(event)) {
         this.acceptEvent(event);
     } else {
         this.send(event);
