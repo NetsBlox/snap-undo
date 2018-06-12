@@ -220,6 +220,8 @@ SnapDriver.prototype.moveToRole = function(name) {
 
     // Click on "save"
     dialog = this.dialog();
-    const saveBtn = dialog.buttons.children.find(btn => btn.action === 'ok');
-    this.click(saveBtn);
+    if (dialog.buttons) {
+        const saveBtn = dialog.buttons.children.find(btn => btn.action === 'ok');
+        this.click(saveBtn);
+    }
 };
