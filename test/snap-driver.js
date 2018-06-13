@@ -16,8 +16,12 @@ SnapDriver.prototype.palette = function() {
     return this.world().children[0].palette;
 };
 
+SnapDriver.prototype.dialogs = function() {
+    return this.world().children.slice(1);
+};
+
 SnapDriver.prototype.dialog = function() {
-    var dialogs = this.world().children.slice(1);
+    var dialogs = this.dialogs();
     var len = dialogs.length;
     return dialogs[len-1];
 };

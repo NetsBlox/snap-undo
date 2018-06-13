@@ -11,7 +11,33 @@ describe('save', function() {
         return false;
     }
 
-    function saveProjectAs(name) {
+    function waitUntilProjectsLoaded() {
+        if (driver.dialog().source.includes('cloud')) {
+            return driver.expect(
+                () => {
+                    const isShowingUpdateMsg = driver.dialogs().length === 2;
+                    const projectDialog = driver.dialogs()
+                        .find(d => d instanceof ProjectDialogMorph);
+                    const hasLoadedProjects = getProjectList(projectDialog)[0] !== '(empty)';
+                    return isShowingUpdateMsg || hasLoadedProjects;
+                },
+                'Did not see "update project list" message'
+            )
+            .then(() => driver.expect(
+                    () => driver.dialogs().length === 1,
+                    '"update project list" message did not disappear'
+                )
+            )
+            .catch(err => {
+                console.log(driver.dialog());
+                debugger;
+            });
+        } else {
+            return Promise.resolve();
+        }
+    }
+
+    function saveProjectAsNoConfirm(name) {  // don't wait for save confirmation
         // save as
         const controlBar = driver.ide().controlBar;
         driver.click(controlBar.projectButton);
@@ -22,14 +48,25 @@ describe('save', function() {
         const saveAsBtn = menu.children[saveBtnIndex+1];
         driver.click(saveAsBtn);
 
-        // Enter the new project name
-        driver.keys(name);
-        driver.dialog().accept();
+        // Wait for the project list to be updated
+        return waitUntilProjectsLoaded()
+            .then(() => {
+                // Enter the new project name
+                driver.keys(name);
+                const dialog = driver.dialog();
+                const saveBtn = dialog.buttons.children[0];
+                driver.click(saveBtn);
+            });
+    }
 
-        return driver.expect(
-            showingSaveMsg,
-            `Did not see save message after "Save As"`
-        );
+    function saveProjectAs(name) {
+        return saveProjectAsNoConfirm(name)
+            .then(() => {
+                return driver.expect(
+                    showingSaveMsg,
+                    `Did not see save message after "Save As"`
+                );
+            });
     }
 
     function saveProject() {
@@ -63,12 +100,8 @@ describe('save', function() {
         driver.click(openBtn);
 
         // Open the saved project
-        const projectDialog = driver.dialog();
-        return driver.expect(
-            () => getProjectList(projectDialog)[0] !== '(empty)',
-            'Open project dialog did not populate with projects'
-        )
-        .then(() => projectDialog);
+        return waitUntilProjectsLoaded()
+            .then(() => driver.dialog());
     }
 
     function openSavedProject(projectName) {
@@ -146,76 +179,140 @@ describe('save', function() {
         let projectName;
         let saveAsName;
 
-        before(function() {
-            projectName = `save-as-${Date.now()}`;
+        describe('from saved', function() {
+            before(function() {
+                projectName = `save-as-${Date.now()}`;
 
-            return driver.reset()
-                .then(() => driver.setProjectName(projectName))
-                .then(() => driver.addBlock('doIfElse'))
-                .then(() => saveProject())
-                .then(() => driver.reset())
-                .then(() => openSavedProject(projectName))
-                .then(() => {
-                    saveAsName = `new${projectName}-saveAs`;
-                    return saveProjectAs(saveAsName);
-                });
-        });
-
-        it('should change name of current project', function() {
-            return driver.expect(
-                () => driver.ide().room.name === saveAsName,
-                `Project name not updated (expected ${saveAsName})`
-            );
-        });
-
-        it('should make a copy on save as', function() {
-            return openProjectsBrowser()
-                .then(projectDialog => {
-                    // Check that both projects show up in the project list
-                    return driver.waitUntil(() => {
-                        // Click the cloud icon
-                        const cloudSrc = projectDialog.srcBar.children[0];
-                        driver.click(cloudSrc);
-
-                        const projectList = projectDialog.listField.listContents
-                            .children.map(child => child.labelString);
-                        const hasOriginal = projectList.includes(projectName);
-                        const hasSaveAsVersion = projectList.includes(saveAsName);
-
-                        return hasOriginal && hasSaveAsVersion;
+                return driver.reset()
+                    .then(() => driver.setProjectName(projectName))
+                    .then(() => driver.addBlock('doIfElse'))
+                    .then(() => saveProject())
+                    .then(() => driver.reset())
+                    .then(() => openSavedProject(projectName))
+                    .then(() => {
+                        saveAsName = `new${projectName}-saveAs`;
+                        return saveProjectAs(saveAsName);
                     });
-                });
+            });
+
+            it('should change name of current project', function() {
+                return driver.expect(
+                    () => driver.ide().room.name === saveAsName,
+                    `Project name not updated (expected ${saveAsName})`
+                );
+            });
+
+            it('should make a copy on save as', function() {
+                return openProjectsBrowser()
+                    .then(projectDialog => {
+                        // Check that both projects show up in the project list
+                        return driver.waitUntil(() => {
+                            // Click the cloud icon
+                            const cloudSrc = projectDialog.srcBar.children[0];
+                            driver.click(cloudSrc);
+
+                            const projectList = projectDialog.listField.listContents
+                                .children.map(child => child.labelString);
+                            const hasOriginal = projectList.includes(projectName);
+                            const hasSaveAsVersion = projectList.includes(saveAsName);
+
+                            return hasOriginal && hasSaveAsVersion;
+                        });
+                    });
+            });
         });
 
-        it('should not make a copy if not saved', function() {
-            const name = `save-as-unsaved-${Date.now()}`;
-            const saveAs = `${name}-SAVE-AS`;
-            return driver.reset()
-                .then(() => driver.setProjectName(name))
-                .then(() => driver.addBlock('forward'))
-                .then(() => saveProjectAs(saveAs))
-                .then(() => openProjectsBrowser())
-                .then(dialog => {
-                    return driver.waitUntil(() => {
-                        // Click the cloud icon
-                        const cloudSrc = dialog.srcBar.children[0];
-                        driver.click(cloudSrc);
+        describe('from unsaved', function() {
+            const existingName = `existing-${Date.now()}`;
 
-                        const projectList = dialog.listField.listContents
-                            .children.map(child => child.labelString);
-                        const hasOriginal = projectList.includes(name);
-                        const hasSaveAsVersion = projectList.includes(saveAs);
+            before(function() {
+                return driver.reset()
+                    .then(() => driver.addBlock('doIf'))
+                    .then(() => saveProjectAs(existingName));
+            });
 
-                        return !hasOriginal && hasSaveAsVersion;
+            beforeEach(function() {
+                return driver.reset()
+                    .then(() => driver.addBlock('doIfElse'));
+            });
+
+            it('should not make a copy', function() {
+                const name = `save-as-unsaved-${Date.now()}`;
+                const saveAs = `${name}-SAVE-AS`;
+                return driver.setProjectName(name)
+                    .catch(err => {
+                        console.log('could not set name to', name);
+                        console.log(SnapCloud.projectId);
+                        debugger;
+                        throw err;
+                    })
+                    .then(() => driver.addBlock('forward'))
+                    .then(() => saveProjectAs(saveAs))
+                    .then(() => openProjectsBrowser())
+                    .then(dialog => {
+                        return driver.waitUntil(() => {
+                            // Click the cloud icon
+                            const cloudSrc = dialog.srcBar.children[0];
+                            driver.click(cloudSrc);
+
+                            const projectList = dialog.listField.listContents
+                                .children.map(child => child.labelString);
+                            const hasOriginal = projectList.includes(name);
+                            const hasSaveAsVersion = projectList.includes(saveAs);
+
+                            return !hasOriginal && hasSaveAsVersion;
+                        });
                     });
-                });
+            });
+
+            it('should prompt for overwrite if conflicting exists', function() {
+                return saveProjectAsNoConfirm(existingName)
+                    .then(() => {
+                        const menu = driver.dialog();
+                        expect(menu.key.includes('decideReplace')).toBeTruthy();
+                    });
+            });
+
+            it('should save as given name on overwrite', function() {
+                const originalName = `original-name-${Date.now()}`;
+                return driver.setProjectName(originalName)
+                    .then(() => saveProjectAsNoConfirm(existingName))
+                    .then(() => {
+                        const menu = driver.dialog();
+                        menu.ok();
+                        return driver.expect(
+                            showingSaveMsg,
+                            `Did not show save message on overwrite`
+                        );
+                    })
+                    .then(() => openProjectsBrowser())
+                    .then(browser => {
+                        const names = getProjectList(browser);
+                        expect(names).toContain(existingName);
+                        expect(names).toNotContain(originalName);
+                    });
+            });
+
+            it('should not save if not overwriting', function() {
+                const originalName = `original-name-${Date.now()}`;
+                return driver.setProjectName(originalName)
+                    .then(() => saveProjectAsNoConfirm(existingName))
+                    .then(() => {
+                        const menu = driver.dialog();
+                        menu.cancel();
+                        const dialog = driver.dialog();
+                        expect(dialog.task).toBe('save');
+                    });
+            });
         });
     });
 
     describe('saveACopy', function() {
         let username;
 
-        beforeEach(() => username = SnapCloud.username);
+        beforeEach(() => driver.reset()
+            .then(() => username = SnapCloud.username)
+        );
         afterEach(() => SnapCloud.username = username);
 
         it('should create "Copy of <project>" on saveACopy', function() {
