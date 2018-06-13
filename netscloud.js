@@ -502,7 +502,7 @@ NetCloud.prototype.hasConflictingStoredProject = function (name, callBack, error
                 },
                 errorCall,
                 [
-                    myself.clientId,
+                    myself.projectId,
                     name
                 ]
             );
