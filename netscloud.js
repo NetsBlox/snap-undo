@@ -488,7 +488,7 @@ NetCloud.prototype.isProjectActive = function (name, callBack, errorCall) {
     );
 };
 
-NetCloud.prototype.hasConflictingStoredProject = function (callBack, errorCall) {
+NetCloud.prototype.hasConflictingStoredProject = function (name, callBack, errorCall) {
     var myself = this;
 
     this.reconnect(
@@ -502,7 +502,8 @@ NetCloud.prototype.hasConflictingStoredProject = function (callBack, errorCall) 
                 },
                 errorCall,
                 [
-                    SnapCloud.clientId
+                    myself.clientId,
+                    name
                 ]
             );
         },

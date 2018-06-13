@@ -712,6 +712,7 @@ NetsBloxMorph.prototype.saveProjectToCloud = function (name) {
 
     // Check if it will overwrite the current one
     SnapCloud.hasConflictingStoredProject(
+        name,
         function(hasConflicting) {
             if (!hasConflicting) {
                 myself.updateUrlQueryString();
