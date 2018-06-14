@@ -124,11 +124,14 @@ RoomMorph.prototype.silentSetRoomName = function(name) {
 };
 
 RoomMorph.prototype.setRoomName = function(name) {
-    var changed = this.name !== name;
+    var myself = this,
+        changed = this.name !== name;
 
     if (changed) {
         return SnapCloud.setProjectName(name)
-            .then(name => this.silentSetRoomName(name))
+            .then(function(name) {
+                return myself.silentSetRoomName(name);
+            })
             .catch(this.ide.cloudError());
     }
 
