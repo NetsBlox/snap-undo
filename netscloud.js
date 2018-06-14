@@ -42,7 +42,7 @@ NetCloud.prototype.login = function (
             if (request.readyState === 4) {
                 if (request.status === 200) {
                     myself.api = myself.parseAPI(request.responseText);
-                    // Update session info 
+                    // Update session info
                     myself.session = true;
                     if (myself.api.logout) {
                         myself.username = username;
