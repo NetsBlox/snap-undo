@@ -521,13 +521,14 @@ NetCloud.prototype.saveProjectCopy = function(callBack, errorCall) {
             myself.callService(
                 'saveProjectCopy',
                 function (response, url) {
-                    myself.setProjectID(response[0].projectId);
+                    myself.setProjectID(response.projectId);
                     callBack.call(null, response, url);
                     myself.disconnect();
                 },
                 errorCall,
                 [
-                    SnapCloud.clientId
+                    myself.clientId,
+                    myself.projectId
                 ]
             );
         },
