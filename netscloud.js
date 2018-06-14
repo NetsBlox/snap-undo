@@ -598,8 +598,7 @@ NetCloud.prototype.newProject = function (name) {
 
 NetCloud.prototype.setClientState = function (room, role, owner, actionId) {
     var myself = this,
-        newProjectRequest = this.newProjectRequest || Promise.resolve(),
-        initialProjectID = null;
+        newProjectRequest = this.newProjectRequest || Promise.resolve();
 
     return newProjectRequest
         .then(() => {
@@ -611,14 +610,11 @@ NetCloud.prototype.setClientState = function (room, role, owner, actionId) {
                 owner: owner,
                 actionId: actionId
             };
-            initialProjectID = data.projectId;
             return myself.request('/api/setClientState', data);
         })
         .then(function(result) {
             // Only change the project ID if no other moves/newProjects/etc have occurred
-            if (myself.projectId === initialProjectID) {
-                myself.setProjectID(result.projectId);
-            }
+            myself.setProjectID(result.projectId);
             return result;
         })
         .catch(function(req) {
