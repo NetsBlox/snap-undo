@@ -611,15 +611,18 @@ NetCloud.prototype.setClientState = function (room, role, owner, actionId) {
                 owner: owner,
                 actionId: actionId
             };
+            initialProjectID = data.projectId;
             return myself.request('/api/setClientState', data);
         })
         .then(function(result) {
-            console.log('>>> setClientState ', myself.projectId);
-            myself.projectId = result.projectId;
+            // Only change the project ID if no other moves/newProjects/etc have occurred
+            if (myself.projectId === initialProjectID) {
+                myself.setProjectID(result.projectId);
+            }
             return result;
         })
         .catch(function(req) {
-            myself.projectId = myself.clientId + '-' + Date.now();
+            myself.setProjectID(myself.clientId + '-' + Date.now());
             throw new Error(req.responseText);
         });
 };

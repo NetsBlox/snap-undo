@@ -25,7 +25,7 @@ describe('cloud', function() {
         });
     });
 
-    describe.only('isProjectActive', function () {
+    describe('isProjectActive', function () {
         let clientId = SnapCloud.clientId;
         before(() => driver.reset());
         after(() => SnapCloud.clientId = clientId);
