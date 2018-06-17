@@ -172,6 +172,17 @@ NetCloud.prototype.inviteToCollaborate = function () {
     );
 };
 
+NetCloud.prototype.joinActiveProject = function (id, callback, onError) {
+    this.callService(
+        'joinActiveProject',
+        function(response) {
+            callback(response[0]);
+        },
+        onError,
+        [id]
+    );
+};
+
 NetCloud.prototype.evictCollaborator = function (id) {
     var myself = this,
         args = [SnapCloud.clientId, id];
