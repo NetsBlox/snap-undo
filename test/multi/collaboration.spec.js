@@ -67,7 +67,6 @@ describe('collaboration', function() {
 
         it('should be able to open project as collaborator', function() {
             let oldProjectId;
-            let sharedProjectId = driver.user1.globals().SnapCloud.projectId;
             return driver.user1.inviteCollaborator(user2)
                 .then(() => driver.user2.expect(
                     () => {
@@ -97,6 +96,7 @@ describe('collaboration', function() {
                 })
                 .then(() => {
                     let projectId = driver.user2.globals().SnapCloud.projectId;
+                    let sharedProjectId = driver.user1.globals().SnapCloud.projectId;
                     expect(projectId).toBe(sharedProjectId);
                     expect(projectId).toNotBe(oldProjectId);
                 });
