@@ -39,12 +39,9 @@ ProjectDialogMorph.prototype.openProject = function () {
         this.ide.updateUrlQueryString(proj.name, false, true);
     } else if (this.source === 'cloud-shared'){
         this.destroy();
-        var loadingMsg = this.ide.showMessage('Loading project.. ');
+        this.ide.showMessage('Loading project.. ', 2000);
         SnapCloud.callService('joinActiveProject', function(response) {
             myself.ide.rawLoadCloudProject(response[0], proj.Public);
-            // since there is no simple way to pass a callback to openProject,
-            // set a small timeout so that the next line is delayed by the blocking deserialization
-            setTimeout(() => loadingMsg.destroy(), 500);
         }, myself.ide.cloudError(), [proj.ProjectName, proj.Owner]);
     } else {
         return this._openProject();
