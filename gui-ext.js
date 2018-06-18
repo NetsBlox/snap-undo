@@ -39,7 +39,7 @@ ProjectDialogMorph.prototype.openProject = function () {
         this.ide.updateUrlQueryString(proj.name, false, true);
     } else if (this.source === 'cloud-shared'){
         this.destroy();
-        this.ide.showMessage('Loading project.. ', 2000);
+        this.ide.showMessage('Opening project.. ', 2000);
         SnapCloud.joinActiveProject(
             proj.ID,
             function(xml) {
