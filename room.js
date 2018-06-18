@@ -120,29 +120,37 @@ RoomMorph.prototype.silentSetRoomName = function(name) {
     this.roomName.changed();
 
     this.ide.controlBar.updateLabel();
+    return name;
 };
 
 RoomMorph.prototype.setRoomName = function(name) {
-    var changed = this.name !== name;
+    var myself = this,
+        changed = this.name !== name;
 
     if (changed) {
-        this.ide.sockets.sendMessage({
-            type: 'rename-room',
-            name: name
-        });
+        return SnapCloud.setProjectName(name)
+            .then(function(name) {
+                return myself.silentSetRoomName(name);
+            })
+            .catch(this.ide.cloudError());
     }
 
+    return Promise.resolve(name);
 };
 
 RoomMorph.prototype.getDefaultRoles = function() {
     var roleInfo = {},
         name = this.getCurrentRoleName(),
-        myRoleInfo = {
+        occupant = {
             uuid: this.myUuid(),
             username: SnapCloud.username || 'me'
         };
 
-    roleInfo[name] = [myRoleInfo];
+    roleInfo[name] = {
+        name: name,
+        occupants: [occupant]
+    };
+
     return roleInfo;
 };
 
@@ -301,26 +309,33 @@ RoomMorph.prototype.updateRoles = function(roleInfo) {
     var myself = this,
         roles = this.getRoles(),
         changed = false,
-        names;
+        occupants,
+        ids;
 
     roles.forEach(function(role) {
-        if (!roleInfo[role.name]) {
+        if (!roleInfo[role.id]) {
             role.destroy();
             changed = true;
         } else {
             // Update the occupants
-            if (!RoomMorph.sameOccupants(role.users, roleInfo[role.name])) {
-                role.setOccupants(roleInfo[role.name]);
+            occupants = roleInfo[role.id].occupants;
+            if (!RoomMorph.sameOccupants(role.users, occupants)) {
+                role.setOccupants(occupants);
             }
-            delete roleInfo[role.name];
+
+            // Update the name
+            role.setName(roleInfo[role.id].name);
+
+            delete roleInfo[role.id];
         }
     });
 
-    names = Object.keys(roleInfo);
-    names.forEach(function(name) {
+    ids = Object.keys(roleInfo);
+    ids.forEach(function(id) {
         var role = new RoleMorph(
-            name,
-            roleInfo[name]
+            id,
+            roleInfo[id].name,
+            roleInfo[id].occupants
         );
         myself.add(role);
         changed = true;
@@ -488,11 +503,7 @@ RoomMorph.prototype.editRoomName = function () {
                 myself.world()
             );
         } else {
-            myself.ide.sockets.sendMessage({
-                type: 'rename-room',
-                name: name,
-                inPlace: true
-            });
+            myself.setRoomName(name);
         }
     }, null, 'editRoomName');
 };
@@ -582,33 +593,34 @@ RoomMorph.prototype.moveToRole = function(dstId) {
 
     myself.ide.showMessage('moving to ' + dstId);
     SnapCloud.moveToRole(
+        dstId,
         function(args) {
             myself.ide.showMessage('moved to ' + dstId + '!');
-            myself.ide.projectName = dstId;
+            myself.ide.silentSetProjectName(dstId);
             myself.ide.source = 'cloud';
 
             var proj = args[0];
             // Load the project or make the project empty
             if (proj) {
-                if (proj.SourceCode) {
-                    myself.ide.droppedText(proj.SourceCode);
-                } else {  // newly created role
-                    myself.ide.newRole(dstId);
-                }
                 if (proj.Public === 'true') {
                     location.hash = '#present:Username=' +
                         encodeURIComponent(SnapCloud.username) +
                         '&ProjectName=' +
                         encodeURIComponent(proj.ProjectName);
                 }
+
+                if (proj.SourceCode) {
+                    myself.ide.droppedText(proj.SourceCode);
+                } else {  // newly created role
+                    SnapActions.openProject();
+                }
             } else {  // Empty the project FIXME
-                myself.ide.newRole(dstId);
+                SnapActions.openProject();
             }
         },
         function (err, lbl) {
             myself.ide.cloudError().call(null, err, lbl);
-        },
-        [dstId, this.ownerId, this.name]
+        }
     );
 };
 
@@ -792,25 +804,22 @@ RoomMorph.prototype._invitationResponse = function (id, response, role) {
     SnapCloud.invitationResponse(
         id,
         response,
-        function (args) {
-            if (response) {
-                var proj = args[0];
-                // Load the project or make the project empty
-                if (proj) {
-                    myself.ide.source = 'cloud';
-                    myself.ide.droppedText(proj.SourceCode);
-                    if (proj.Public === 'true') {
-                        location.hash = '#present:Username=' +
-                            encodeURIComponent(SnapCloud.username) +
-                            '&ProjectName=' +
-                            encodeURIComponent(proj.ProjectName);
-                    }
-                } else {  // Empty the project
-                    myself.ide.newRole(role);
+        function (project) {
+            // Load the project or make the project empty
+            if (project) {
+                myself.ide.source = 'cloud';
+                myself.ide.droppedText(project.SourceCode);
+                if (project.Public === 'true') {
+                    location.hash = '#present:Username=' +
+                        encodeURIComponent(SnapCloud.username) +
+                        '&ProjectName=' +
+                        encodeURIComponent(project.ProjectName);
                 }
-                myself.ide.showMessage('you have joined the room!', 2);
-                myself.ide.silentSetProjectName(role);  // Set the role name FIXME
+            } else {  // Empty the project
+                myself.ide.newRole(role);
             }
+            myself.ide.showMessage('you have joined the room!', 2);
+            myself.ide.silentSetProjectName(role);  // Set the role name FIXME
             SnapCloud.disconnect();
         },
         function(err) {
@@ -1345,12 +1354,13 @@ RoleMorph.COLORS = [
 });
 
 // The role morph needs to know where to draw itself
-function RoleMorph(name, user) {
-    this.init(name, user);
+function RoleMorph(id, name, user) {
+    this.init(id, name, user);
 }
 
-RoleMorph.prototype.init = function(name, users) {
+RoleMorph.prototype.init = function(id, name, users) {
     RoleMorph.uber.init.call(this, true);
+    this.id = id;
     this.name = name;
     this.users = [];
 
@@ -1398,6 +1408,12 @@ RoleMorph.prototype.init = function(name, users) {
     this.acceptsDrops = true;
     this.setOccupants(users);
     this.drawNew();
+};
+
+RoleMorph.prototype.setName = function(name) {
+    this.name = name;
+    this.label.text = name;
+    this.label.drawNew();
 };
 
 RoleMorph.prototype.wantsDropOf = function(aMorph) {

@@ -40,9 +40,13 @@ ProjectDialogMorph.prototype.openProject = function () {
     } else if (this.source === 'cloud-shared'){
         this.destroy();
         this.ide.showMessage('Loading project.. ', 2000);
-        SnapCloud.callService('joinActiveProject', function(response) {
-            myself.ide.rawLoadCloudProject(response[0], proj.Public);
-        }, myself.ide.cloudError(), [proj.ProjectName, proj.Owner]);
+        SnapCloud.joinActiveProject(
+            proj.ID,
+            function(xml) {
+                myself.ide.rawLoadCloudProject(xml, proj.Public);
+            },
+            myself.ide.cloudError()
+        );
     } else {
         return this._openProject();
     }
@@ -66,7 +70,7 @@ ProjectDialogMorph.prototype.openCloudProject = function (project) {
                     myself.rawOpenCloudProject(project);
                 } else {
                     SnapCloud.isProjectActive(
-                        project.ProjectName,
+                        project.ID,
                         function(isActive) {
                             var choices,
                                 dialog;
@@ -76,9 +80,13 @@ ProjectDialogMorph.prototype.openCloudProject = function (project) {
                                 dialog = new DialogBoxMorph(null, nop);
                                 choices = {};
                                 choices['Join Existing'] = function() {
-                                    SnapCloud.callService('joinActiveProject', function(response) {
-                                        myself.ide.rawLoadCloudProject(response[0], project.Public);
-                                    }, myself.ide.cloudError(), [project.ProjectName, project.Owner]);
+                                    SnapCloud.joinActiveProject(
+                                        project.ID,
+                                        function(xml) {
+                                            myself.ide.rawLoadCloudProject(xml, project.Public);
+                                        },
+                                        myself.ide.cloudError()
+                                    );
                                     dialog.destroy();
                                     myself.destroy();
                                 };
@@ -123,7 +131,7 @@ ProjectDialogMorph.prototype.rawOpenCloudProject = function (proj) {
                     myself.ide.rawLoadCloudProject(response[0], proj.Public);
                 },
                 myself.ide.cloudError(),
-                [proj.Owner, proj.ProjectName, SnapCloud.socketId()]
+                [proj.Owner, proj.ProjectName, SnapCloud.clientId]
             );
         },
         myself.ide.cloudError()
@@ -180,3 +188,40 @@ IDE_Morph.prototype.rawOpenBlocksString = function (str, name, silently) {
 
     return this._rawOpenBlocksString(str, name, silently);
 };
+
+IDE_Morph.prototype.loadReplayFromXml = function (str) {
+    // Extract the replay from the project xml and load it
+    var xml = this.serializer.parse(str);
+
+    if (xml.tag === 'room') {
+        // grab the first role for now
+        xml = xml.children[0].childNamed('project');
+    }
+
+    if (xml.tag === 'project') {
+        // Update ids of sprite, stage, if needed
+        var ids = this.serializer.getInitialStageSpriteIds(xml),
+            stageId = ids[0],
+            spriteId = ids[1],
+            sprite = this.sprites.at(1);
+
+        SnapActions.registerOwner(this.stage, stageId);
+        SnapActions.registerOwner(sprite, spriteId);
+        xml = xml.childNamed('replay');
+    }
+
+    return this.droppedText(xml.toString());
+};
+
+IDE_Morph.prototype.openReplayString = function (str) {
+    var myself = this,
+        replay = this.serializer.parse(str);
+
+    return SnapActions.openProject()
+        .then(function() {
+            myself.exitReplayMode();
+            myself.serializer.loadReplayHistory(replay);
+            myself.replayEvents(JSON.parse(JSON.stringify(SnapUndo.allEvents)), false);
+        });
+};
+

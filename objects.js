@@ -2248,7 +2248,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
                     function (definition) {
                         if (definition.spec !== '') {
                             SnapActions.addCustomBlock(definition, myself)
-                                .accept(function(def) {
+                                .then(function(def) {
                                     var editor = new BlockEditorMorph(def, myself);
                                     editor.popUp();
                                 });
@@ -2276,7 +2276,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
                     function (definition) {
                         if (definition.spec !== '') {
                             SnapActions.addCustomBlock(definition, myself)
-                                .accept(function(def) {
+                                .then(function(def) {
                                     var editor = new BlockEditorMorph(def, myself);
                                     editor.popUp();
                                 });
@@ -4525,6 +4525,7 @@ SpriteMorph.prototype.toggleVariableWatcher = function (varName, isGlobal) {
         return null;
     }
     watcher = this.findVariableWatcher(varName);
+    SnapActions.toggleVariableWatcher(varName, isGlobal, watcher && watcher.isVisible)
     if (watcher !== null) {
         if (watcher.isVisible) {
             watcher.hide();
@@ -4590,6 +4591,7 @@ SpriteMorph.prototype.toggleWatcher = function (selector, label, color) {
         others;
     if (!stage) { return; }
     watcher = this.watcherFor(stage, selector);
+    SnapActions.toggleWatcher(selector, watcher && watcher.isVisible);
     if (watcher) {
         if (watcher.isVisible) {
             watcher.hide();
@@ -6589,7 +6591,7 @@ StageMorph.prototype.blockTemplates = function (category) {
                     function (definition) {
                         if (definition.spec !== '') {
                             SnapActions.addCustomBlock(definition, myself)
-                                .accept(function(def) {
+                                .then(function(def) {
                                     var editor = new BlockEditorMorph(def, myself);
                                     editor.popUp();
                                 });
@@ -6614,7 +6616,7 @@ StageMorph.prototype.blockTemplates = function (category) {
                     function (definition) {
                         if (definition.spec !== '') {
                             SnapActions.addCustomBlock(definition, myself)
-                                .accept(function(def) {
+                                .then(function(def) {
                                     var editor = new BlockEditorMorph(def, myself);
                                     editor.popUp();
                                 });
@@ -9552,15 +9554,16 @@ ReplayControls.prototype.update = function() {
             }
 
             setTimeout(myself.update.bind(myself), 10);
-        });
+        }, dir);
     } else {
         setTimeout(this.update.bind(this), 100);
     }
 };
 
-ReplayControls.prototype.applyEvent = function(event, next) {
+ReplayControls.prototype.applyEvent = function(event, next, dir) {
     if (event.isUserAction) return next();
-    var ide = this.parentThatIsA(IDE_Morph),
+    var myself = this,
+        ide = this.parentThatIsA(IDE_Morph),
         chunks,
         ownerId,
         tabName,
@@ -9580,10 +9583,36 @@ ReplayControls.prototype.applyEvent = function(event, next) {
     }
 
     return SnapActions.applyEvent(event)
-        .accept(next)
-        .reject(function() {
-            throw Error('Could not apply event: ' + JSON.stringify(event, null, 2));
+        .then(next)
+        .catch(function(err) {
+            myself.onReplayError(err, event, dir);
+            next();
         });
+};
+
+ReplayControls.prototype.onReplayError = function(err, event, dir) {
+    var actionText = dir === 1 ? 'apply' : 'revert',
+        desc = '.';
+
+    // Restore the project from before the replay?
+    // TODO
+    if (event) {
+        desc = ' ' + localize('when trying to ') + event.type;
+    }
+    if (err) {
+        desc += ':\n\n' + err.message;
+    }
+    var msg = localize('Something went wrong') + desc +
+    '\n\n' + localize('The error has been reported. Reloading the page is recommended.');
+
+    this.pause();
+    new DialogBoxMorph().inform(
+        localize('Could not ' + actionText + ' action'),
+        msg,
+        this.world()
+    );
+    console.error('Could not apply event: ' + JSON.stringify(event, null, 2));
+    console.error(err);
 };
 
 ReplayControls.prototype.getInverseEvent = function(event) {
