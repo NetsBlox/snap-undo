@@ -146,10 +146,11 @@ NetsBloxMorph.prototype.newProject = function (projectName) {
     return SnapCloud.newProject(projectName)
         .then(callback)
         .catch(function() {
-            callback({
+            var defaults = {
                 name: projectName || 'untitled',
                 roleName: 'myRole',
-            });
+            };
+            callback(defaults);
         });
 };
 
