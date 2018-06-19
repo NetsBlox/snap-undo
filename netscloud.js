@@ -428,7 +428,7 @@ NetCloud.prototype.logout = function (callBack, errorCall) {
                 'logout',
                 callBack,
                 errorCall,
-                [SnapCloud.clientId]
+                [myself.clientId]
             );
             myself.clear();
         },
