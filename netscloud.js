@@ -310,9 +310,7 @@ NetCloud.prototype.deleteRole = function(onSuccess, onFail, args) {
         function () {
             myself.callService(
                 'deleteRole',
-                function () {
-                    onSuccess.call(null);
-                },
+                onSuccess,
                 onFail,
                 args
             );
@@ -327,7 +325,7 @@ NetCloud.prototype.evictUser = function(onSuccess, onFail, args) {
         function () {
             myself.callService(
                 'evictUser',
-                onSuccess.bind(null),
+                onSuccess,
                 onFail,
                 args
             );

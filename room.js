@@ -627,7 +627,8 @@ RoomMorph.prototype.moveToRole = function(dstId) {
 RoomMorph.prototype.deleteRole = function(role) {
     var myself = this;
     SnapCloud.deleteRole(
-        function() {
+        function(state) {
+            myself.onRoomStateUpdate(state);
             myself.ide.showMessage('deleted ' + role + '!');
         },
         function (err, lbl) {
@@ -642,7 +643,8 @@ RoomMorph.prototype.createRoleClone = function(roleName) {
 
     SnapCloud.cloneRole(
         roleName,
-        function() {
+        function(state) {
+            myself.onRoomStateUpdate(state);
             myself.ide.showMessage('created copy of ' + roleName);
         },
         myself.ide.cloudError()
@@ -678,7 +680,8 @@ RoomMorph.prototype.setRoleName = function(roleId, name) {
 RoomMorph.prototype.evictUser = function (user, role) {
     var myself = this;
     SnapCloud.evictUser(
-        function() {
+        function(state) {
+            myself.onRoomStateUpdate(state);
             myself.ide.showMessage('evicted ' + user.username + '!');
         },
         function (err, lbl) {
