@@ -4809,6 +4809,53 @@ function HatBlockMorph() {
 HatBlockMorph.prototype.init = function () {
     HatBlockMorph.uber.init.call(this, true); // silently
     this.setExtent(new Point(300, 150));
+
+    // init readout
+    this.msgCount = 10;
+    this.readColor = new Color(200, 20, 20);
+    this.updateReadout();
+};
+
+HatBlockMorph.prototype.readout = function () {
+    // TODO ES5 4fd6190c
+    return this.children.find(morph => morph instanceof SpeechBubbleMorph);
+};
+
+HatBlockMorph.prototype.updateReadout = function () {
+    // TODO get the message type for this hatblock and count
+    console.log('updating readout', this);
+    var readout = this.readout();
+    if (this.msgCount < 1) {
+        if (readout) {
+            readout.destroy();
+        }
+        return;
+    }
+    if (readout) {
+        readout.contents = this.msgCount.toString();
+        readout.fullChanged();
+        readout.drawNew();
+        readout.fullChanged();
+    } else {
+        readout = new SpeechBubbleMorph(
+            this.msgCount.toString(),
+            this.readColor, // color,
+            null, // edge,
+            null, // border,
+            this.readColor.darker(), // borderColor,
+            null, // padding,
+            1 // isThought - don't draw a hook
+        );
+        this.add(readout);
+    }
+
+    // compute and set the bubble position
+    const padding = 5;
+    var bubblePos = this.position() // hatblock pos
+        .add(new Point(this.width(), 0)) // all the way to the right
+        .add(new Point(padding, -2*padding)); // add a padding (same for x & y)
+    readout.setPosition(bubblePos);
+
 };
 
 // HatBlockMorph enumerating:
