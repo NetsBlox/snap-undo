@@ -697,7 +697,7 @@ SyntaxElementMorph.prototype.refactorVarInStack = function (
         this.setSpec(newName);
         this.fullChanged();
         this.fixLabelColor();
-    } 
+    }
 
     if (this.choices === 'getVarNamesDict'
             && this.contents().text === oldName) {
@@ -3244,7 +3244,7 @@ BlockMorph.prototype.refactorThisVar = function (justTheTemplate) {
 
     function renameVarTo (newName) {
         var definer;
-        
+
         if (this.parent instanceof SyntaxElementMorph) {
             // script var
             if (justTheTemplate) {
@@ -3303,7 +3303,7 @@ BlockMorph.prototype.refactorThisVar = function (justTheTemplate) {
                     detect(
                         stage.children,
                         function (any) {
-                            return any instanceof SpriteMorph && 
+                            return any instanceof SpriteMorph &&
                                 any.hasSpriteVariable(newName);
                         })
                     ) {
@@ -3363,7 +3363,7 @@ BlockMorph.prototype.refactorThisVar = function (justTheTemplate) {
 
     function varExistsError (where) {
         ide.inform(
-            'Variable exists', 
+            'Variable exists',
             'A variable with this name already exists ' +
                 (where || 'in this context') + '.'
             );
@@ -11137,7 +11137,7 @@ SymbolMorph.prototype.drawSymbolMagnifyingGlass = function (canvas, color) {
         y + r,
         w
     );
-    
+
     gradient.addColorStop(0, color.inverted().lighter(50).toString());
     gradient.addColorStop(1, color.inverted().darker(25).toString());
     ctx.fillStyle = gradient;
@@ -11147,7 +11147,7 @@ SymbolMorph.prototype.drawSymbolMagnifyingGlass = function (canvas, color) {
     ctx.lineWidth = l / 2;
     ctx.arc(x, y, r, radians(0), radians(360), false);
     ctx.stroke();
-    
+
     ctx.lineWidth = l;
     ctx.beginPath();
     ctx.moveTo(l / 2, h - l / 2);
