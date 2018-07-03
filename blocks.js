@@ -4813,7 +4813,6 @@ HatBlockMorph.prototype.init = function () {
     // init readout
     this.msgCount = 10;
     this.readColor = new Color(200, 20, 20);
-    this.updateReadout();
 };
 
 HatBlockMorph.prototype.readout = function () {
@@ -4821,9 +4820,18 @@ HatBlockMorph.prototype.readout = function () {
     return this.children.find(morph => morph instanceof SpeechBubbleMorph);
 };
 
+// finds and returns the msg queue for this hatblock
+HatBlockMorph.prototype._msgQueue = function () {
+    let queues = world.children[0].sockets.processes;
+    let scriptQ = queues.find((p, i) => p.length && p[0].block === this);
+    return scriptQ;
+}
+
 HatBlockMorph.prototype.updateReadout = function () {
     // TODO get the message type for this hatblock and count
     console.log('updating readout', this);
+    let msgQ = this._msgQueue();
+    this.msgCount =  msgQ ? msgQ.length : 0;
     var readout = this.readout();
     if (this.msgCount < 1) {
         if (readout) {
