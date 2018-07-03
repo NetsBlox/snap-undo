@@ -4811,7 +4811,7 @@ HatBlockMorph.prototype.init = function () {
     this.setExtent(new Point(300, 150));
 
     // init readout
-    this.msgCount = 10;
+    this.msgCount = 0;
     this.readColor = new Color(200, 20, 20);
 };
 
@@ -4827,9 +4827,23 @@ HatBlockMorph.prototype._msgQueue = function () {
     return scriptQ;
 }
 
+// clears the msg que for this  hatblock
+HatBlockMorph.prototype.clearMessages = function () {
+    let queues = world.children[0].sockets.processes;
+    let curQueue = this._msgQueue();
+    // delete it from the main queue
+    for (let i = 0; i < queues.length; i++) {
+        if (queues[i] === curQueue) {
+            queues.splice(i, 1);
+            this.updateReadout();
+            return;
+        }
+    }
+}
+
 HatBlockMorph.prototype.updateReadout = function () {
     // TODO get the message type for this hatblock and count
-    console.log('updating readout', this);
+    var myself = this;
     let msgQ = this._msgQueue();
     this.msgCount =  msgQ ? msgQ.length : 0;
     var readout = this.readout();
@@ -4854,6 +4868,14 @@ HatBlockMorph.prototype.updateReadout = function () {
             null, // padding,
             1 // isThought - don't draw a hook
         );
+        readout.mouseClickLeft = pos => {
+            let dialog = new DialogBoxMorph();
+            dialog.askYesNo('Clear Message Queue', 'Do you want to clear the message queue for this block?', world);
+            dialog.ok = function() {
+                myself.clearMessages();
+                this.destroy();
+            };
+        };
         this.add(readout);
     }
 
