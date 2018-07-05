@@ -4809,42 +4809,46 @@ function HatBlockMorph() {
 HatBlockMorph.prototype.init = function () {
     HatBlockMorph.uber.init.call(this, true); // silently
     this.setExtent(new Point(300, 150));
-
-    // init readout
-    this.msgCount = 0;
-    this.readColor = new Color(200, 20, 20);
 };
 
+// finds the readout child morph
 HatBlockMorph.prototype.readout = function () {
-    // TODO ES5 4fd6190c
-    return this.children.find(morph => morph instanceof SpeechBubbleMorph);
+    for (var i=0; i<this.children.length; i++) {
+        if (this.children[i] instanceof SpeechBubbleMorph) return this.children[i];
+    }
 };
 
 // finds and returns the msg queue for this hatblock
 HatBlockMorph.prototype._msgQueue = function () {
-    let queues = world.children[0].sockets.processes;
-    let scriptQ = queues.find((p, i) => p.length && p[0].block === this);
-    return scriptQ;
-}
+    var queues = this.world().children[0].sockets.processes;
+    for (var i=0; i<queues.length; i++) {
+        var procs = queues[i];
+        if (procs.length && procs[0].block === this) return procs;
+    }
+};
 
 // clears the msg que for this  hatblock
 HatBlockMorph.prototype.clearMessages = function () {
-    let queues = world.children[0].sockets.processes;
-    let curQueue = this._msgQueue();
+    var queues = this.world().children[0].sockets.processes;
+    var curQueue = this._msgQueue();
     // delete it from the main queue
-    for (let i = 0; i < queues.length; i++) {
+    for (var i = 0; i < queues.length; i++) {
         if (queues[i] === curQueue) {
             queues.splice(i, 1);
             this.updateReadout();
             return;
         }
     }
-}
+};
 
+// creates, updates and destroys the readout as necessary
 HatBlockMorph.prototype.updateReadout = function () {
-    // TODO get the message type for this hatblock and count
-    var myself = this;
-    let msgQ = this._msgQueue();
+    // forked from snap/dd4fd6190c
+    var myself = this,
+        world = this.world(),
+        readColor = new Color(22, 137, 20);
+
+    var msgQ = this._msgQueue();
     this.msgCount =  msgQ ? msgQ.length : 0;
     var readout = this.readout();
     if (this.msgCount < 1) {
@@ -4853,23 +4857,23 @@ HatBlockMorph.prototype.updateReadout = function () {
         }
         return;
     }
-    if (readout) {
+    if (readout) { // just update the value
         readout.contents = this.msgCount.toString();
         readout.fullChanged();
         readout.drawNew();
         readout.fullChanged();
-    } else {
+    } else { // create the readout
         readout = new SpeechBubbleMorph(
             this.msgCount.toString(),
-            this.readColor, // color,
+            readColor, // color,
             null, // edge,
             null, // border,
-            this.readColor.darker(), // borderColor,
+            readColor.darker(), // borderColor,
             null, // padding,
             1 // isThought - don't draw a hook
         );
-        readout.mouseClickLeft = pos => {
-            let dialog = new DialogBoxMorph();
+        readout.mouseClickLeft = function() {
+            var dialog = new DialogBoxMorph();
             dialog.askYesNo('Clear Message Queue', 'Do you want to clear the message queue for this block?', world);
             dialog.ok = function() {
                 myself.clearMessages();
