@@ -37,5 +37,34 @@ describe('messages', function() {
                 expect(!!btn).toBe(true);
             });
         });
+
+        it.only('should show queue message count', function() {
+            var hatBlock, // hatblock
+                doWait;
+            driver.addBlock('receiveSocketMessage')
+                .then(_block => {
+                    hatBlock = _block;
+                    const msgField = hatBlock.inputs()[0];
+                    // set the msg type to message
+                    return SnapActions.setField(msgField, 'message');
+                })
+                .then(() => {
+                    return driver.addBlock('doWait');
+                })
+                .then(_doWait => {
+                    doWait = _doWait;
+                    return SnapActions.setField(doWait.inputs()[0], '0.5');
+                })
+                .then(() => {
+                    let Point = driver.globals().Point;
+                    let dropPosition = hatBlock.bottomAttachPoint()
+                        .add(new Point(doWait.width()/2, doWait.height()/2))
+                        .subtract(doWait.topAttachPoint().subtract(doWait.topLeft()))
+                        .subtract(new Point(0, 3));
+                    driver.dragAndDrop(doWait, dropPosition);
+                })
+                .catch(console.error);
+
+        });
     });
 });
