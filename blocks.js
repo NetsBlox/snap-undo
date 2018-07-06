@@ -2604,9 +2604,8 @@ BlockMorph.prototype.userMenu = function () {
             );
             ide.saveCanvasAs(
                 myself.topBlock().scriptPic(),
-                ide.projetName || localize('Untitled') + ' ' +
-                    localize('script pic'),
-                true // request new window
+                (ide.projetName || localize('Untitled')) + ' ' +
+                    localize('script pic')
             );
         },
         'open a new window\nwith a picture of this script'
