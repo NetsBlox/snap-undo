@@ -4847,7 +4847,7 @@ HatBlockMorph.prototype.updateReadout = function () {
     var myself = this,
         world = this.world(),
         readColor = new Color(22, 137, 20);
-
+    if (!world) return;
     var msgQ = this._msgQueue();
     this.msgCount =  msgQ ? msgQ.length : 0;
     var readout = this.readout();
