@@ -574,7 +574,7 @@ ActionManager.prototype.newId = function() {
 ActionManager.prototype.getId = function (block, index) {
     var id = '';
     while (!block.id) {
-        if (block.parent === null) {  // template block
+        if (block.parent === null || typeof block.parent.inputs !== 'function') {  // template block
             return null;
         }
         id = block.parent.inputs().indexOf(block) + '/' + id;
