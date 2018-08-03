@@ -1,6 +1,10 @@
 /* globals world */
 /* eslint-disable no-console */
 
+/*
+* provides a helper for simulating a fragile websocket connection (SimianArmy)
+*/
+
 class WSMonkey {
     constructor(aWorld) {
     // TODO total desired duration
