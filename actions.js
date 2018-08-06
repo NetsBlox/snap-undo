@@ -574,11 +574,13 @@ ActionManager.prototype.newId = function() {
 ActionManager.prototype.getId = function (block, index) {
     var id = '';
     while (!block.id) {
-        if (block.parent === null || typeof block.parent.inputs !== 'function') {  // template block
+        if (block.parent === null || block.parent.inputs == undefined) {  // template block
             return null;
         }
+
         id = block.parent.inputs().indexOf(block) + '/' + id;
         block = block.parent;
+        
         if (!block) {
             throw Error('Cannot get id from element');
         }
