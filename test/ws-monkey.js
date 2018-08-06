@@ -84,6 +84,7 @@ class WSMonkey {
         return str;
     }
 
+    // WARN mutates the input profile
     _play(profile) {
         return new Promise(resolve => {
             console.log('playing profile');
