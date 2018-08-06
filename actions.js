@@ -580,8 +580,10 @@ ActionManager.prototype.getId = function (block, index) {
         if (!isParentCodeElement) {
             return null;
         }
+
         id = block.parent.inputs().indexOf(block) + '/' + id;
         block = block.parent;
+        
         if (!block) {
             throw Error('Cannot get id from element');
         }
