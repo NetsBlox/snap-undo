@@ -12,7 +12,7 @@ class WSMonkey {
         this._size = 200;
         this._connectedRatio = 0.7;
         this._durationRange = [200, 2000]; // ms
-        this._playOver = false;
+        this._playOver = true;
     }
 
     get ide() {
@@ -112,14 +112,19 @@ class WSMonkey {
 
     async startPlaying() {
     // plan ahead
-        let profile = this._genProfile();
+        this._playOver = false;
         while (!this._playOver) {
+            let profile = this._genProfile();
             await this._play(profile);
         }
     }
 
     async stopPlaying() {
         this._playOver = true;
+    }
+
+    get isPlaying() {
+        return !this._playOver;
     }
 
     // using Box-Muller transform to get a normal distribution

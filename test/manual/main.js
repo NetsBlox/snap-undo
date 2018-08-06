@@ -36,10 +36,53 @@ function checkLoaded() {
     }
 }
 
-window.onload = checkLoaded;
+window.onload = () => {
+    fitIframes();
+    checkLoaded();
+};
+
+// computes the appropriate height for iframes
+// handles one iframe for now
+function fitIframes() {
+    let idealHeight = window.innerHeight - document.getElementById('footer').clientHeight;
+    frames[0].style.height = idealHeight;
+}
 
 function onIframesReady() {
     console.log('all iframes ready');
+    setupVue();
+}
+
+function setupVue() {
+    const app = new Vue({
+        el: '#footer',
+        data: {
+            status: {
+                ws: monkey._status,
+            },
+        },
+
+        computed: {
+            monkeyToggleBtnText() {
+                return this.status.wsMonkeyPlaying ? 'stop' : 'start';
+            },
+            wsMonkeyPlaying() {
+                return !monkey._playOver;
+            }
+        },
+
+        methods: {
+            toggleWsMonkey() {
+                if (monkey.isPlaying) {
+                    monkey.stopPlaying();
+                    // this.status.wsMonkeyPlaying = monkey.isPlaying;
+                } else {
+                    monkey.startPlaying();
+                    // this.status.wsMonkeyPlaying = monkey.isPlaying;
+                }
+            },
+        }
+    });
 }
 
 
