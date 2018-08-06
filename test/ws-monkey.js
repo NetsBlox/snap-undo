@@ -113,8 +113,9 @@ class WSMonkey {
     async startPlaying() {
     // plan ahead
         let profile = this._genProfile();
-        // TODO have it keep going
-        await this._play(profile);
+        while (!this._playOver) {
+            await this._play(profile);
+        }
     }
 
     async stopPlaying() {
