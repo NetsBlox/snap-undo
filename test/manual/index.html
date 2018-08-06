@@ -10,8 +10,9 @@
     <iframe id="user1"></iframe>
     <footer id="footer">
       <div>
-        {{ status.ws }}
-        <button @click:prevent="toggleWsMonkey">{{ monkeyToggleBtnText }}</button>
+        WSMonkey:
+        <button  @click="toggleWsMonkey">{{ wsToggleBtn }}</button>
+        <!-- watch and update the state of ws -->
       </div>
 
     </footer>

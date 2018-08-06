@@ -50,6 +50,7 @@ function fitIframes() {
 
 function onIframesReady() {
     console.log('all iframes ready');
+    document.body.style.visibility = 'visible';
     setupVue();
 }
 
@@ -57,17 +58,13 @@ function setupVue() {
     const app = new Vue({
         el: '#footer',
         data: {
-            status: {
-                ws: monkey._status,
-            },
+            wsToggleBtn: 'start',
+            monkey: monkey, // to watch for changes in monkey. Is there a better way? watchers?
         },
 
         computed: {
-            monkeyToggleBtnText() {
-                return this.status.wsMonkeyPlaying ? 'stop' : 'start';
-            },
-            wsMonkeyPlaying() {
-                return !monkey._playOver;
+            isPlaying() {
+                return !this.monkey._playOver;
             }
         },
 
@@ -75,15 +72,12 @@ function setupVue() {
             toggleWsMonkey() {
                 if (monkey.isPlaying) {
                     monkey.stopPlaying();
-                    // this.status.wsMonkeyPlaying = monkey.isPlaying;
+                    this.wsToggleBtn = 'start';
                 } else {
                     monkey.startPlaying();
-                    // this.status.wsMonkeyPlaying = monkey.isPlaying;
+                    this.wsToggleBtn = 'stop';
                 }
             },
         }
     });
 }
-
-
-
