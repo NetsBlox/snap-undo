@@ -112,8 +112,8 @@ class WSMonkey {
 
     async startPlaying() {
     // plan ahead
-        let profile = this._genProfile();
         while (!this._playOver) {
+            let profile = this._genProfile();
             await this._play(profile);
         }
     }
