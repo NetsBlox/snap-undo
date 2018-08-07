@@ -87,6 +87,7 @@ class WSMonkey {
         return str;
     }
 
+    // WARN mutates the input profile
     _play(profile) {
         return new Promise(resolve => {
             console.log('playing profile');
@@ -114,7 +115,7 @@ class WSMonkey {
     }
 
     async startPlaying() {
-    // plan ahead
+        // plan ahead
         this._playOver = false;
         while (!this._playOver) {
             let profile = this._genProfile();
