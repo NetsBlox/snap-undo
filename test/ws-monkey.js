@@ -1,4 +1,3 @@
-/* globals world */
 /* eslint-disable no-console */
 
 /*
@@ -8,8 +7,8 @@
 class WSMonkey {
     constructor(aWorld) {
     // TODO total desired duration
-        this._world = aWorld || world;
         this._size = 200;
+        if (aWorld) this._setWorld(aWorld); // allow for early initialization
         this._connectedRatio = 0.7;
         this._durationRange = [200, 2000]; // ms
         this._playOver = true;
@@ -17,6 +16,10 @@ class WSMonkey {
 
     get ide() {
         return this._world.children[0];
+    }
+
+    _setWorld(aWorld) {
+        this._world = aWorld;
     }
 
     disconnect() {
