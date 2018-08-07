@@ -1,9 +1,11 @@
-/* globals WSMonkey, SnapDriver */
+/* globals WSMonkey, SnapDriver, Vue */
 /* eslint-disable no-console, no-unused-vars */
 
 const frames = Array.prototype.slice.call(document.getElementsByTagName('iframe'));
 var driver = null,
-    monkey = null;
+    monkey = new WSMonkey();
+
+setupVue();
 
 frames.forEach(frame => {
     frame.setAttribute('src', window.origin);
@@ -15,7 +17,7 @@ function startTests() {
             return promise.then(() => {
                 driver = new SnapDriver(frame.contentWindow.world);
                 driver.setWindow(frame.contentWindow);
-                monkey = new WSMonkey(frame.contentWindow.world);
+                monkey._world = frame.contentWindow.world; // update the world view for our monkey
                 return driver.login('test');
             });
         }, Promise.resolve())
@@ -51,7 +53,6 @@ function fitIframes() {
 function onIframesReady() {
     console.log('all iframes ready');
     document.body.style.visibility = 'visible';
-    setupVue();
 }
 
 function setupVue() {
