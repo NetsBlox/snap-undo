@@ -164,7 +164,7 @@ SnapDriver.prototype.mouseUp = function(position) {
  * Simulates mouse inputs to pick up a Morph and place it somewhere else.
  * @param {Morph} srcMorph Morph to drag and drop
  * @param {Point} position Position to drag center of srcMorph to 
- * @param {Point=} start Position to initiate drag at, if not speficied top left corner of srcMorph is used
+ * @param {Point=} start Position to initiate drag at, if not speficied middle of left side of srcMorph is used
  */
 SnapDriver.prototype.dragAndDrop = function(srcMorph, position, start = null) {
     const {MorphicPreferences, Point} = this.globals();
