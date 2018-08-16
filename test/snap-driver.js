@@ -171,7 +171,9 @@ SnapDriver.prototype.dragAndDrop = function(srcMorph, position, start = null) {
     
     // Drag from the upper left corner if not told otherwise
     if(start == null)
+    {
         start = srcMorph.topLeft().add(new Point(2,srcMorph.height() / 2));
+    }
     
     // If Morph is not grabbed at center, final position will no longer be correct
     let offset = start.subtract(srcMorph.center());
