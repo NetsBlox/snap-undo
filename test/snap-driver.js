@@ -167,11 +167,11 @@ SnapDriver.prototype.mouseUp = function(position) {
  * @param {Point=} start Position to initiate drag at, if not speficied top left corner of srcMorph is used
  */
 SnapDriver.prototype.dragAndDrop = function(srcMorph, position, start = null) {
-    const {MorphicPreferences} = this.globals();
+    const {MorphicPreferences, Point} = this.globals();
     
     // Drag from the upper left corner if not told otherwise
     if(start == null)
-        start = srcMorph.topLeft();
+        start = srcMorph.topLeft().add(new Point(2,srcMorph.height() / 2));
     
     // If Morph is not grabbed at center, final position will no longer be correct
     let offset = start.subtract(srcMorph.center());
