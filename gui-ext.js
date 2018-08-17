@@ -91,7 +91,6 @@ ProjectDialogMorph.prototype.openCloudProject = function (project) {
                                     myself.destroy();
                                 };
                                 choices['Create Copy'] = function() {
-                                    // Should I just get the project xml and reload it?
                                     dialog.destroy();
                                     return SnapCloud.getEntireProject(
                                         project.ID,
