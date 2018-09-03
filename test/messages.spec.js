@@ -38,7 +38,7 @@ describe('messages', function() {
             });
         });
 
-        it.only('should show queue message count', function() {
+        it('should show queue message count', function() {
             var hatBlock, // hatblock
                 doWait;
             driver.addBlock('receiveSocketMessage')
@@ -62,8 +62,7 @@ describe('messages', function() {
                         .subtract(doWait.topAttachPoint().subtract(doWait.topLeft()))
                         .subtract(new Point(0, 3));
                     driver.dragAndDrop(doWait, dropPosition);
-                })
-                .catch(console.error);
+                });
 
         });
     });
