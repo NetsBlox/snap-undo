@@ -573,24 +573,21 @@ IDE_Morph.prototype.interpretUrlAnchors = function (loc) {
             },
             function () {nop(); }, // yield (bug in Chrome)
             function () {
-                SnapCloud.reconnect(
-                    function () {
-                        SnapCloud.callService(
-                            'getProject',
-                            function (response) {
-                                msg.destroy();
-                                var action = myself.rawLoadCloudProject(response[0]);
-                                if (action) {
-                                    action.then(function() {
-                                        applyFlags(dict);
-                                    });
-                                } else {
-                                    applyFlags(dict);
-                                }
-                            },
-                            myself.cloudError(),
-                            [SnapCloud.username, dict.ProjectName, SnapCloud.clientId]
-                        );
+                // This needs to be able to open a project by name, too
+                // TODO: FIXME
+                SnapCloud.getProjectByName(
+                    SnapCloud.username,
+                    dict.ProjectName,
+                    function (xml) {
+                        msg.destroy();
+                        var action = myself.rawLoadCloudProject(xml);
+                        if (action) {
+                            action.then(function() {
+                                applyFlags(dict);
+                            });
+                        } else {
+                            applyFlags(dict);
+                        }
                     },
                     myself.cloudError()
                 );
@@ -2630,10 +2627,10 @@ IDE_Morph.prototype.cloudMenu = function () {
                                     },
                                     function () {nop(); }, // yield (Chrome)
                                     function () {
-                                        SnapActions.openProject(projectData);
-                                    },
-                                    function () {
-                                        msg.destroy();
+                                        SnapActions.openProject(projectData)
+                                            .then(function() {
+                                                msg.destroy();
+                                            });
                                     }
                                 ]);
                             },
@@ -4074,7 +4071,7 @@ IDE_Morph.prototype.exportScriptsPicture = function () {
         y += padding;
         y += each.height;
     });
-    this.saveCanvasAs(pic, this.projectName || localize('Untitled'), true);
+    this.saveCanvasAs(pic, this.projectName || localize('Untitled'));
 };
 
 IDE_Morph.prototype.exportProjectSummary = function (useDropShadows) {
@@ -4370,10 +4367,10 @@ IDE_Morph.prototype.openProjectString = function (str) {
         },
         function () {nop(); }, // yield (bug in Chrome)
         function () {
-            SnapActions.openProject(str);
-        },
-        function () {
-            msg.destroy();
+            SnapActions.openProject(str)
+                .then(function() {
+                    msg.destroy();
+                });
         }
     ]);
 };
@@ -4415,18 +4412,11 @@ IDE_Morph.prototype.openCloudDataString = function (str) {
         size = Math.round(str.length / 1024);
 
     this.exitReplayMode();
-    this.nextSteps([
-        function () {
-            msg = myself.showMessage('Opening project\n' + size + ' KB...');
-        },
-        function () {nop(); }, // yield (bug in Chrome)
-        function () {
-            SnapActions.openProject(str);
-        },
-        function () {
+    msg = myself.showMessage('Opening project\n' + size + ' KB...');
+    return SnapActions.openProject(str)
+        .then(function() {
             msg.destroy();
-        }
-    ]);
+        });
 };
 
 IDE_Morph.prototype.rawOpenCloudDataString = function (str) {
@@ -4706,7 +4696,7 @@ IDE_Morph.prototype.saveFileAs = function (
     }
 };
 
-IDE_Morph.prototype.saveCanvasAs = function (canvas, fileName, newWindow) {
+IDE_Morph.prototype.saveCanvasAs = function (canvas, fileName) {
     // Export a Canvas object as a PNG image
     // Note: This commented out due to poor browser support.
     // cavas.toBlob() is currently supported in Firefox, IE, Chrome but 
@@ -4720,7 +4710,7 @@ IDE_Morph.prototype.saveCanvasAs = function (canvas, fileName, newWindow) {
     //     return;
     // }
     
-    this.saveFileAs(canvas.toDataURL(), 'image/png', fileName, newWindow);
+    this.saveFileAs(canvas.toDataURL(), 'image/png', fileName);
 };
 
 IDE_Morph.prototype.saveXMLAs = function(xml, fileName, newWindow) {
@@ -7496,11 +7486,10 @@ SpriteIconMorph.prototype.userMenu = function () {
                 var ide = myself.parentThatIsA(IDE_Morph);
                 ide.saveCanvasAs(
                     myself.object.fullImageClassic(),
-                    this.object.name,
-                    true
+                    this.object.name
                 );
             },
-            'open a new window\nwith a picture of the stage'
+            'download a picture of the stage'
         );
         return menu;
     }
@@ -7866,7 +7855,7 @@ CostumeIconMorph.prototype.exportCostume = function () {
         // don't show SVG costumes in a new tab (shows text)
         ide.saveFileAs(this.object.contents.src, 'text/svg', this.object.name);
     } else { // rasterized Costume
-        ide.saveCanvasAs(this.object.contents, this.object.name, true);
+        ide.saveCanvasAs(this.object.contents, this.object.name);
     }
 };
 

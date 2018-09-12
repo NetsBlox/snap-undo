@@ -91,8 +91,14 @@ ProjectDialogMorph.prototype.openCloudProject = function (project) {
                                     myself.destroy();
                                 };
                                 choices['Create Copy'] = function() {
-                                    myself.rawOpenCloudProject(project);
                                     dialog.destroy();
+                                    return SnapCloud.getEntireProject(
+                                        project.ID,
+                                        function(xml) {
+                                            return myself.ide.droppedText(xml);
+                                        },
+                                        myself.ide.cloudError()
+                                    );
                                 };
                                 dialog.ask(
                                     localize('Join Existing Project'),
@@ -122,17 +128,11 @@ ProjectDialogMorph.prototype.rawOpenCloudProject = function (proj) {
     var myself = this,
         msg = myself.ide.showMessage('Fetching project\nfrom the cloud...');
 
-    SnapCloud.reconnect(
-        function () {
-            SnapCloud.callService(
-                'getProject',
-                function (response) {
-                    msg.destroy();
-                    myself.ide.rawLoadCloudProject(response[0], proj.Public);
-                },
-                myself.ide.cloudError(),
-                [proj.Owner, proj.ProjectName, SnapCloud.clientId]
-            );
+    SnapCloud.getProject(
+        proj.ID,
+        function (xml) {
+            msg.destroy();
+            myself.ide.rawLoadCloudProject(xml, proj.Public);
         },
         myself.ide.cloudError()
     );
@@ -217,9 +217,9 @@ IDE_Morph.prototype.openReplayString = function (str) {
     var myself = this,
         replay = this.serializer.parse(str);
 
+    myself.exitReplayMode();
     return SnapActions.openProject()
         .then(function() {
-            myself.exitReplayMode();
             myself.serializer.loadReplayHistory(replay);
             myself.replayEvents(JSON.parse(JSON.stringify(SnapUndo.allEvents)), false);
         });

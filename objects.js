@@ -1900,6 +1900,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
         blocks.push('-');
 
         blocks.push(block('getJSFromRPCStruct'));
+        blocks.push(block('doRunRPC'));
         blocks.push(watcherToggle('reportRPCError'));
         blocks.push(block('reportRPCError'));
         blocks.push('-');
@@ -2296,6 +2297,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
         button.showHelp = BlockMorph.prototype.showHelp;
         blocks.push(button);
     }
+
     return blocks;
 };
 
@@ -2474,32 +2476,34 @@ SpriteMorph.prototype.freshPalette = function (category) {
 
     // global custom blocks:
 
-    if (category === 'custom') {
-        if (stage) {
-            y += unit * 1.6;
+    if (stage) {
+        y += unit * 1.6;
 
-            stage.globalBlocks.forEach(function (definition) {
+        stage.globalBlocks.forEach(function (definition) {
+            if (category === 'custom' || definition.category === category) {
                 var block = definition.templateInstance();
                 y += unit * 0.3;
                 block.setPosition(new Point(x, y));
                 palette.addContents(block);
                 x = 0;
                 y += block.height();
-            });
-        }
+            }
+        });
+    }
 
-        // local custom blocks:
+    // local custom blocks:
 
-        y += unit * 1.6;
-        this.customBlocks.forEach(function (definition) {
+    y += unit * 1.6;
+    this.customBlocks.forEach(function (definition) {
+        if (category === 'custom' || definition.category === category) {
             var block = definition.templateInstance();
             y += unit * 0.3;
             block.setPosition(new Point(x, y));
             palette.addContents(block);
             x = 0;
             y += block.height();
-        });
-    }
+        }
+    });
 
     palette.scrollX(palette.padding);
     palette.scrollY(palette.padding);
@@ -6269,6 +6273,7 @@ StageMorph.prototype.blockTemplates = function (category) {
         blocks.push('-');
 
         blocks.push(block('getJSFromRPCStruct'));
+        blocks.push(block('doRunRPC'));
         blocks.push(watcherToggle('reportRPCError'));
         blocks.push(block('reportRPCError'));
         blocks.push('-');
@@ -6662,11 +6667,10 @@ StageMorph.prototype.userMenu = function () {
         function () {
             ide.saveCanvasAs(
                 myself.fullImageClassic(),
-                myself.name,
-                true // open as new window
+                myself.name
             );
         },
-        'open a new window\nwith a picture of the stage'
+        'download a picture of stage'
     );
     if (shiftClicked) {
         menu.addLine();
@@ -9180,7 +9184,7 @@ ReplayControls.prototype.getCaptionFor = function(action) {
 ReplayControls.prototype.play = function() {
     var myself = this;
 
-    if (this.actionIndex < this.actions.length-1) {
+    if (!this.isAtEnd()) {
         this.isPlaying = true;
         this.lastPlayUpdate = Date.now();
 
@@ -9192,6 +9196,10 @@ ReplayControls.prototype.play = function() {
         this.add(this.playButton);
         this.fixLayout();
     }
+};
+
+ReplayControls.prototype.isAtEnd = function() {
+    return this.actionIndex === this.actions.length-1;
 };
 
 ReplayControls.prototype.getSliderLeftFromValue = function(value) {
@@ -9477,6 +9485,7 @@ ReplayControls.prototype.setActions = function(actions, atEnd) {
         this.actionIndex = this.actions.length - 1;
         this.actionTime = endTime;
     } else {
+        this.actionIndex = -1;
         this.slider.value = this.slider.start;
     }
     this.slider.setStop(endPosition);
