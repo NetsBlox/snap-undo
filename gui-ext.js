@@ -273,7 +273,8 @@ IDE_Morph.prototype.mobileMode.updateBtnConfig = function() {
 
 // permanently change the btn size or
 // temporarily set the btn size for current fixlayout
-IDE_Morph.prototype.mobileMode.setBtnSize = function(newSize, temp=true) {
+IDE_Morph.prototype.mobileMode.setBtnSize = function(newSize, temp) {
+    if (temp === undefined) temp = true;
     if (!temp) this.btnConfig.idealSize = newSize;
     this.btnConfig.size = newSize;
     this.updateBtnConfig();
@@ -306,10 +307,10 @@ IDE_Morph.prototype.mobileMode.hideExtra = function() {
 };
 
 IDE_Morph.prototype.mobileMode.emptySpaces = function() {
-    const h = window.innerHeight,
+    var h = window.innerHeight,
         w = window.innerWidth,
         bounds = world.children[0].stage.bounds;
-    const spaces = {
+    var spaces = {
         top: bounds.origin.y,
         left: bounds.origin.x,
         right: w - bounds.corner.x,
@@ -335,9 +336,9 @@ IDE_Morph.prototype.mobileMode.optimalRectangle = function(spaces) {
 
     bestSide = (spaces.top > spaces.right) ? 'top' : 'right';
 
-    const sizeToPixelRatio = 2; // symbol size to pixel raito
+    var sizeToPixelRatio = 2; // symbol size to pixel raito
     if (spaces[bestSide] < this.btnConfig.size * sizeToPixelRatio) {
-        const optimalSize = (spaces[bestSide] /sizeToPixelRatio) - 10;
+        var optimalSize = (spaces[bestSide] /sizeToPixelRatio) - 10;
         if (optimalSize < 10) throw new Error('no space on the sides.');
         this.setBtnSize(optimalSize);
     } else {
@@ -464,7 +465,7 @@ IDE_Morph.prototype.mobileMode.createButtons = function() {
 
 // position and show buttons
 IDE_Morph.prototype.mobileMode.positionButtons = function(buttons, controls) {
-    const btnHeight = buttons[0].height(),
+    var btnHeight = buttons[0].height(),
         myself = this,
         btnWidth = buttons[0].width();
 
