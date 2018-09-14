@@ -4846,7 +4846,7 @@ HatBlockMorph.prototype.updateReadout = function () {
     // forked from snap/dd4fd6190c
     var myself = this,
         world = this.world(),
-        readColor = new Color(22, 137, 20);
+        readColor = new Color(242, 119, 68);
     if (!world) return;
     var msgQ = this._msgQueue();
     this.msgCount =  msgQ ? msgQ.length : 0;
