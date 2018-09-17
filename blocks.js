@@ -11221,11 +11221,15 @@ SymbolMorph.prototype.drawSymbolQueue = function (canvas, color) {
 
     ctx.fillStyle = color.toString();
 
-    drawTriangle(ctx, color, {
-        tipPos: {x: curX + rectW, y: centerY},
-        dims: {h: rectH/2, w: rectW},
-        direction: 'right'
-    });
+    var drawRightTri = function(startX) {
+        drawTriangle(ctx, color, {
+            tipPos: {x: startX + rectW, y: centerY},
+            dims: {h: rectH/2, w: rectW},
+            direction: 'right'
+        });
+    };
+
+    drawRightTri(curX);
     curX += rectW+padding;
 
     ctx.fillRect(curX, padding, rectW, rectH);
@@ -11234,11 +11238,8 @@ SymbolMorph.prototype.drawSymbolQueue = function (canvas, color) {
     ctx.fillRect(curX, padding, rectW, rectH);
     curX += rectW+padding;
 
-    drawTriangle(ctx, color, {
-        tipPos: {x: curX + rectW, y: centerY},
-        dims: {h: rectH/2, w: rectW},
-        direction: 'right'
-    });
+    drawRightTri(curX);
+
     return canvas;
 };
 
