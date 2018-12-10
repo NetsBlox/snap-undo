@@ -1,3 +1,4 @@
+/* Basic index file for netsblox editor. Uses minified Javascript for production. */
 <!DOCTYPE html>
 <html>
     <head>

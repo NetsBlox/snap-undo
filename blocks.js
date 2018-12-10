@@ -4884,7 +4884,7 @@ HatBlockMorph.prototype.updateReadout = function () {
     }
 
     // compute and set the bubble position
-    const padding = 5;
+    var padding = 5;
     var bubblePos = this.position() // hatblock pos
         .add(new Point(this.width(), 0)) // all the way to the right
         .add(new Point(padding, -2*padding)); // add a padding (same for x & y)
@@ -9676,7 +9676,8 @@ SymbolMorph.prototype.names = [
     'arrowRight',
     'arrowRightOutline',
     'robot',
-    'magnifiyingGlass'
+    'magnifiyingGlass',
+    'footprints',
 ];
 
 // SymbolMorph instance creation:
@@ -9864,6 +9865,8 @@ SymbolMorph.prototype.symbolCanvasColored = function (aColor) {
         return this.drawSymbolMagnifyingGlass(canvas, aColor);
     case 'queue':
         return this.drawSymbolQueue(canvas, aColor);
+    case 'footprints':
+        return this.drawSymbolFootprints(canvas, aColor);
     default:
         return canvas;
     }
@@ -11242,6 +11245,43 @@ SymbolMorph.prototype.drawSymbolQueue = function (canvas, color) {
 
     return canvas;
 };
+
+SymbolMorph.prototype.drawSymbolFootprints = function (canvas, color) {
+    // answer a canvas showing a pair of (shoe) footprints
+    var ctx = canvas.getContext('2d'),
+        w = canvas.width,
+        u = w / 10,
+        r = u * 1.5;
+     ctx.fillStyle = color.toString();
+     // left shoe
+    // tip
+    ctx.beginPath();
+    ctx.arc(r, r, r, radians(-200), radians(0), false);
+    ctx.lineTo(r * 2, u * 5.5);
+    ctx.lineTo(u, u * 6);
+    ctx.closePath();
+    ctx.fill();
+    // heel
+    ctx.beginPath();
+    ctx.arc(u * 2.25, u * 6.75, u , radians(-40), radians(-170), false);
+    ctx.closePath();
+    ctx.fill();
+     // right shoe
+    // tip
+    ctx.beginPath();
+    ctx.arc(w - r, u * 4.5, r, radians(-180), radians(20), false);
+    ctx.lineTo(w - u, u * 8.5);
+    ctx.lineTo(w - (r * 2), u * 8);
+    ctx.closePath();
+    ctx.fill();
+    // heel
+    ctx.beginPath();
+    ctx.arc(w - (u * 2.25), u * 9, u, radians(0), radians(-150), false);
+    ctx.closePath();
+    ctx.fill();
+    return canvas;
+};
+
 
 // ColorSlotMorph //////////////////////////////////////////////////////
 
