@@ -77,7 +77,7 @@ NetsProcess.prototype.doSocketMessage = function (msgInfo) {
     var id = 'asyncFn-sendMsg';
     if (!this[id]) {
         this[id] = {};
-        this[id].startTime = new Date().getTime();
+        this[id].endTime = new Date().getTime() + delay;
         ide.sockets.sendMessage({
             type: 'message',
             dstId: targetRole,
@@ -88,8 +88,8 @@ NetsProcess.prototype.doSocketMessage = function (msgInfo) {
         this[id].onerror = function(event) {
             this[id].error = event;
         };
-    } else if ((new Date().getTime() - this[id].startTime) > delay) {
-        // Clear request
+    } else if (new Date().getTime() > this[id].endTime) {
+        // delay is passed
         this[id] = null;
         return;
     }
