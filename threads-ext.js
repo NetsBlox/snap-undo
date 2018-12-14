@@ -71,13 +71,8 @@ NetsProcess.prototype.doSocketMessage = function (msgInfo) {
         contents[fieldNames[i]] = fieldValues[i] || '';
     }
 
-    var OUTPUT_RATE = 30; // per second (approx)
-    var delay = 1000 / OUTPUT_RATE;
-
-    var id = 'asyncFn-sendMsg';
-    if (!this[id]) {
-        this[id] = {};
-        this[id].endTime = new Date().getTime() + delay;
+    var id = undefined;
+    var sendMessage = function() {
         ide.sockets.sendMessage({
             type: 'message',
             dstId: targetRole,
@@ -85,16 +80,34 @@ NetsProcess.prototype.doSocketMessage = function (msgInfo) {
             msgType: name,
             content: contents
         });
-        this[id].onerror = function(event) {
-            this[id].error = event;
-        };
-    } else if (new Date().getTime() > this[id].endTime) {
-        // delay is passed
-        this[id] = null;
-        return;
+
+    };
+
+    // only slow down message sending if we are or just was in turbo mode
+    if (this.reportIsFastTracking() || id !== undefined) {
+        var OUTPUT_RATE = 30; // per second (approx)
+        var delay = 1000 / OUTPUT_RATE;
+
+        id = 'asyncFn-sendMsg';
+        if (!this[id]) {
+            this[id] = {};
+            this[id].endTime = new Date().getTime() + delay;
+            sendMessage();
+            this[id].onerror = function(event) {
+                this[id].error = event;
+            };
+        } else if (new Date().getTime() > this[id].endTime) {
+            // delay is passed
+            this[id] = null;
+            return;
+        }
+        this.pushContext('doYield');
+        this.pushContext();
+
+    } else {
+        sendMessage();
     }
-    this.pushContext('doYield');
-    this.pushContext();
+
 };
 
 //request block
