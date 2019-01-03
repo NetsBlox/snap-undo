@@ -40,6 +40,7 @@ describe('messages', function() {
 
         it('should show queue message count', async function() {
             const MIN_DELAY = 50;
+            driver.selectTab('scripts');
             const hatBlock = await driver.addBlock('receiveSocketMessage');
             const msgField = hatBlock.inputs()[0];
             // set the msg type to message
