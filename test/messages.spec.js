@@ -73,7 +73,7 @@ describe('messages', function() {
 
             hatBlock.updateReadout();
             console.assert(hatBlock._msgQueue().length > 0);
-            console.assert(hatBlock._msgQueue().length < 9);
+            console.assert(hatBlock.msgCount < 10);
         });
     });
 });
