@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo make sure there is no other server instances running pointing to the wrong client code
+
 function redirectClientCode()
 {
   if [ ! -L src/browser ]; then
