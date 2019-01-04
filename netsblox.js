@@ -1491,8 +1491,8 @@ NetsBloxMorph.prototype.createCloudAccount = function () {
     );
 };
 
-NetsBloxMorph.prototype.showUpdateNotification = function () {
-    var msgText = localize('Newer Version of NetsBlox Available: Please Save and Refresh');
+NetsBloxMorph.prototype.simpleNotification = function (msg, canClose) {
+    var msgText = localize(msg);
     var notification = new MenuMorph(null, msgText);
     var world = this.world();
 
@@ -1505,4 +1505,9 @@ NetsBloxMorph.prototype.showUpdateNotification = function () {
 
     world.add(notification);
     notification.drawNew();
+    if (canClose) notification.mouseClickLeft = notification.destroy;
+};
+
+NetsBloxMorph.prototype.showUpdateNotification = function () {
+    this.simpleNotification('Newer Version of NetsBlox Available: Please Save and Refresh');
 };
