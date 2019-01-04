@@ -1511,3 +1511,7 @@ NetsBloxMorph.prototype.simpleNotification = function (msg, canClose) {
 NetsBloxMorph.prototype.showUpdateNotification = function () {
     this.simpleNotification('Newer Version of NetsBlox Available: Please Save and Refresh');
 };
+
+NetsBloxMorph.prototype.showBrowserNotification = function () {
+    this.simpleNotification(`It seems you're using an unsupported browser. \n Use an up-to-date Chrome browser for the best experience.`, true);
+};
