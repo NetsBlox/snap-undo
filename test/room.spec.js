@@ -31,7 +31,7 @@ describe('room', function() {
                 driver.dialogs().forEach(d => d.destroy());
             });
 
-            it('should be able to move to new role', function() {
+            it.only('should be able to move to new role', function() {
                 // wait for the project name to change
                 return driver
                     .expect(() => {
