@@ -186,7 +186,7 @@ describe('room', function() {
                 });
         });
 
-        it.skip('should remove the role', function() {
+        it('should remove the role', function() {
             return driver.expect(() => {
                 const roleNames = driver.ide().room.getRoleNames();
                 return roleNames.includes(newRoleName);
