@@ -31,7 +31,7 @@ describe('room', function() {
                 driver.dialogs().forEach(d => d.destroy());
             });
 
-            it.only('should be able to move to new role', function() {
+            it('should be able to move to new role', function() {
                 // wait for the project name to change
                 return driver
                     .expect(() => {
@@ -186,7 +186,7 @@ describe('room', function() {
                 });
         });
 
-        it('should remove the role', function() {
+        it.skip('should remove the role', function() {
             return driver.expect(() => {
                 const roleNames = driver.ide().room.getRoleNames();
                 return roleNames.includes(newRoleName);

@@ -38,7 +38,7 @@ describe('messages', function() {
             });
         });
 
-        it('should show queue message count', async function() {
+        it.skip('should show queue message count', async function() {
             const MIN_DELAY = 50;
             driver.selectTab('scripts');
             const hatBlock = await driver.addBlock('receiveSocketMessage');
