@@ -1125,6 +1125,21 @@ ActionManager.prototype._addSound = function(sound, owner, focus) {
 
     sound.id = this.newId();
 
+    // calculate the approximate file size
+    var sizeInMb = sound.audio.src.length * 2 / 1e+6;
+    var SIZE_THRESHOLD = 15; // consider client performance and mongo document size limit
+
+    if (sizeInMb > SIZE_THRESHOLD) {
+        logger.error('audio file is too big', sound);
+
+        var nb = world.children[0];
+        nb.simpleNotification('Audio file is too big.');
+
+        // replace it with an error sound
+        sound.audio.src = SERVER_URL + '/Sounds/Meow.wav';
+        sound.name = 'BigFileError';
+    }
+
     args = [
         sound.toXML(this.serializer).replace('~', ''),
         owner.id
