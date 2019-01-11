@@ -1127,7 +1127,7 @@ ActionManager.prototype._addSound = function(sound, owner, focus) {
 
     // calculate the approximate file size
     var sizeInMb = sound.audio.src.length * 2 / 1e+6;
-    var SIZE_THRESHOLD = 15; // consider client performance and mongo document size limit
+    var SIZE_THRESHOLD = 10; // consider client performance and mongo document size limit
 
     if (sizeInMb > SIZE_THRESHOLD) {
         logger.error('audio file is too big', sound);
