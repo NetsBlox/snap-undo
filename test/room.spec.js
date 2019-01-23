@@ -126,12 +126,19 @@ describe('room', function() {
         });
     });
 
-    describe.only('duplicate', function() {
+    describe('duplicate', function() {
         before(async () => {
             await driver.reset();
             await driver.addBlock('forward');
             await driver.selectTab('Room');
 
+            await driver.expect(() => { // determine if the roleid update is recevied from the server
+                const roleName = driver.ide().projectName;
+                const role = driver.ide().room.getRole(roleName);
+                return (role.id.match(/-\d{12,15}/) !== null); // FIXME
+            }, 'didnt receive role update');
+
+            // get a handle of the current/only role
             const roleName = driver.ide().projectName;
             const role = driver.ide().room.getRole(roleName);
 
