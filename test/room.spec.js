@@ -148,7 +148,7 @@ describe('room', function() {
             return driver.expect(() => {
                 const roleNames = driver.ide().room.getRoleNames();
                 return roleNames.length === 2;
-            }, 'new role did not appear', {maxWait: 9000});
+            }, 'new role did not appear');
         });
 
         it('should contain the same blocks', function() {
@@ -161,7 +161,7 @@ describe('room', function() {
             driver.moveToRole(newRoleName);
             return driver.expect(() => {
                 return driver.ide().currentSprite.scripts.children.length === currentBlockCount;
-            }, 'role does not contain expected blocks', {maxWait: 9000});
+            }, 'role does not contain expected blocks');
         });
     });
 
