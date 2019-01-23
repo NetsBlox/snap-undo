@@ -126,7 +126,7 @@ describe('room', function() {
         });
     });
 
-    describe('duplicate', function() {
+    describe.only('duplicate', function() {
         before(async () => {
             await driver.reset();
             await driver.addBlock('forward');
