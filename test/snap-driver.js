@@ -209,6 +209,7 @@ SnapDriver.prototype._defer = function() {
     };
 };
 
+// fn: synchronous function returning a boolean
 SnapDriver.prototype.waitUntil = function(fn, maxWait) {
     const deferred = this._defer();
 
@@ -219,7 +220,7 @@ SnapDriver.prototype.waitUntil = function(fn, maxWait) {
             if (result) {
                 deferred.resolve(result);
             } else {
-                deferred.reject(result);
+                deferred.reject(result || '');
             }
         } else {
             setTimeout(check, 25);
@@ -231,10 +232,10 @@ SnapDriver.prototype.waitUntil = function(fn, maxWait) {
     return deferred.promise;
 };
 
-SnapDriver.prototype.expect = function(fn, msg) {
-    return this.waitUntil(fn)
-        .catch(() => {
-            throw new Error(msg);
+SnapDriver.prototype.expect = function(fn, msg, opts={}) {
+    return this.waitUntil(fn, opts.maxWait)
+        .catch(e => {
+            throw new Error(msg, e);
         });
 };
 
