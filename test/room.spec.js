@@ -127,21 +127,19 @@ describe('room', function() {
     });
 
     describe('duplicate', function() {
-        before(() => {
-            return driver.reset()
-                .then(() => driver.addBlock('forward'))
-                .then(() => {
-                    driver.selectTab('Room');
+        before(async () => {
+            await driver.reset();
+            await driver.addBlock('forward');
+            await driver.selectTab('Room');
 
-                    const roleName = driver.ide().projectName;
-                    const role = driver.ide().room.getRole(roleName);
+            const roleName = driver.ide().projectName;
+            const role = driver.ide().room.getRole(roleName);
 
-                    // duplicate the role
-                    driver.click(role);
-                    const dupBtn = driver.dialog().buttons.children
-                        .find(btn => btn.action === 'createRoleClone');
-                    driver.click(dupBtn);
-                });
+            // duplicate the role
+            driver.click(role);
+            const dupBtn = driver.dialog().buttons.children
+                .find(btn => btn.action === 'createRoleClone');
+            driver.click(dupBtn);
         });
 
         it('should create a new role', function() {
