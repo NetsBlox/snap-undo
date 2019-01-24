@@ -279,6 +279,7 @@ function RPCInputSlotMorph() {
                     this.methodSignature();
                 } catch (e) { // let the projects load when the service is not supported
                     console.error(e);
+                    world.children[0].showMessage && world.children[0].showMessage(e.message);
                     this.fieldsFor = {};
                 }
             }
