@@ -2682,12 +2682,12 @@ SpriteMorph.prototype.searchBlocks = function (
             console.log('found', blocks.length, 'blocks');
             let msg;
             if (blocks.length) {
-                let addresses = blocks.map(b => ide.blockAddress(b).join('=> '))
+                let addresses = blocks.map(b => ide.blockAddress(b).join(' => '))
                 msg = addresses.join('\n');
             } else {
                 msg = 'no blocks found';
             }
-            ide.simpleNotification(msg);
+            ide.inform('Search Results', msg);
         }, null, 'searchBlocks')
     };
     searchBar.setWidth(ide.logo.width() - 30);
