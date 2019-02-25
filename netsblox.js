@@ -1548,16 +1548,17 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
     var impBlocks = [];
     while (allTopBlocks.length !== 0) {
         var topBlock = allTopBlocks.shift();
-        if (topBlock.definition) { // if custom block
-            var blk = topBlock.definition.scriptsModel();
-            blk = blk.children[0];
-            if (blk.children.length > 1) { // has contents
-                var topChild = blk.children[1];
-                trackPath(topChild, topBlock);
-                allTopBlocks.push(topChild); // add the top child
+        SnapActions.traverse(topBlock, function(block) {
+            if (block.definition) { // if custom block
+                if (block !== topBlock) trackPath(block, topBlock);
+                var blk = block.definition.scriptsModel();
+                blk = blk.children[0];
+                if (blk.children.length > 1) { // has contents
+                    var topChild = blk.children[1];
+                    trackPath(topChild, block);
+                    allTopBlocks.push(topChild); // add the top child // OPT only once per custom block
+                }
             }
-        }
-        SnapActions.traverse(topBlock, function( block) {
             var include = false;
             if (query.selectors && query.selectors.includes(block.selector)) {
                 include = true;
@@ -1595,7 +1596,7 @@ NetsBloxMorph.prototype.blockAddress = function(b) {
         if (morph.name) return morph.name; // cover stage
 
         // custom blocks
-        if (morph.selector === 'evaluateCustomBlock') return 'CB:' + getCleanBlockSpec(morph);
+        if (morph.selector === 'evaluateCustomBlock') return 'CB: ' + getCleanBlockSpec(morph);
 
         // other blocks
         return getCleanBlockSpec(morph);
