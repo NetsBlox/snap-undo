@@ -1521,9 +1521,17 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
         .filter(m => m instanceof SpriteMorph);
     allSprites.push(ide.stage); // also look into stage scripts
 
-    const trackPath = function(b, upperLevel) {
+    // track upper level blocks w/o modifying the blocks
+    const lookupDic = {};
+    const setUpperLevel = function(b, upperLevel) {
         console.log(b.selector, 'is inside', parent.selector || parent.name);
-        if (b.upperLevel !== undefined) throw new Error('upper level already set');
+        if (lookupDic[b.id] !== undefined) throw new Error('upper level already set');
+        lookupDic[b.id] = upperLevel;
+        return b;
+    };
+
+    // mark it on the blocks
+    const trackPath = function(b, upperLevel) {
         b.upperLevel = upperLevel;
         return b;
     };
@@ -1567,7 +1575,7 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
         });
     }
 
-    return Array.from(new Set(impBlocks));
+    return impBlocks;
 };
 
 NetsBloxMorph.prototype.blockAddress = function(b) {
