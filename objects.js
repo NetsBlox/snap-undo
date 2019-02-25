@@ -2677,6 +2677,8 @@ SpriteMorph.prototype.searchBlocks = function (
     searchPane.mouseClickLeft = function() {
         if (world.currentKey !== 16) return; // shift key required.
         ide.prompt('Search for used blocks', function (input) {
+            if (!input) return;
+            input = input.toLowerCase();
             console.log('searching with query:', input);
             var blocks = ide.findBlocks({specs: [input]});
             console.log('found', blocks.length, 'blocks');
@@ -2687,7 +2689,7 @@ SpriteMorph.prototype.searchBlocks = function (
                 })
                 msg = addresses.join('\n');
             } else {
-                msg = 'no blocks found';
+                msg = 'No blocks found';
             }
             ide.inform('Search Results', msg);
         }, null, 'searchBlocks')
@@ -9152,7 +9154,7 @@ ReplayControls.prototype.stepBackward = function() {
 };
 
 ReplayControls.prototype.displayCaption = function(action, originalEvent) {
-    var message, 
+    var message,
         intervalHandle,
         menu;
 
@@ -9525,7 +9527,7 @@ ReplayControls.prototype.getColorForTick = function(/*action*/) {
     return null;  // use the default
 };
 
-// apply any actions between 
+// apply any actions between
 ReplayControls.prototype.update = function() {
     var myself = this,
         originalEvent,
