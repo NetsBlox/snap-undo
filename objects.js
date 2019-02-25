@@ -2669,11 +2669,6 @@ SpriteMorph.prototype.searchBlocks = function (
         searchPane.changed();
     }
 
-    searchPane.owner = this;
-    searchPane.color = myself.paletteColor;
-    searchPane.contents.color = myself.paletteColor;
-    searchPane.addContents(searchBar);
-    searchBar.drawNew();
     searchPane.mouseClickLeft = function() {
         if (world.currentKey !== 16) return; // shift key required.
         ide.prompt('Search for used blocks', function (input) {
@@ -2694,6 +2689,12 @@ SpriteMorph.prototype.searchBlocks = function (
             ide.inform('Search Results', msg);
         }, null, 'searchBlocks')
     };
+
+    searchPane.owner = this;
+    searchPane.color = myself.paletteColor;
+    searchPane.contents.color = myself.paletteColor;
+    searchPane.addContents(searchBar);
+    searchBar.drawNew();
     searchBar.setWidth(ide.logo.width() - 30);
     searchBar.contrast = 90;
     searchBar.setPosition(
