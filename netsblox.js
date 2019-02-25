@@ -1516,14 +1516,16 @@ NetsBloxMorph.prototype.simpleNotification = function (msg, sticky) {
 
 NetsBloxMorph.prototype.findBlocks = function(query) {
     query = query || {};
-    let ide = this;
-    let allSprites = ide.stage.children
-        .filter(m => m instanceof SpriteMorph);
+    var ide = this;
+    var allSprites = ide.stage.children
+        .filter(function(m) {
+            return m instanceof SpriteMorph
+        });
     allSprites.push(ide.stage); // also look into stage scripts
 
     // track upper level blocks w/o modifying the blocks
-    const lookupDic = {};
-    const setUpperLevel = function(b, upperLevel) {
+    var lookupDic = {};
+    var setUpperLevel = function(b, upperLevel) {
         console.log(b.selector, 'is inside', parent.selector || parent.name);
         if (lookupDic[b.id] !== undefined) throw new Error('upper level already set');
         lookupDic[b.id] = upperLevel;
@@ -1531,38 +1533,45 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
     };
 
     // mark it on the blocks
-    const trackPath = function(b, upperLevel) {
+    var trackPath = function(b, upperLevel) {
         b.upperLevel = upperLevel;
         return b;
     };
 
-    let allTopBlocks = allSprites
-        .map(sp => sp.scripts)
-        .map((script, idx) => {
-            return script.children.map(b => trackPath(b, allSprites[idx]));
+    var allTopBlocks = allSprites
+        .map(function(sp) {
+            return sp.scripts;
         })
-        .reduce((a, b) => a.concat(b));
+        .map(function(script, idx) {
+            return script.children.map(function(b) {
+                return trackPath(b, allSprites[idx]);
+            });
+        })
+        .reduce(function(a, b) {
+            return a.concat(b);
+        });
 
     // find interesting blocks
-    let impBlocks = []; while (allTopBlocks.length !== 0) {
+    var impBlocks = [];
+    while (allTopBlocks.length !== 0) {
         b = allTopBlocks.shift();
         if (b.definition) {
             // TODO remember the parent? recurse?
-            let blk = b.definition.scriptsModel();
+            var blk = b.definition.scriptsModel();
             blk = blk.children[0];
             if (blk.children.length > 1) { // has contents
-                let topChild = blk.children[1];
+                var topChild = blk.children[1];
                 trackPath(topChild, b);
                 allTopBlocks.push(topChild); // add the top child
             }
         }
-        SnapActions.traverse(b, block => {
-            let include = false;
+        SnapActions.traverse(b, function( block) {
+            var include = false;
             if (query.selectors && query.selectors.includes(block.selector)) {
                 include = true;
             } else if (query.specs) {
                 // OPT break early
-                query.specs.forEach(spec => {
+                query.specs.forEach(function(spec) {
                     if (block.blockSpec.toLowerCase().indexOf(spec) !== -1) {
                         include = true;
                     }
@@ -1579,12 +1588,12 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
 };
 
 NetsBloxMorph.prototype.blockAddress = function(b) {
-    let location = [];
-    const getStepName = function(morph) {
-        return morph.name || `${morph.selector}[${morph.blockSpec.replace(/%/g,'')}]`;
+    var location = [];
+    var getStepName = function(morph) {
+        return morph.name || morph.selector + '[' + morph.blockSpec.replace(/%/g,'') + ']';
     };
     while (b.upperLevel) {
-        let upperLevel = b.upperLevel;
+        var upperLevel = b.upperLevel;
         location.unshift(getStepName(upperLevel));
         b = upperLevel;
     }
