@@ -1519,7 +1519,7 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
     var ide = this;
     var allSprites = ide.stage.children
         .filter(function(m) {
-            return m instanceof SpriteMorph
+            return m instanceof SpriteMorph;
         });
     allSprites.push(ide.stage); // also look into stage scripts
 
@@ -1554,18 +1554,18 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
     // find interesting blocks
     var impBlocks = [];
     while (allTopBlocks.length !== 0) {
-        b = allTopBlocks.shift();
-        if (b.definition) {
+        var topBlock = allTopBlocks.shift();
+        if (topBlock.definition) { // if custom block
             // TODO remember the parent? recurse?
-            var blk = b.definition.scriptsModel();
+            var blk = topBlock.definition.scriptsModel();
             blk = blk.children[0];
             if (blk.children.length > 1) { // has contents
                 var topChild = blk.children[1];
-                trackPath(topChild, b);
+                trackPath(topChild, topBlock);
                 allTopBlocks.push(topChild); // add the top child
             }
         }
-        SnapActions.traverse(b, function( block) {
+        SnapActions.traverse(topBlock, function( block) {
             var include = false;
             if (query.selectors && query.selectors.includes(block.selector)) {
                 include = true;
@@ -1578,7 +1578,7 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
                 });
             }
             if (include) {
-                if (block !== b) trackPath(block, b);
+                if (block !== topBlock) trackPath(block, topBlock);
                 impBlocks.push(block);
             }
         });
