@@ -1564,8 +1564,12 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
             } else if (query.specs) {
                 // OPT break early
                 query.specs.forEach(function(spec) {
-                    if (block.blockSpec.toLowerCase().indexOf(spec) !== -1) {
-                        include = true;
+                    try {
+                        if (block.blockSpec && block.blockSpec.toLowerCase().indexOf(spec) !== -1) {
+                            include = true;
+                        }
+                    } catch (e) {
+                        console.error('error when searching for blocks', e);
                     }
                 });
             }
