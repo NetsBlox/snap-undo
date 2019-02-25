@@ -1514,6 +1514,8 @@ NetsBloxMorph.prototype.simpleNotification = function (msg, sticky) {
     notification.drawNew();
 };
 
+// searches the existing sprites and custom blocks for the desired block.
+// can search by block spec or selector
 NetsBloxMorph.prototype.findBlocks = function(query) {
     query = query || {};
     var ide = this;
@@ -1522,15 +1524,6 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
             return m instanceof SpriteMorph;
         });
     allSprites.push(ide.stage); // also look into stage scripts
-
-    // track upper level blocks w/o modifying the blocks
-    var lookupDic = {};
-    var setUpperLevel = function(b, upperLevel) {
-        console.log(b.selector, 'is inside', parent.selector || parent.name);
-        if (lookupDic[b.id] !== undefined) throw new Error('upper level already set');
-        lookupDic[b.id] = upperLevel;
-        return b;
-    };
 
     // mark it on the blocks
     var trackPath = function(b, upperLevel) {
@@ -1556,7 +1549,6 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
     while (allTopBlocks.length !== 0) {
         var topBlock = allTopBlocks.shift();
         if (topBlock.definition) { // if custom block
-            // TODO remember the parent? recurse?
             var blk = topBlock.definition.scriptsModel();
             blk = blk.children[0];
             if (blk.children.length > 1) { // has contents
@@ -1587,6 +1579,7 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
     return impBlocks;
 };
 
+// give a block found by the findBlocks fn returns a user friendly list of parents
 NetsBloxMorph.prototype.blockAddress = function(b) {
     var location = [];
     var getStepName = function(morph) {

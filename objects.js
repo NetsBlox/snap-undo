@@ -2675,7 +2675,7 @@ SpriteMorph.prototype.searchBlocks = function (
     searchPane.addContents(searchBar);
     searchBar.drawNew();
     searchPane.mouseClickLeft = function() {
-        if (world.currentKey !== 16) return; // shift key required. TODO make it ctrl?
+        if (world.currentKey !== 16) return; // shift key required.
         ide.prompt('Search for used blocks', function (input) {
             console.log('searching with query:', input);
             var blocks = ide.findBlocks({specs: [input]});
