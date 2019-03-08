@@ -2682,7 +2682,20 @@ SpriteMorph.prototype.searchBlocks = function (
                 var addresses = blocks.map(function(b) {
                     return ide.blockAddress(b).join(' => ');
                 })
-                msg = addresses.join('\n');
+
+                /* count and remove duplicates */
+                const stats = {};
+                addresses.forEach(addr => {
+                    stats[addr] = stats[addr] === undefined ? 1 : stats[addr] + 1;
+                })
+
+                msg = '';
+                for (var addr in stats) {
+                    if (stats[addr] > 1)
+                        msg += `[${stats[addr]}x] `;
+                    msg += addr + '\n';
+                }
+
             } else {
                 msg = 'No blocks found';
             }
