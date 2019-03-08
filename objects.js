@@ -2684,15 +2684,15 @@ SpriteMorph.prototype.searchBlocks = function (
                 })
 
                 /* count and remove duplicates */
-                const stats = {};
-                addresses.forEach(addr => {
+                var stats = {};
+                addresses.forEach(function(addr) {
                     stats[addr] = stats[addr] === undefined ? 1 : stats[addr] + 1;
-                })
+                });
 
                 msg = '';
                 for (var addr in stats) {
                     if (stats[addr] > 1)
-                        msg += `[${stats[addr]}x] `;
+                        msg += '[' + stats[addr] + 'x] ';
                     msg += addr + '\n';
                 }
 
