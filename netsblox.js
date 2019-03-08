@@ -1584,7 +1584,7 @@ NetsBloxMorph.prototype.findBlocks = function(query) {
     return impBlocks;
 };
 
-// give a block found by the findBlocks fn returns a user friendly list of parents
+// given a block found by the findBlocks fn returns a user friendly list of parents
 NetsBloxMorph.prototype.blockAddress = function(b) {
     var location = [];
     var getCleanBlockSpec = function(morph) {
@@ -1592,8 +1592,11 @@ NetsBloxMorph.prototype.blockAddress = function(b) {
     };
 
     var getStepName = function(morph) {
-        if (morph.name && morph instanceof SpriteMorph) return 'S: ' + morph.name;
-        if (morph.name) return morph.name; // cover stage
+        if (morph.name !== undefined && morph instanceof SpriteMorph) {
+            if (morph.name === '') return 'S: Sprite'; // default name
+            return 'S: ' + morph.name;
+        }
+        if (morph.name !== undefined) return morph.name; // cover stage
 
         // custom blocks
         if (morph.selector === 'evaluateCustomBlock') return 'CB: ' + getCleanBlockSpec(morph);
