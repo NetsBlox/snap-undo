@@ -2672,7 +2672,7 @@ SpriteMorph.prototype.searchBlocks = function (
     searchPane.mouseClickLeft = function() {
         if (world.currentKey !== 16) return; // shift key required.
         ide.prompt('Search for used blocks', function (input) {
-            if (!input) return;
+            if (!input || input.length < 3) return; // min 3 chars
             input = input.toLowerCase();
             console.log('searching with query:', input);
             var blocks = ide.findBlocks({specs: [input]});
