@@ -1592,17 +1592,19 @@ NetsBloxMorph.prototype.blockAddress = function(b) {
     };
 
     var getStepName = function(morph) {
-        if (morph.name !== undefined && morph instanceof SpriteMorph) {
-            if (morph.name === '') return 'S: Sprite'; // default name
-            return 'S: ' + morph.name;
+        var stepName = '';
+
+        if (morph.name !== undefined && morph instanceof SpriteMorph) { // sprites
+            stepName = morph.name === '' ? 'S: Sprite' : 'S: ' + morph.name;
+        } else if (morph.name !== undefined) { // stage
+            stepName = morph.name;
+        } else if (morph.selector === 'evaluateCustomBlock') { // custom blocks
+            stepName = 'CB: ' + getCleanBlockSpec(morph);
+        } else  { // others
+            stepName = getCleanBlockSpec(morph);
         }
-        if (morph.name !== undefined) return morph.name; // cover stage
 
-        // custom blocks
-        if (morph.selector === 'evaluateCustomBlock') return 'CB: ' + getCleanBlockSpec(morph);
-
-        // other blocks
-        return getCleanBlockSpec(morph);
+        return stepName;
     };
 
     while (b.upperLevel) {
