@@ -1,6 +1,6 @@
 /* global nop, DialogBoxMorph, ScriptsMorph, BlockMorph, InputSlotMorph, StringMorph, Color
    ReporterBlockMorph, CommandBlockMorph, MultiArgMorph, SnapActions, isNil,
-   ReporterSlotMorph, RingMorph, SyntaxElementMorph, contains*/
+   ReporterSlotMorph, RingMorph, SyntaxElementMorph, contains, world*/
 // Extensions to the Snap blocks
 
 
@@ -40,7 +40,7 @@ BlockMorph.prototype.showHelp = function() {
         help = 'Get information from different providers, save information and more. \nTo get more help select one of the services:'
             + metadata.slice(0,3).join(', ') + ' ...';
     }
-    
+
     block = this.fullCopy();
     block.addShadow();
     new DialogBoxMorph().inform(
@@ -275,7 +275,15 @@ function RPCInputSlotMorph() {
         'methodSignature',
         function(rpcMethod) {
             if (!this.fieldsFor || !this.fieldsFor[rpcMethod]) {
-                this.methodSignature();
+                try {
+                    this.methodSignature();
+                } catch (e) { // let the projects load when the service is not supported
+                    /* eslint-disable no-console */
+                    console.error(e);
+                    /* eslint-enable no-console */
+                    world.children[0].showMessage && world.children[0].showMessage(e.message);
+                    this.fieldsFor = {};
+                }
             }
             if (this.fieldsFor[rpcMethod]) {
                 return this.fieldsFor[rpcMethod].args.map(function(arg) {
@@ -304,6 +312,7 @@ RPCInputSlotMorph.prototype.getRPCName = function () {
     return null;
 };
 
+// sets this.fieldsFor and returns the method signature dict
 RPCInputSlotMorph.prototype.methodSignature = function () {
     var actionNames,
         rpc,

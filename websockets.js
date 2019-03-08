@@ -194,6 +194,9 @@ WebSocketManager.MessageHandlers = {
     },
     'user-action': function(msg) {
         SnapActions.onMessage(msg.action);
+    },
+    'action-rejected': function(msg) {
+        SnapActions.onActionReject(msg.action);
     }
 };
 
@@ -524,6 +527,7 @@ WebSocketManager.prototype.startProcesses = function () {
         activeBlock = !!stage.threads.findProcess(block);
         if (!activeBlock) {  // Check if the process can be added
             process = this.processes[i].shift();
+            process.block.updateReadout();
             stage.threads.startProcess(
                 process.block,
                 process.isThreadSafe,

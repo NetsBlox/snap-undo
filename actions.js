@@ -432,10 +432,6 @@ ActionManager.prototype.submitIfAllowed = function(event) {
     }
 };
 
-ActionManager.prototype.mightRejectActions = function() {
-    return this.ide().isReplayMode || this.isCollaborating();
-};
-
 ActionManager.prototype._getMethodFor = function(action) {
     var method = 'on' + action.substring(0,1).toUpperCase() + action.substring(1);
 
@@ -513,7 +509,7 @@ ActionManager.prototype.addActionToQueue = function(msg) {
 };
 
 ActionManager.prototype._applyEvent = function(msg) {
-    logger.debug('received event:', msg);
+    logger.debug('received "' + msg.type + '" event ' + msg.id + ':', msg);
     this.currentEvent = msg;
     this.isApplyingAction = true;
     this.lastSeen = this.currentEvent.id;
@@ -1128,6 +1124,21 @@ ActionManager.prototype._addSound = function(sound, owner, focus) {
     var args;
 
     sound.id = this.newId();
+
+    // calculate the approximate file size
+    var sizeInMb = sound.audio.src.length * 2 / 1e+6;
+    var SIZE_THRESHOLD = 10; // consider client performance and mongo document size limit
+
+    if (sizeInMb > SIZE_THRESHOLD) {
+        logger.error('audio file is too big', sound);
+
+        var nb = world.children[0];
+        nb.simpleNotification('Audio file is too big.');
+
+        // replace it with an error sound
+        sound.audio.src = SERVER_URL + '/Sounds/Meow.wav';
+        sound.name = 'BigFileError';
+    }
 
     args = [
         sound.toXML(this.serializer).replace('~', ''),
@@ -3073,6 +3084,17 @@ ActionManager.prototype.onMessage = function(msg) {
         }
     } else {
         this.onReceiveAction(msg);
+    }
+};
+
+ActionManager.prototype.onActionReject = function(action) {
+    var queue = this._attemptedLocalActions,
+        item = queue.find(function(item) { return item.equals(action)}),
+        index = queue.indexOf(item);
+
+    if (index > -1) {
+        queue.splice(index, 1);
+        item.reject();
     }
 };
 

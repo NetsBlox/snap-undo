@@ -71,13 +71,42 @@ NetsProcess.prototype.doSocketMessage = function (msgInfo) {
         contents[fieldNames[i]] = fieldValues[i] || '';
     }
 
-    ide.sockets.sendMessage({
-        type: 'message',
-        dstId: targetRole,
-        srcId: srcId,
-        msgType: name,
-        content: contents
-    });
+    var sendMessage = function() {
+        ide.sockets.sendMessage({
+            type: 'message',
+            dstId: targetRole,
+            srcId: srcId,
+            msgType: name,
+            content: contents
+        });
+
+    };
+
+    var TURBO_OUTPUT_RATE = 90; // per sec
+    var outputRate = TURBO_OUTPUT_RATE;
+    var delay = 1000 / outputRate;
+
+    if (!this.reportIsFastTracking()) {
+        return sendMessage();
+    }
+
+    // else rate limit in turbo mode
+    var id = 'asyncFn-sendMsg';
+    if (!this[id]) {
+        this[id] = {};
+        this[id].endTime = new Date().getTime() + delay;
+        sendMessage();
+        this[id].onerror = function(event) {
+            this[id].error = event;
+        };
+    } else if (new Date().getTime() > this[id].endTime) {
+        // delay is passed
+        this[id] = null;
+        return;
+    }
+    this.pushContext('doYield');
+    this.pushContext();
+
 };
 
 //request block
@@ -244,7 +273,7 @@ NetsProcess.prototype.callRPC = function (rpc, params, noCache) {
             }
             return image;
         } else {  // assume text
-            response = String.fromCharCode.apply(null, new Uint8Array(this.rpcRequest.response));
+            response = decodeURIComponent(escape(String.fromCharCode.apply(null, new Uint8Array(this.rpcRequest.response))));
             stage = this.homeContext.receiver.parentThatIsA(StageMorph);
             if (this.rpcRequest.status < 200 || this.rpcRequest.status > 299) {
                 stage.rpcError = response;
@@ -447,4 +476,52 @@ NetsProcess.prototype.reportStageWidth = function () {
 NetsProcess.prototype.reportStageHeight = function () {
     var stage = this.homeContext.receiver.parentThatIsA(StageMorph);
     return stage.dimensions.y;
+};
+
+// helps executing async functions in custom js blocks
+// WARN it could be slower than non-promise based approach
+// when calling this function, return only if the return value is not undefined.
+NetsProcess.prototype.runAsyncFn = function (asyncFn, opts) {
+    opts = opts || {};
+    opts = {
+        timeout: opts.timeout || 2000,
+        args: opts.args || [],
+    };
+    var id = '_async' + 'Func' + asyncFn.name; // make sure id doesn't collide with process methods
+    var tmp;
+    var myself = this;
+    if (!id || !(asyncFn instanceof Function)) throw new Error('id or asyncFn input missing');
+    if (!this[id]) {
+        this[id] = {};
+        this[id].startTime = new Date().getTime();
+        var timeoutPromise = new Promise(function(_, reject) {
+            setTimeout(reject, opts.timeout, 'timeout');
+        });
+        var requestedPromise = asyncFn.apply(this, opts.args);
+        var promise = Promise.race([requestedPromise, timeoutPromise])
+            .then(function(r) {
+                myself[id].complete = true;
+                myself[id].response = r;
+            })
+            .catch(function(e) {
+                myself[id].error = true;
+                myself[id].response = e;
+            });
+        myself[id].onerror = function(event) {
+            myself[id].error = event;
+        };
+        myself[id].promise = promise;
+    } else if (myself[id].complete) {
+        // Clear request
+        tmp = myself[id];
+        myself[id] = null;
+        return tmp.response;
+    } else if (myself[id].error) {
+        tmp = myself[id];
+        myself[id] = null;
+        console.error(tmp.response);
+        throw new Error(tmp.response);
+    }
+    this.pushContext('doYield');
+    this.pushContext();
 };

@@ -25,6 +25,12 @@ NetsBloxMorph.prototype.init = function (isAutoFill) {
     // initialize inherited properties:
     NetsBloxMorph.uber.init.call(this, isAutoFill);
     this.serializer = new NetsBloxSerializer();
+
+    var myself = this;
+    // attach the event listeners
+    window.addEventListener('ideLoaded', function() {
+        if (!(myself.isSupportedBrowser())) myself.showBrowserNotification();
+    });
 };
 
 NetsBloxMorph.prototype.buildPanes = function () {
@@ -396,8 +402,8 @@ NetsBloxMorph.prototype.projectMenu = function () {
                     myself.inform(
                         'Multiple Roles Detected',
                         'As a Snap! project is equivalent to a role in NetsBlox,\n' +
-                        'we can only export a single role to a Snap! project at\n' + 
-                        'a time.\n\nTo migrate the remaining roles, please export\n' + 
+                        'we can only export a single role to a Snap! project at\n' +
+                        'a time.\n\nTo migrate the remaining roles, please export\n' +
                         'them all individually.',
                         myself.world()
                     );
@@ -605,9 +611,6 @@ NetsBloxMorph.prototype.openRoomString = function (str) {
     role = room.children[0].attributes.name;
 
     var msg = this.showMessage('Opening project...');
-    // Create a room with the new name
-    this.newRole(role);
-
     var myself = this,
         name = room.attributes.name;
 
@@ -1494,8 +1497,8 @@ NetsBloxMorph.prototype.createCloudAccount = function () {
     );
 };
 
-NetsBloxMorph.prototype.showUpdateNotification = function () {
-    var msgText = localize('Newer Version of NetsBlox Available: Please Save and Refresh');
+NetsBloxMorph.prototype.simpleNotification = function (msg, sticky) {
+    var msgText = localize(msg);
     var notification = new MenuMorph(null, msgText);
     var world = this.world();
 
@@ -1507,5 +1510,116 @@ NetsBloxMorph.prototype.showUpdateNotification = function () {
     notification.addShadow(new Point(2, 2), 80);
 
     world.add(notification);
+    notification.mouseClickLeft = sticky ? nop : notification.destroy;
     notification.drawNew();
+};
+
+// searches the existing sprites and custom blocks for the desired block.
+// can search by block spec or selector
+NetsBloxMorph.prototype.findBlocks = function(query) {
+    query = query || {};
+    var ide = this;
+    var allSprites = ide.stage.children
+        .filter(function(m) {
+            return m instanceof SpriteMorph;
+        });
+    allSprites.push(ide.stage); // also look into stage scripts
+
+    // mark it on the blocks
+    var trackPath = function(b, upperLevel) {
+        b.upperLevel = upperLevel;
+        return b;
+    };
+
+    var allTopBlocks = allSprites
+        .map(function(sp) {
+            return sp.scripts;
+        })
+        .map(function(script, idx) {
+            return script.children.map(function(b) {
+                return trackPath(b, allSprites[idx]);
+            });
+        })
+        .reduce(function(a, b) {
+            return a.concat(b);
+        });
+
+    // find interesting blocks
+    var impBlocks = [];
+    while (allTopBlocks.length !== 0) {
+        var topBlock = allTopBlocks.shift();
+        SnapActions.traverse(topBlock, function(block) {
+            if (block.definition) { // if custom block
+                if (block !== topBlock) trackPath(block, topBlock);
+                var blk = block.definition.scriptsModel();
+                blk = blk.children[0];
+                if (blk.children.length > 1) { // has contents
+                    var topChild = blk.children[1];
+                    trackPath(topChild, block);
+                    allTopBlocks.push(topChild); // add the top child // OPT only once per custom block
+                }
+            }
+            var include = false;
+            if (query.selectors && query.selectors.includes(block.selector)) {
+                include = true;
+            } else if (query.specs) {
+                // OPT break early
+                query.specs.forEach(function(spec) {
+                    try {
+                        if (block.blockSpec && block.blockSpec.toLowerCase().indexOf(spec) !== -1) {
+                            include = true;
+                        }
+                    } catch (e) {
+                        console.error('error when searching for blocks', e);
+                    }
+                });
+            }
+            if (include) {
+                if (block !== topBlock) trackPath(block, topBlock);
+                impBlocks.push(block);
+            }
+        });
+    }
+
+    return impBlocks;
+};
+
+// given a block found by the findBlocks fn returns a user friendly list of parents
+NetsBloxMorph.prototype.blockAddress = function(b) {
+    var location = [];
+    var getCleanBlockSpec = function(morph) {
+        return '[' + morph.blockSpec.replace(/%/g,'') + ']';
+    };
+
+    var getStepName = function(morph) {
+        var stepName = '';
+
+        if (morph.name !== undefined && morph instanceof SpriteMorph) { // sprites
+            stepName = morph.name === '' ? 'S: Sprite' : 'S: ' + morph.name;
+        } else if (morph.name !== undefined) { // stage
+            stepName = morph.name;
+        } else if (morph.selector === 'evaluateCustomBlock') { // custom blocks
+            stepName = 'CB: ' + getCleanBlockSpec(morph);
+        } else  { // others
+            stepName = getCleanBlockSpec(morph);
+        }
+
+        return stepName;
+    };
+
+    while (b.upperLevel) {
+        var upperLevel = b.upperLevel;
+        location.unshift(getStepName(upperLevel));
+        b = upperLevel;
+    }
+    return location;
+};
+
+
+NetsBloxMorph.prototype.showUpdateNotification = function () {
+    this.simpleNotification('Newer Version of NetsBlox Available: Please Save and Refresh', true);
+};
+
+NetsBloxMorph.prototype.showBrowserNotification = function () {
+    this.simpleNotification('It seems you\'re using an unsupported browser. \n Use an up-to-date Chrome browser for the best experience.');
 };
