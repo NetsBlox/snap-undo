@@ -322,7 +322,7 @@ RPCInputSlotMorph.prototype.methodSignature = function () {
     if (rpc) {
         // stores information on a specific service's rpcs
         try {
-            this.fieldsFor = JSON.parse(this.getURL('/rpc/' + rpc)).rpcs;
+            this.fieldsFor = JSON.parse(getUrlSyncCached('/rpc/' + rpc)).rpcs;
         } catch (e) {
             throw new Error('Service "' + rpc + '" is not available');
         }
