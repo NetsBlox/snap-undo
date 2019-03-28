@@ -2,7 +2,9 @@
 // loaded before main nb scripts
 /* globals ensureFullUrl */
 
-function requestPromise(request, data) {
+var utils = {};
+
+utils.requestPromise = function(request, data) {
     // takes an xhr request
     return new Promise((resolve, reject) => {
         // stringifying undefined => undefined
@@ -25,10 +27,9 @@ function requestPromise(request, data) {
             }
         };
     });
-}
+};
 
-
-function memoize(func){
+utils.memoize = function(func){
     var cache = {};
     return function(){
         var key = JSON.stringify(arguments);
@@ -41,9 +42,9 @@ function memoize(func){
             return val;
         }
     };
-}
+};
 
-function getUrlSync(url) {
+utils.getUrlSync = function(url) {
     url = ensureFullUrl(url);
     var request = new XMLHttpRequest();
     request.open('GET', url, false);
@@ -52,7 +53,6 @@ function getUrlSync(url) {
         return request.responseText;
     }
     throw new Error('unable to retrieve ' + url);
-}
+};
 
-var getUrlSyncCached = memoize(getUrlSync);
-
+utils.getUrlSyncCached = utils.memoize(utils.getUrlSync);

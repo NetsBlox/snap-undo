@@ -1,4 +1,4 @@
-/* globals SnapCloud, SERVER_URL, NetsBloxMorph, WorldMorph, requestPromise */
+/* globals SnapCloud, SERVER_URL, NetsBloxMorph, WorldMorph, utils */
 
 var world;
 
@@ -21,7 +21,7 @@ window.onload = function () {
                 return_user: true,
                 silent: true
             };
-            return requestPromise(request, data)
+            return utils.requestPromise(request, data)
                 .then(function(res) {
                     if (!res.responseText) throw new Error('Access denied. You are not logged in.');
                     let user = JSON.parse(res.responseText);

@@ -70,7 +70,7 @@ fontHeight, hex_sha512, sb, CommentMorph, CommandBlockMorph,
 BlockLabelPlaceHolderMorph, Audio, SpeechBubbleMorph, ScriptFocusMorph,
 XML_Element, WatcherMorph, BlockRemovalDialogMorph, saveAs, TableMorph,
 isSnapObject, isRetinaEnabled, disableRetinaSupport, enableRetinaSupport,
-isRetinaSupported, SliderMorph, Animation*/
+isRetinaSupported, SliderMorph, Animation, utils*/
 
 // Global stuff ////////////////////////////////////////////////////////
 
@@ -358,7 +358,7 @@ IDE_Morph.prototype.interpretUrlAnchors = function (loc) {
     loc = loc || location;
     function getURL(url) {
         try {
-            return getUrlSync(url);
+            return utils.getUrlSync(url);
         } catch (err) {
             myself.showMessage('unable to retrieve project');
             return '';
