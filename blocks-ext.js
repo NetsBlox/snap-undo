@@ -172,6 +172,7 @@ StructInputSlotMorph.prototype.evaluate = function() {
 
 StructInputSlotMorph.prototype.setContents = function(name, values) {
     // Set the value for the dropdown
+    values = values || [];
     InputSlotMorph.prototype.setContents.call(this, name);
 
     if (this.parent) {  // update fields
@@ -207,7 +208,6 @@ StructInputSlotMorph.prototype.setContents = function(name, values) {
         }
 
         // Create new struct fields
-        values = values || [];
         this.fieldContent = [];
         for (i = 0; i < this.fields.length; i++) {
             this.fieldContent.push(this.updateField(this.fields[i], values[i]));
