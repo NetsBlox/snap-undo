@@ -194,6 +194,9 @@ StructInputSlotMorph.prototype.setContents = function(name, values) {
             this.parent.removeChild(this.fieldContent[i]);
         }
         this.fields = this.getFieldNames(name);
+        if (!this.fields) {
+            this.fields = values.map(function(){ return '???'; });
+        }
 
         if (scripts) {
             removed
@@ -305,8 +308,8 @@ function RPCInputSlotMorph() {
                 return this.fieldsFor[rpcMethod].args.map(function(arg) {
                     return arg.name;
                 });
-            } else { // the requested action is undefined
-                return [];
+            } else {  // the requested action is undefined
+                return null;
             }
         },
         true
