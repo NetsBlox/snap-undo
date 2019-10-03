@@ -282,6 +282,38 @@ StructInputSlotMorph.prototype.updateField = function(field, value) {
     return result;
 };
 
+InputSlotMorph.prototype.rpcNames = function () {
+    var services = JSON.parse(utils.getUrlSync('/rpc')),
+        menuDict = {},
+        namespace,
+        dict,
+        name;
+
+    services.sort(function(s1, s2) {
+        // Sort the services alphabetically by namespace then name
+        if (s1.namespace === s2.namespace) {
+            return s1.name.toLowerCase() < s2.name.toLowerCase() ? -1 : 1;
+        }
+        if (!s1.namespace) return -1;
+        if (!s2.namespace) return 1;
+        return s2.namespace.toLowerCase() < s1.namespace.toLowerCase() ? -1 : 1;
+    });
+
+    for (var i = 0; i < services.length; i++) {
+        dict = menuDict;
+        namespace = services[i].namespace;
+        name = services[i].name;
+        if (namespace) {
+            if (!dict[namespace]) {
+                dict[namespace] = {};
+            }
+            dict = dict[namespace];
+        }
+        dict[name] = name;
+    }
+    return menuDict;
+};
+
 RPCInputSlotMorph.prototype = new StructInputSlotMorph();
 RPCInputSlotMorph.prototype.constructor = RPCInputSlotMorph;
 RPCInputSlotMorph.uber = StructInputSlotMorph.prototype;
