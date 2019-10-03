@@ -285,33 +285,40 @@ StructInputSlotMorph.prototype.updateField = function(field, value) {
 InputSlotMorph.prototype.rpcNames = function () {
     var services = JSON.parse(utils.getUrlSync('/rpc')),
         menuDict = {},
-        namespace,
-        dict,
+        category,
         name;
 
-    services.sort(function(s1, s2) {
-        // Sort the services alphabetically by namespace then name
-        if (s1.namespace === s2.namespace) {
-            return s1.name.toLowerCase() < s2.name.toLowerCase() ? -1 : 1;
-        }
-        if (!s1.namespace) return -1;
-        if (!s2.namespace) return 1;
-        return s2.namespace.toLowerCase() < s1.namespace.toLowerCase() ? -1 : 1;
-    });
+    function sortDict(dict) {
+        var keys = Object.keys(dict).sort(),
+            sortedDict = {};
 
-    for (var i = 0; i < services.length; i++) {
-        dict = menuDict;
-        namespace = services[i].namespace;
-        name = services[i].name;
-        if (namespace) {
-            if (!dict[namespace]) {
-                dict[namespace] = {};
+        for (var i = 0; i < keys.length; i++) {
+            if (dict[keys[i]] instanceof Object && !Array.isArray(dict[keys[i]])) {
+                sortedDict[keys[i]] = sortDict(dict[keys[i]]);
+            } else {
+                sortedDict[keys[i]] = dict[keys[i]];
             }
-            dict = dict[namespace];
         }
-        dict[name] = name;
+
+        return sortedDict;
     }
-    return menuDict;
+
+    for (var i = services.length; i--;) {
+        name = services[i].name;
+        if (services[i].categories.length) {
+            for (var j = services[i].categories.length; j--;) {
+                category = services[i].categories[j];
+                if (!menuDict[category]) {
+                    menuDict[category] = {};
+                }
+                menuDict[category][name] = name;
+            }
+        } else {
+            menuDict[name] = name;
+        }
+    }
+
+    return sortDict(menuDict);
 };
 
 RPCInputSlotMorph.prototype = new StructInputSlotMorph();
