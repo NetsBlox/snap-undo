@@ -1284,8 +1284,8 @@ function isWordChar(aCharacter) {
     return aCharacter.match(/[A-zÀ-ÿ0-9]/);
 }
 
-function isWhitespace(aCharacter) {
-    return aCharacter.match(/\s/);
+function isURLChar(aCharacter) {
+    return aCharacter.match(/[A-z0-9./:?&_+%-]/);
 }
 
 function isURL(text) {
@@ -8590,12 +8590,12 @@ StringMorph.prototype.mouseClickLeft = function (pos) {
         }
 
         startMark = slot;
-        while (startMark > 1 && !isWhitespace(this.text[startMark-1])) {
+        while (startMark > 1 && isURLChar(this.text[startMark-1])) {
             startMark -= 1;
         }
 
         endMark = slot;
-        while (endMark < this.text.length - 1 && !isWhitespace(this.text[endMark + 1])) {
+        while (endMark < this.text.length - 1 && isURLChar(this.text[endMark + 1])) {
             endMark += 1;
         }
 
@@ -8816,7 +8816,6 @@ TextMorph.prototype.parse = function () {
         myself.words.push('\n');
     });
 
-    // TODO: Can we add link detection here?
     this.words.forEach(function (word) {
         if (word === '\n') {
             myself.lines.push(oldline);
