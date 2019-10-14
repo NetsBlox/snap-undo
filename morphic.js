@@ -1289,7 +1289,7 @@ function isURLChar(aCharacter) {
 }
 
 function isURL(text) {
-    return /https?:\/\//.test(text);
+    return /^https?:\/\//.test(text);
 }
 
 function newCanvas(extentPoint, nonRetina) {
