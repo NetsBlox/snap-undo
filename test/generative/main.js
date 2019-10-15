@@ -22,13 +22,12 @@ async function onIframeReady() {
     while (true) {
         setOptions(options);
         await runTest(driver, options);
-
         options.seed = Date.now();
     }
 }
 
 async function runTest(driver, options) {
-    const {SnapActions, SnapUndo, UndoManager} = driver.globals();
+    const {SnapActions, SnapUndo, UndoManager, copy} = driver.globals();
     const tester = new InteractionGenerator(driver, null, options.seed);
     let remainingActions = options.count;
     let undoCount = 0;
@@ -37,13 +36,15 @@ async function runTest(driver, options) {
         await tester.act();
         // Test that the last action can be undone (and redone)
         if (undoCount < SnapUndo.allEvents.length) {
-            const lastEvent = SnapUndo.allEvents[SnapUndo.allEvents.length - 1];
+            const lastEvent = copy(SnapUndo.allEvents[SnapUndo.allEvents.length - 1]);
             if (lastEvent && !lastEvent.replayType && !lastEvent.isUserAction) {
                 const event = SnapUndo.getInverseEvent(lastEvent);
                 event.replayType = UndoManager.UNDO;
                 event.owner = lastEvent.owner;
                 event.isReplay = true;
+                lastEvent.isReplay = true;
                 await SnapActions.applyEvent(event);
+                await driver.sleep(25);
                 await SnapActions.applyEvent(lastEvent);
             }
             undoCount = SnapUndo.allEvents.length;
