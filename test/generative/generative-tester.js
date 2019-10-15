@@ -36,10 +36,7 @@
             click: [driver => sample([generator.point, generator.morph])(driver)],
             rightClick: [generator.morph],
             dragAndDrop: [generator.morph, generator.point],
-            //newRoleNWait: [generator.text],
             addBlock: [generator.blockSpec, generator.point],
-            selectStage: [],
-            //selectSprite: [generator.],
         };
     };
 
