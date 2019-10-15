@@ -44,7 +44,7 @@ async function runTest(driver, options) {
                 event.isReplay = true;
                 lastEvent.isReplay = true;
                 await SnapActions.applyEvent(event);
-                await driver.sleep(25);
+                await driver.sleep(250);
                 await SnapActions.applyEvent(lastEvent);
             }
             undoCount = SnapUndo.allEvents.length;
