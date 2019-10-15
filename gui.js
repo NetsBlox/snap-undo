@@ -4729,7 +4729,7 @@ IDE_Morph.prototype.rawOpenDataString = function (str, name, type) {
             data = str;
     }
     vName = newVarName(name || 'data');
-    return SnapActions.addVariable(vName, true).then(() => {
+    return SnapActions.addVariable(vName, true).then(function() {
         globals.setVar(vName, data);
         this.currentSprite.toggleVariableWatcher(vName, true); // global
         this.flushBlocksCache('variables');
