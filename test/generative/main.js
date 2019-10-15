@@ -7,18 +7,8 @@ const url = window.location.href
     .replace(window.location.hash, '');
 frame.setAttribute('src', url);
 
-function checkLoaded() {
-    const loaded = frame.contentWindow.world;
-
-    if (loaded) {
-        onIframeReady();
-    } else {
-        setTimeout(checkLoaded, 10);
-    }
-}
-
 window.onload = () => {
-    checkLoaded();
+    setTimeout(onIframeReady, 100);
 };
 
 async function onIframeReady() {
@@ -39,11 +29,11 @@ async function onIframeReady() {
 
 async function runTest(driver, options) {
     const {SnapActions, SnapUndo, UndoManager} = driver.globals();
+    const tester = new InteractionGenerator(driver, null, options.seed);
     let remainingActions = options.count;
     let undoCount = 0;
 
     while (remainingActions--) {
-        const tester = new InteractionGenerator(driver, null, options.seed);
         await tester.act();
         // Test that the last action can be undone (and redone)
         if (undoCount < SnapUndo.allEvents.length) {
