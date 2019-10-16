@@ -1,5 +1,4 @@
-function SnapDriver(world) {
-    this._world = world;
+function SnapDriver() {
     this._window = window;
 }
 
@@ -13,11 +12,11 @@ SnapDriver.prototype.globals = function() {
 
 // Convenience Getters
 SnapDriver.prototype.world = function() {
-    return this._world;
+    return this._window.world;
 };
 
 SnapDriver.prototype.ide = function() {
-    return this._world.children[0];
+    return this.world().children[0];
 };
 
 SnapDriver.prototype.palette = function() {
