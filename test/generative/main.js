@@ -5,26 +5,25 @@ const frame = document.getElementsByTagName('iframe')[0];
 const url = window.location.href
     .replace(window.location.pathname, '')
     .replace(window.location.hash, '');
-frame.setAttribute('src', url);
 
-window.onload = () => {
-    setTimeout(onIframeReady, 100);
-};
-
-async function onIframeReady() {
+let driver;
+window.onload = async function onIframeReady() {
     document.body.style.visibility = 'visible';
-    const driver = new SnapDriver(frame.contentWindow.world);
     const options = getOptions();
-    driver.setWindow(frame.contentWindow);
+    driver = new SnapDriver();
     frame.style.setProperty('width', `${options.width}px`);
     frame.style.setProperty('height', `${options.height}px`);
 
     while (true) {
+        frame.setAttribute('src', url);
+        driver.setWindow(frame.contentWindow);
+        await driver.waitUntil(() => isIDELoaded(driver));
+        driver.disableExitPrompt();
         setOptions(options);
         await runTest(driver, options);
         options.seed = Date.now();
     }
-}
+};
 
 async function runTest(driver, options) {
     const {SnapActions, SnapUndo, UndoManager, copy} = driver.globals();
@@ -51,6 +50,17 @@ async function runTest(driver, options) {
         }
         await driver.sleep(250);
     }
+}
+
+function isIDELoaded(driver) {
+    if (driver.world()) {
+        const hasUnloadedPrevious = driver.globals().SnapUndo.allEvents
+            .filter(event => event.type !== 'openProject').length === 0;
+        const sprite = driver.ide().currentSprite;
+        const aProjectIsLoaded = sprite && !!sprite.id;
+        return hasUnloadedPrevious && aProjectIsLoaded;
+    }
+    return false;
 }
 
 function getOptions() {
