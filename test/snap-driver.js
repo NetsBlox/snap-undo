@@ -431,7 +431,7 @@ SnapDriver.prototype.waitUntilProjectsLoaded = async function() {
         const oldProjectList = dialog.projectList;
         await this.expect(
             () => {
-                const hasLoadedProjects = dialog.projectList === oldProjectList;  // this.getProjectList(projectDialog)[0] !== '(empty)';
+                const hasLoadedProjects = dialog.projectList !== oldProjectList;
                 return isShowingUpdateMsg() || hasLoadedProjects;
             },
             'Did not see "update project list" message'
