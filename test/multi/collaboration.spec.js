@@ -1,12 +1,12 @@
 /* globals driver, expect */
 describe('collaboration', function() {
-    this.timeout(10000);
+    this.timeout(5000);
 
     const projectName = `collab-${Date.now()}`;
-    before(function() {
-        return driver.user1.reset()
-            .then(() => driver.user1.addBlock('doIf'))
-            .then(() => driver.user1.saveProjectAs(projectName));
+    before(async function() {
+        await driver.user1.reset();
+        await driver.user1.addBlock('doIf');
+        await driver.user1.saveProjectAs(projectName);
     });
 
     describe('same user', function() {
@@ -52,9 +52,8 @@ describe('collaboration', function() {
             driver.user1.inviteCollaborator(user2);
             await driver.user2.expect(
                 () => {
-                    const dialog = driver.user2.dialog();
-                    const key = dialog && dialog.key;
-                    return key && key.includes('decideCollab');
+                    const isCollabKey = key => key.includes('Collaboration Invitation');
+                    return driver.user2.isShowingDialogKey(isCollabKey);
                 },
                 `Prospective collaborator never received invite`
             );
