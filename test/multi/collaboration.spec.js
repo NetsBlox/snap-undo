@@ -1,6 +1,6 @@
 /* globals driver, expect */
 describe('collaboration', function() {
-    this.timeout(5000);
+    this.timeout(7500);
 
     const projectName = `collab-${Date.now()}`;
     before(async function() {
@@ -44,7 +44,7 @@ describe('collaboration', function() {
     });
 
     describe('shared project', function() {
-        const user2 = 'test2';
+        const user2 = 'akos';
         let oldProjectId;
         let oldRoleId;
         before(async () => {
