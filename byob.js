@@ -291,8 +291,28 @@ CustomBlockDefinition.prototype.inputOptionsOfIdx = function (idx) {
 };
 
 CustomBlockDefinition.prototype.dropDownMenuOf = function (inputName) {
-    if (this.declarations[inputName] && this.declarations[inputName][2]) {
-        return this.parseChoices(this.declarations[inputName][2]);
+    var fname;
+    if (this.declarations.has(inputName) &&
+            this.declarations.get(inputName)[2]) {
+        if ((this.declarations.get(inputName)[2].indexOf('§_') === 0)) {
+            fname = this.declarations.get(inputName)[2].slice(2);
+            if (contains(
+                [
+                    'messagesMenu',
+                    'messagesReceivedMenu',    //for backward (5.0.0 - 5.0.3) support
+                    'objectsMenu',
+                    'costumesMenu',
+                    'soundsMenu',
+                    'getVarNamesDict',
+                    'pianoKeyboardMenu',
+                    'directionDialMenu'
+                ],
+                fname
+            )) {
+                return fname;
+            }
+        }
+        return this.parseChoices(this.declarations.get(inputName)[2]);
     }
     return null;
 };

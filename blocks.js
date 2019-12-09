@@ -136,11 +136,11 @@
     constructor for further details.
 */
 
-/*global Array, BoxMorph,
-Color, ColorPaletteMorph, FrameMorph, Function, HandleMorph, Math, MenuMorph,
-Morph, MorphicPreferences, Object, Point, ScrollFrameMorph, ShadowMorph,
-String, StringMorph, TextMorph, WorldMorph, contains, degrees, detect,
-document, getDocumentPositionOf, isNaN, isString, newCanvas, nop, parseFloat,
+/*global BoxMorph,
+Color, ColorPaletteMorph, FrameMorph, HandleMorph, MenuMorph,
+Morph, MorphicPreferences, Point, ScrollFrameMorph, ShadowMorph,
+StringMorph, TextMorph, WorldMorph, contains, degrees, detect,
+getDocumentPositionOf, isString, newCanvas, nop,
 radians, useBlurredShadows, SpeechBubbleMorph, modules, StageMorph,
 fontHeight, TableFrameMorph, SpriteMorph, Context, ListWatcherMorph,
 CellMorph, DialogBoxMorph, BlockInputFragmentMorph, PrototypeHatBlockMorph,
@@ -993,6 +993,14 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             );
             part.setContents(90);
             break;
+        case '%note':
+            part = new InputSlotMorph(
+                null, // test
+                true, // numeric
+                'pianoKeyboardMenu',
+                false // read-only
+            );
+            break;
         case '%inst':
             part = new InputSlotMorph(
                 null,
@@ -1005,6 +1013,55 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
                     '(5) Electric Piano 1' : 5,
                     '(6) Electric Piano 2' : 6,
                     '(7) Harpsichord' : 7
+                }
+            );
+            part.setContents(1);
+            break;
+        case '%audio':
+            part = new InputSlotMorph(
+                null, // text
+                false, // numeric?
+                'audioMenu',
+                true // read-only
+            );
+            break;
+        case '%aa': // audio attributes
+            part = new InputSlotMorph(
+                null, // text
+                false, // numeric?
+                {
+                    'name' : ['name'],
+                    'duration' : ['duration'],
+                    'length' : ['length'],
+                    'number of channels' : ['number of channels'],
+                    'sample rate' : ['sample rate'],
+                    'samples' : ['samples']
+                },
+                true // read-only
+            );
+            break;
+        case '%img': // image attributes
+            part = new InputSlotMorph(
+                null, // text
+                false, // numeric?
+                {
+                    'name' : ['name'],
+                    'width' : ['width'],
+                    'height' : ['height'],
+                    'pixels' : ['pixels']
+                },
+                true // read-only
+            );
+            break;
+        case '%rate':
+            part = new InputSlotMorph(
+                null,
+                true,
+                {
+                    '22.05 kHz' : 22050,
+                    '44.1 kHz' : 44100,
+                    '88.2 kHz' : 88200,
+                    '96 kHz' : 96000
                 }
             );
             part.setContents(1);
@@ -1361,7 +1418,22 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             part.setContents(['all']);
             part.isStatic = true;
             break;
-        case '%stopOthersChoices':
+        case '%setting':
+            part = new InputSlotMorph(
+                null,
+                false,
+                {
+                    'turbo mode' : ['turbo mode'],
+                    'flat line ends' : ['flat line ends'],
+                    'video capture' : ['video capture'],
+                    'mirror video' : ['mirror video']
+                },
+                true
+            );
+            part.setContents(['turbo mode']);
+            part.isStatic = true;
+            break;
+        case '%stopOthersChoices':  // FIXME: Remove this?
             part = new InputSlotMorph(
                 null,
                 false,
@@ -1583,6 +1655,26 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             part.shadowOffset = MorphicPreferences.isFlat ?
                     new Point() : this.embossing;
             part.drawNew();
+            break;
+        case '%self':
+            part = new InputSlotMorph(
+                null,
+                false,
+                'objectsMenuWithSelf',
+                true
+            );
+            break;
+        case '%vid':
+            part = new InputSlotMorph(
+                null,
+                false, {
+                    'snap': ['snap'],
+                    'motion': ['motion'],
+                    'direction': ['direction']
+                },
+                true // read-only
+            );
+            part.setContents(['motion']);
             break;
         default:
             nop();
@@ -8126,12 +8218,19 @@ InputSlotMorph.prototype.clonablesMenu = function () {
     return dict;
 };
 
-InputSlotMorph.prototype.objectsMenu = function () {
+InputSlotMorph.prototype.objectsMenuWithSelf = function () {
+    return this.objectsMenu(true);
+};
+
+InputSlotMorph.prototype.objectsMenu = function (includeMyself) {
     var rcvr = this.parentThatIsA(BlockMorph).receiver(),
         stage = rcvr.parentThatIsA(StageMorph),
         dict = {},
         allNames = [];
 
+    if (includeMyself) {
+        dict.myself = ['myself'];
+    }
     dict[stage.name] = stage.name;
     stage.children.forEach(function (morph) {
         if (morph instanceof SpriteMorph) {
@@ -8306,6 +8405,47 @@ InputSlotMorph.prototype.shadowedVariablesMenu = function () {
         rcvr.inheritedVariableNames(true).forEach(function (name) {
             dict[name] = name;
         });
+    }
+    return dict;
+};
+
+InputSlotMorph.prototype.pianoKeyboardMenu = function () {
+    var menu, block, instrument;
+    block = this.parentThatIsA(BlockMorph);
+    if (block) {
+        instrument = block.scriptTarget().instrument;
+    }
+    menu = new PianoMenuMorph(
+        this.setContents,
+        this,
+        this.fontSize,
+        instrument
+    );
+    menu.popup(this.world(), new Point(
+        this.right() - (menu.width() / 2),
+        this.bottom()
+    ));
+    menu.selectKey(+this.evaluate());
+};
+
+InputSlotMorph.prototype.directionDialMenu = function () {
+    return {'§_dir': null};
+};
+
+InputSlotMorph.prototype.audioMenu = function () {
+    var dict = {
+        'volume' : ['volume'],
+        'note' : ['note'],
+        'frequency' : ['frequency'],
+        'samples' : ['samples'],
+        'sample rate' : ['sample rate'],
+        'spectrum' : ['spectrum'],
+        'resolution' : ['resolution']
+    };
+    if (this.world().currentKey === 16) { // shift
+        dict['~'] = null;
+        dict.modifier = ['modifier'];
+        dict.output = ['output'];
     }
     return dict;
 };
