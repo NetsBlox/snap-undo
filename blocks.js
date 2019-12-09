@@ -993,14 +993,6 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             );
             part.setContents(90);
             break;
-        case '%note':
-            part = new InputSlotMorph(
-                null, // test
-                true, // numeric
-                'pianoKeyboardMenu',
-                false // read-only
-            );
-            break;
         case '%inst':
             part = new InputSlotMorph(
                 null,
@@ -8407,25 +8399,6 @@ InputSlotMorph.prototype.shadowedVariablesMenu = function () {
         });
     }
     return dict;
-};
-
-InputSlotMorph.prototype.pianoKeyboardMenu = function () {
-    var menu, block, instrument;
-    block = this.parentThatIsA(BlockMorph);
-    if (block) {
-        instrument = block.scriptTarget().instrument;
-    }
-    menu = new PianoMenuMorph(
-        this.setContents,
-        this,
-        this.fontSize,
-        instrument
-    );
-    menu.popup(this.world(), new Point(
-        this.right() - (menu.width() / 2),
-        this.bottom()
-    ));
-    menu.selectKey(+this.evaluate());
 };
 
 InputSlotMorph.prototype.directionDialMenu = function () {
