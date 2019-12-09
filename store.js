@@ -490,7 +490,8 @@ SnapSerializer.prototype.loadProjectModel = function (xmlNode, ide) {
     // show a warning if the origin apps differ
 
     var appInfo = xmlNode.attributes.app,
-        app = appInfo ? appInfo.split(' ')[0] : null;
+        app = appInfo ? appInfo.split(' ')[0] : null,
+        model;
 
     if (ide && app && app !== this.app.split(' ')[0]) {
         ide.inform(
@@ -500,7 +501,9 @@ SnapSerializer.prototype.loadProjectModel = function (xmlNode, ide) {
                 '\n\nand may be incompatible or fail to load here.'
         );
     }
-    return this.rawLoadProjectModel(xmlNode);
+    model = this.rawLoadProjectModel(xmlNode);
+    this.objects = {};
+    return model;
 };
 
 SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
@@ -693,8 +696,6 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
         );
     }
 
-    this.objects = {};
-
     /* Watchers */
 
     model.sprites.childrenNamed('watcher').forEach(function (model) {
@@ -765,7 +766,6 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode) {
             watcher.cellMorph.contentsMorph.handle.drawNew();
         }
     });
-    this.objects = {};
     return project;
 };
 
