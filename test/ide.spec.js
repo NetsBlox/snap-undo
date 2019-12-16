@@ -448,7 +448,7 @@ describe('ide', function() {
         });
     });
 
-    describe.only('embedded api', function() {
+    describe('embedded api', function() {
         after(() => delete driver.ide().droppedText);
 
         it('should be able to set variables', async function() {
