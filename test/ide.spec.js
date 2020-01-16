@@ -468,9 +468,7 @@ describe('ide', function() {
         describe('load', function() {
             const frame = document.getElementsByTagName('iframe')[0];
             after(done => {
-                driver.disableExitPrompt();
-                frame.setAttribute('src', window.origin);
-                driver.setWindow(frame.contentWindow);
+                reloadIframe(frame);
                 frame.onload = async () => {
                     await driver.login('test');
                     done();
