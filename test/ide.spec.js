@@ -505,7 +505,7 @@ describe('ide', function() {
                 };
             });
 
-            it('should accept messages immediately', function(done) {
+            it('should import variable immediately (no url anchors)', function(done) {
                 reloadIframe(frame);
                 frame.onload = async () => {
                     const {IDE_Morph} = driver.globals();
@@ -553,7 +553,24 @@ describe('ide', function() {
                         table instanceof List && firstItem instanceof List,
                         'CSV not imported as list of lists'
                     );
+                };
+            });
 
+            it('should set var immediately load IDE w/ url anchors', done => {
+                reloadIframe(frame, window.origin + '?action=example&ProjectName=Battleship');
+                frame.onload = async () => {
+                    const key = 'testVariable';
+                    const value = 'test variable value';
+                    frame.contentWindow.postMessage({
+                        type: 'set-variable',
+                        key: key,
+                        value: value,
+                    });
+
+                    await driver.expect(
+                        () => driver.globals().externalVariables[key] === value,
+                        'Did not set external variable',
+                    );
                     done();
                 };
             });
@@ -564,6 +581,8 @@ describe('ide', function() {
                 }
             }
 
+=======
+>>>>>>> master
             function reloadIframe(frame, url=window.origin) {
                 driver.disableExitPrompt();
                 driver.setWindow(frame.contentWindow);
