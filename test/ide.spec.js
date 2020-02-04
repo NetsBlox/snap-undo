@@ -581,8 +581,6 @@ describe('ide', function() {
                 }
             }
 
-=======
->>>>>>> master
             function reloadIframe(frame, url=window.origin) {
                 driver.disableExitPrompt();
                 driver.setWindow(frame.contentWindow);
