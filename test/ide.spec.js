@@ -505,6 +505,65 @@ describe('ide', function() {
                 };
             });
 
+            it('should accept messages immediately', function(done) {
+                reloadIframe(frame);
+                frame.onload = async () => {
+                    const {IDE_Morph} = driver.globals();
+                    const ide = frame.contentWindow.world.children.find(morph => {
+                        return morph instanceof IDE_Morph;
+                    });
+
+                    frame.contentWindow.postMessage({
+                        type: 'import',
+                        name: 'abc',
+                        content: '123',
+                        fileType: 'text'
+                    });
+
+                    await driver.expect(
+                        () => ide.stage.globalVariables().allNames().includes('abc'),
+                        'Imported variable not found.'
+                    );
+                    done();
+                };
+            });
+
+            it('should import CSV data', function(done) {
+                reloadIframe(frame);
+                frame.onload = async () => {
+                    frame.contentWindow.postMessage({
+                        type: 'import',
+                        name: 'csvData',
+                        content: 'a,b,c\n1,2,3',
+                        fileType: 'csv'
+                    });
+
+                    const {IDE_Morph,List} = driver.globals();
+                    const ide = frame.contentWindow.world.children.find(morph => {
+                        return morph instanceof IDE_Morph;
+                    });
+                    await driver.expect(
+                        () => ide.stage.globalVariables().allNames().includes('csvData'),
+                        'Imported variable not found.'
+                    );
+                    const table = ide.stage.globalVariables().getVar('csvData');
+                    assert(typeof table !== 'string', 'CSV imported as string');
+                    const firstItem = table.asArray()[0];
+                    assert(
+                        table instanceof List && firstItem instanceof List,
+                        'CSV not imported as list of lists'
+                    );
+
+                    done();
+                };
+            });
+
+            function assert(cond, err) {
+                if (!cond) {
+                    throw new Error(err || 'Assert failed');
+                }
+            }
+
             function reloadIframe(frame, url=window.origin) {
                 driver.disableExitPrompt();
                 driver.setWindow(frame.contentWindow);
