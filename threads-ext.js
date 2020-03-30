@@ -111,7 +111,7 @@ NetsProcess.prototype.doSocketMessage = function (msgInfo) {
 };
 
 //request block
-NetsProcess.prototype.MESSAGE_REPLY_TIMEOUT = 3000;
+NetsProcess.prototype.MESSAGE_REPLY_TIMEOUT = 1500;
 NetsProcess.prototype.doSocketRequest = function (msgInfo) {
     var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph),
         targetRole = arguments[arguments.length-1],
