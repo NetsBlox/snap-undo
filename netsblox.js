@@ -3,7 +3,7 @@
    StringMorph, Color, TabMorph, InputFieldMorph, MorphicPreferences, MenuMorph,
    TextMorph, NetsBloxSerializer, nop, SnapActions, DialogBoxMorph, hex_sha512,
    SnapUndo, ScrollFrameMorph, SnapUndo, CollaboratorDialogMorph,
-   SnapSerializer, newCanvas, detect, WatcherMorph, SERVICES_URL */
+   SnapSerializer, newCanvas, detect, WatcherMorph, Services */
 // Netsblox IDE (subclass of IDE_Morph)
 
 NetsBloxMorph.prototype = new IDE_Morph();
@@ -432,36 +432,8 @@ NetsBloxMorph.prototype.projectMenu = function () {
 
 NetsBloxMorph.prototype.serviceURL = function() {
     var path = Array.prototype.slice.call(arguments, 0);
-    return SERVICES_URL + '/' + path.join('/');
-};
-
-NetsBloxMorph.prototype.requestAndroidApp = function(name) {
-    var myself = this,
-        projectXml,
-        req,
-        params,
-        baseURL = ensureFullUrl('/');
-
-    // FIXME: this baseURL stuff could cause problems
-    if (name !== this.projectName) {
-        this.setProjectName(name);
-    }
-
-    projectXml = encodeURIComponent(
-        this.serializer.serialize(this.stage)
-    );
-    // POST request with projectName, xml, username
-    req = new XMLHttpRequest();
-    params = 'projectName=' + name + '&username=' +
-        SnapCloud.username + '&xml=' + projectXml +
-        '&baseURL=' + encodeURIComponent(baseURL);
-
-    req.open('post', baseURL + 'api/mobile/compile', true);
-    req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    req.onload = function() {
-        myself.showMessage(req.responseText);
-    };
-    req.send(params);
+    const [url] = Services.defaultHost;
+    return url + '/' + path.join('/');
 };
 
 NetsBloxMorph.prototype.exportRole = NetsBloxMorph.prototype.exportProject;
