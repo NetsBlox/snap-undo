@@ -1,6 +1,6 @@
 /* global nop, DialogBoxMorph, ScriptsMorph, BlockMorph, InputSlotMorph, StringMorph, Color
-   ReporterBlockMorph, CommandBlockMorph, MultiArgMorph, localize, isNil, SnapCloud
-   ReporterSlotMorph, RingMorph, SyntaxElementMorph, contains, world, utils, Services*/
+   ReporterBlockMorph, CommandBlockMorph, MultiArgMorph, localize, SnapCloud, contains,
+   world, utils, Services*/
 // Extensions to the Snap blocks
 
 

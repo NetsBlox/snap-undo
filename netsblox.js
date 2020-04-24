@@ -17,6 +17,7 @@ function NetsBloxMorph(isAutoFill) {
 NetsBloxMorph.prototype.init = function (isAutoFill) {
     // Create the websocket manager
     this.sockets = new WebSocketManager(this);
+    Services.onInvalidHosts = this.onInvalidHosts.bind(this);
     this.room = null;
 
     // initialize inherited properties:
@@ -28,6 +29,24 @@ NetsBloxMorph.prototype.init = function (isAutoFill) {
     window.addEventListener('ideLoaded', function() {
         if (!(myself.isSupportedBrowser())) myself.showBrowserNotification();
     });
+};
+
+NetsBloxMorph.prototype.onInvalidHosts = function (servicesHosts) {
+    const msg = 'The following have been registered to provide ' +
+        'additional\nNetsBlox services but are unavailable:\n\n' +
+        servicesHosts.map(hostInfo => {
+            const name = hostInfo.categories[0];
+            if (name) {
+                return name + ' (' + hostInfo.url + ')';
+            }
+            return hostInfo.url;
+        }).join('\n');
+
+    this.inform(
+        'Invalid Services Hosts',
+        msg,
+        this.world()
+    );
 };
 
 NetsBloxMorph.prototype.buildPanes = function () {
@@ -432,7 +451,7 @@ NetsBloxMorph.prototype.projectMenu = function () {
 
 NetsBloxMorph.prototype.serviceURL = function() {
     var path = Array.prototype.slice.call(arguments, 0);
-    const [url] = Services.defaultHost;
+    const {url} = Services.defaultHost;
     return url + '/' + path.join('/');
 };
 
@@ -1397,6 +1416,7 @@ NetsBloxMorph.prototype.logout = function () {
     delete localStorage['-snap-user'];
     SnapCloud.logout(
         function () {
+            Services.reset();
             SnapCloud.clear();
             myself.showMessage('disconnected.', 2);
             myself.newProject();
