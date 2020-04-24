@@ -16,7 +16,11 @@ ServicesRegistry.prototype.fetchHosts = function () {
     const url = SERVER_URL + '/api/v2/services-hosts/all/';
     return fetch(url)
         .then(response => response.json())
-        .then(hosts => this.setServicesHosts(hosts));
+        .then(hosts => this.setServicesHosts(hosts))
+        .catch(err => {
+            console.error('Unable to fetch hosts: ' + err);
+            this.reset();
+        });
 };
 
 ServicesRegistry.prototype.setServicesHosts = function (hostAndUrls) {
