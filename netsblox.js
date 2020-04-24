@@ -32,15 +32,17 @@ NetsBloxMorph.prototype.init = function (isAutoFill) {
 };
 
 NetsBloxMorph.prototype.onInvalidHosts = function (servicesHosts) {
+    const invalidList = servicesHosts.map(hostInfo => {
+        const name = hostInfo.categories[0];
+        if (name) {
+            return name + ' (' + hostInfo.url + ')';
+        }
+        return hostInfo.url;
+    }).join('\n');
+
     const msg = 'The following have been registered to provide ' +
         'additional\nNetsBlox services but are unavailable:\n\n' +
-        servicesHosts.map(hostInfo => {
-            const name = hostInfo.categories[0];
-            if (name) {
-                return name + ' (' + hostInfo.url + ')';
-            }
-            return hostInfo.url;
-        }).join('\n');
+        invalidList;
 
     this.inform(
         'Invalid Services Hosts',
@@ -871,6 +873,7 @@ NetsBloxMorph.prototype.initializeCloud = function () {
                 pwh,
                 user.choice,
                 function () {
+                    Services.fetchHosts();
                     if (user.choice) {
                         str = SnapCloud.encodeDict(
                             {

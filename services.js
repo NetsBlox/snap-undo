@@ -1,4 +1,4 @@
-/* globals utils, DEFAULT_SERVICES_HOST, SERVICES_HOSTS */
+/* globals utils, DEFAULT_SERVICES_HOST, SERVICES_HOSTS, SERVER_URL */
 function ServicesRegistry(servicesHosts) {
     this.setServicesHosts(servicesHosts);
 }
@@ -12,6 +12,13 @@ ServicesRegistry.prototype.onInvalidHosts = function (invalidHosts) {
     console.error('Invalid services hosts detected:', invalidHosts);
 };
 
+ServicesRegistry.prototype.fetchHosts = function () {
+    const url = SERVER_URL + '/api/v2/services-hosts/all/';
+    return fetch(url)
+        .then(response => response.json())
+        .then(hosts => this.setServicesHosts(hosts));
+};
+
 ServicesRegistry.prototype.setServicesHosts = function (hostAndUrls) {
     const defaultIndex = hostAndUrls.findIndex(hostInfo => {
         const {categories} = hostInfo;
@@ -20,7 +27,7 @@ ServicesRegistry.prototype.setServicesHosts = function (hostAndUrls) {
 
     if (defaultIndex > -1) {
         this.defaultHost = hostAndUrls.splice(defaultIndex, 1).pop();
-    } else {
+    } else if (!this.defaultHost) {
         console.error('No default services host found for', hostAndUrls);
         this.defaultHost = hostAndUrls.splice(0, 1).pop();
     }
