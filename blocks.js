@@ -7970,13 +7970,15 @@ InputSlotMorph.prototype.setDropDownValue = function (value) {
 };
 
 InputSlotMorph.prototype.dropDownMenu = async function (enableKeyboard) {
-    var menu = await this.menuFromDict(this.choices);
+    var position = this.world().hand.position(),
+        menu = await this.menuFromDict(this.choices);
+
     if (menu.items.length > 0) {
         if (enableKeyboard) {
             menu.popup(this.world(), this.bottomLeft());
             menu.getFocus();
         } else {
-            menu.popUpAtHand(this.world());
+            menu.popup(this.world(), position);
         }
     }
 };
