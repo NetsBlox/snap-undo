@@ -236,10 +236,11 @@ NetsProcess.prototype.createRPCUrl = function (url) {
     var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph),
         uuid = ide.sockets.uuid,
         projectId = encodeURIComponent(SnapCloud.projectId),
-        roleId = encodeURIComponent(SnapCloud.roleId);
+        roleId = encodeURIComponent(SnapCloud.roleId),
+        username = SnapCloud.username;
 
     return url + '?uuid=' + uuid + '&projectId=' +
-        projectId + '&roleId=' + roleId;
+        projectId + '&roleId=' + roleId + '&username=' + username;
 };
 
 NetsProcess.prototype.callRPC = function (baseUrl, params, noCache) {
