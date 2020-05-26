@@ -6685,7 +6685,7 @@ ProjectDialogMorph.prototype.init = function (ide, task) {
         sources.push(new SaveOpenDialogMorph.Source(  // TODO: If task is open
             'Examples',  // name
             'poster',  // icon
-        );
+        ));
     }
     ProjectDialogMorph.uber.init.call(
         this,
