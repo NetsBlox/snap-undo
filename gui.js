@@ -80,7 +80,7 @@ modules.gui = '2017-April-23';
 
 var IDE_Morph;
 var ProjectDialogMorph;
-var LibraryImportDialogMorph;
+var LibraryDialogMorph;
 var SpriteIconMorph;
 var CostumeIconMorph;
 var TurtleIconMorph;
@@ -3417,6 +3417,7 @@ IDE_Morph.prototype.projectMenu = function () {
                 myself.resourceURL('libraries', 'LIBRARIES'),
                 function (txt) {
                     var libraries = myself.parseResourceFile(txt);
+                    // TODO: Update this
                     new LibraryImportDialogMorph(myself, libraries).popUp();
                 }
             );
@@ -5261,14 +5262,14 @@ IDE_Morph.prototype.createNewProject = function () {
 };
 
 IDE_Morph.prototype.openProjectsBrowser = function () {
-    new ProjectDialogMorph(this, 'open').popUp();
+    new ProjectDialogMorph(this, 'open').popUp(this.world());
 };
 
 IDE_Morph.prototype.saveProjectsBrowser = function () {
     if (this.source === 'examples') {
         this.source = 'local'; // cannot save to examples
     }
-    new ProjectDialogMorph(this, 'save').popUp();
+    new ProjectDialogMorph(this, 'save').popUp(this.world());
 };
 
 // IDE_Morph localization
@@ -6055,28 +6056,43 @@ IDE_Morph.prototype.prompt = function (message, callback, choices, key) {
     );
 };
 
-// ProjectDialogMorph ////////////////////////////////////////////////////
 
-// ProjectDialogMorph inherits from DialogBoxMorph:
+// SaveOpenDialogMorph ////////////////////////////////////////////////////
 
-ProjectDialogMorph.prototype = new DialogBoxMorph();
-ProjectDialogMorph.prototype.constructor = ProjectDialogMorph;
-ProjectDialogMorph.uber = DialogBoxMorph.prototype;
+// SaveOpenDialogMorph inherits from DialogBoxMorph:
 
-// ProjectDialogMorph instance creation:
+SaveOpenDialogMorph.prototype = new DialogBoxMorph();
+SaveOpenDialogMorph.prototype.constructor = SaveOpenDialogMorph;
+SaveOpenDialogMorph.uber = DialogBoxMorph.prototype;
 
-function ProjectDialogMorph(ide, label) {
-    this.init(ide, label);
+function SaveOpenDialogMorph() {
+    // TODO: Need to know
+    //  - [ ] task
+    //  - [ ] type/label
+    //  - [ ] current name (if saving)
+    //  - [ ] current description (if saving)
+    //  - [ ] sources (maybe implemented as function in subclass)
+    //  - [ ] how to create preview
+    //this.init(task, label, source);
 }
 
-ProjectDialogMorph.prototype.init = function (ide, task) {
+SaveOpenDialogMorph.Source = function(name, icon, open, save, id) {
+    this.name = name;
+    this.icon = icon;
+    this.save = save;
+    this.open = open;
+    this.id = id || name.toLowerCase();
+};
+
+SaveOpenDialogMorph.prototype.init = function (task, itemName, sources, source, currentData) {
     var myself = this;
 
     // additional properties:
-    this.ide = ide;
     this.task = task || 'open'; // String describing what do do (open, save)
-    this.source = ide.source || 'local'; // or 'cloud' or 'examples'
-    this.projectList = []; // [{name: , thumb: , notes:}]
+    this.sources = sources;
+    this.source = source || sources[0].id; // or 'cloud' or 'examples'
+    this.itemsList = []; // [{name: , thumb: , notes:}]  // FIXME
+    this.itemName = itemName;
 
     this.handle = null;
     this.srcBar = null;
@@ -6092,7 +6108,7 @@ ProjectDialogMorph.prototype.init = function (ide, task) {
     this.unshareButton = null;
 
     // initialize inherited properties:
-    ProjectDialogMorph.uber.init.call(
+    SaveOpenDialogMorph.uber.init.call(
         this,
         this, // target
         null, // function
@@ -6100,18 +6116,18 @@ ProjectDialogMorph.prototype.init = function (ide, task) {
     );
 
     // override inherited properites:
-    this.labelString = this.task === 'save' ? 'Save Project' : 'Open Project';
+    this.labelString = this.task === 'save' ? 'Save ' + itemName : 'Open ' + itemName;
     this.createLabel();
-    this.key = 'project' + task;
+    this.key = task + itemName;
 
     // build contents
-    this.buildContents();
+    this.buildContents(currentData);
     this.onNextStep = function () { // yield to show "updating" message
         myself.setSource(myself.source);
     };
 };
 
-ProjectDialogMorph.prototype.buildContents = function () {
+SaveOpenDialogMorph.prototype.buildContents = function (currentData) {
     var thumbnail, notification, baseSize = new Point(455, 335);
 
     this.addBody(new Morph());
@@ -6119,38 +6135,37 @@ ProjectDialogMorph.prototype.buildContents = function () {
 
     this.srcBar = new AlignmentMorph('column', this.padding / 2);
 
-    if (this.ide.cloudMsg) {
-        notification = new TextMorph(
-            this.ide.cloudMsg,
-            10,
-            null, // style
-            false, // bold
-            null, // italic
-            null, // alignment
-            null, // width
-            null, // font name
-            new Point(1, 1), // shadow offset
-            new Color(255, 255, 255) // shadowColor
-        );
-        notification.refresh = nop;
-        this.srcBar.add(notification);
-    }
+    //if (this.ide.cloudMsg) {  // Is this needed?
+        //notification = new TextMorph(
+            //this.ide.cloudMsg,
+            //10,
+            //null, // style
+            //false, // bold
+            //null, // italic
+            //null, // alignment
+            //null, // width
+            //null, // font name
+            //new Point(1, 1), // shadow offset
+            //new Color(255, 255, 255) // shadowColor
+        //);
+        //notification.refresh = nop;
+        //this.srcBar.add(notification);
+    //}
 
-    this.addSourceButton('cloud', localize('Cloud'), 'cloud');
-    if (this.task === 'open') {
-        this.addSourceButton('cloud-shared', localize('Shared with me'), 'cloud');
-        baseSize.y += 50;
-    }
-    this.addSourceButton('local', localize('Browser'), 'storage');
-    if (this.task === 'open') {
-        this.buildFilterField();
-        this.addSourceButton('examples', localize('Examples'), 'poster');
+    this.sources.forEach(source => {
+        this.addSourceButton(source.id, localize(source.name), source.icon);
+    });
+    const minHeight = 455;
+    baseSize.y = Math.max(this.sources.length * 50 + 305, 455);
+    if (this.task === 'open') {  // FIXME: move this to project version only
+        this.buildFilterField();  // Why is it doing this here?
     }
     this.srcBar.fixLayout();
     this.body.add(this.srcBar);
 
-    if (this.task === 'save') {
-        this.nameField = new InputFieldMorph(this.ide.room.name);
+    if (this.task === 'save') {  // TODO: Update
+        const {name} = currentData;
+        this.nameField = new InputFieldMorph(name);
         this.body.add(this.nameField);
     }
 
@@ -6166,47 +6181,7 @@ ProjectDialogMorph.prototype.buildContents = function () {
 
     this.body.add(this.listField);
 
-    this.preview = new Morph();
-    this.preview.fixLayout = nop;
-    this.preview.edge = InputFieldMorph.prototype.edge;
-    this.preview.fontSize = InputFieldMorph.prototype.fontSize;
-    this.preview.typeInPadding = InputFieldMorph.prototype.typeInPadding;
-    this.preview.contrast = InputFieldMorph.prototype.contrast;
-    this.preview.drawNew = function () {
-        InputFieldMorph.prototype.drawNew.call(this);
-        if (this.texture) {
-            this.drawTexture(this.texture);
-        }
-    };
-    this.preview.drawCachedTexture = function () {
-        var context = this.image.getContext('2d');
-        var scale = Math.min(
-                (this.width() / this.cachedTexture.width),
-                (this.height() / this.cachedTexture.height)
-            ),
-            width = scale * this.cachedTexture.width,
-            height = scale * this.cachedTexture.height;
-
-        context.drawImage(this.cachedTexture, this.edge, this.edge,
-            width, height);
-
-        this.changed();
-    };
-    this.preview.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
-    this.preview.setExtent(
-        this.ide.serializer.thumbnailSize.divideBy(4).add(this.preview.edge * 2)
-    );
-
-    this.body.add(this.preview);
-    this.preview.drawNew();
-    if (this.task === 'save') {
-        thumbnail = this.ide.stage.thumbnail(
-            SnapSerializer.prototype.thumbnailSize
-        );
-        this.preview.texture = null;
-        this.preview.cachedTexture = thumbnail;
-        this.preview.drawCachedTexture();
-    }
+    this.initPreview();
 
     this.notesField = new ScrollFrameMorph();
     this.notesField.fixLayout = nop;
@@ -6224,7 +6199,8 @@ ProjectDialogMorph.prototype.buildContents = function () {
     if (this.task === 'open') {
         this.notesText = new TextMorph('');
     } else { // 'save'
-        this.notesText = new TextMorph(this.ide.projectNotes);
+        const {notes} = currentData;
+        this.notesText = new TextMorph(notes);
         this.notesText.isEditable = true;
         this.notesText.enableSelecting();
     }
@@ -6237,17 +6213,17 @@ ProjectDialogMorph.prototype.buildContents = function () {
     this.body.add(this.notesField);
 
     if (this.task === 'open') {
-        this.addButton('openProject', 'Open');
-        this.action = 'openProject';
+        this.addButton('openItem', 'Open');  // TODO: "Import"
+        this.action = 'openItem';
     } else { // 'save'
-        this.addButton('saveProject', 'Save');
-        this.action = 'saveProject';
+        this.addButton('saveItem', 'Save');
+        this.action = 'saveItem';
     }
-    this.shareButton = this.addButton('shareProject', 'Share');
-    this.unshareButton = this.addButton('unshareProject', 'Unshare');
+    this.shareButton = this.addButton('shareItem', 'Share');
+    this.unshareButton = this.addButton('unshareItem', 'Unshare');
     this.shareButton.hide();
     this.unshareButton.hide();
-    this.deleteButton = this.addButton('deleteProject', 'Delete');
+    this.deleteButton = this.addButton('deleteItem', 'Delete');
     this.addButton('cancel', 'Cancel');
 
     if (notification) {
@@ -6258,23 +6234,17 @@ ProjectDialogMorph.prototype.buildContents = function () {
     this.fixLayout();
 };
 
-ProjectDialogMorph.prototype.popUp = function (wrrld) {
-    var world = wrrld || this.ide.world();
-    if (world) {
-        ProjectDialogMorph.uber.popUp.call(this, world);
-        this.handle = new HandleMorph(
-            this,
-            350,
-            300,
-            this.corner,
-            this.corner
-        );
-    }
+SaveOpenDialogMorph.prototype.initPreview =
+SaveOpenDialogMorph.prototype.openItem =
+SaveOpenDialogMorph.prototype.deleteItem =
+SaveOpenDialogMorph.prototype.shareItem =
+SaveOpenDialogMorph.prototype.unshareItem = function() {
+    throw new Error('Action not supported!');
 };
 
-// ProjectDialogMorph source buttons
+// SaveOpenDialogMorph source buttons
 
-ProjectDialogMorph.prototype.addSourceButton = function (
+SaveOpenDialogMorph.prototype.addSourceButton = function (
     source,
     label,
     symbol
@@ -6333,7 +6303,7 @@ ProjectDialogMorph.prototype.addSourceButton = function (
 
     button = new ToggleButtonMorph(
         null, //colors,
-        myself, // the ProjectDialog is the target
+        myself, // the SaveOpenDialogMorph is the target
         function () { // action
             myself.setSource(source);
         },
@@ -6359,9 +6329,9 @@ ProjectDialogMorph.prototype.addSourceButton = function (
     this.srcBar.add(button);
 };
 
-// ProjectDialogMorph list field control
+// SaveOpenDialogMorph list field control
 
-ProjectDialogMorph.prototype.fixListFieldItemColors = function () {
+SaveOpenDialogMorph.prototype.fixListFieldItemColors = function () {
     // remember to always fixLayout() afterwards for the changes
     // to take effect
     var myself = this;
@@ -6373,9 +6343,9 @@ ProjectDialogMorph.prototype.fixListFieldItemColors = function () {
     });
 };
 
-// ProjectDialogMorph filter field
+// SaveOpenDialogMorph filter field
 
-ProjectDialogMorph.prototype.buildFilterField = function () {
+SaveOpenDialogMorph.prototype.buildFilterField = function () {
     var myself = this;
 
     this.filterField = new InputFieldMorph('');
@@ -6392,10 +6362,11 @@ ProjectDialogMorph.prototype.buildFilterField = function () {
         var text = this.getValue();
 
         myself.listField.elements = 
-            myself.projectList.filter(function (aProject) {
+            myself.itemsList.filter(function (aProject) {
                 var name,
                     notes;
 
+                // FIXME: Make this uniform?
                 if (aProject.ProjectName) { // cloud
                     name = aProject.ProjectName;
                     notes = aProject.Notes;
@@ -6421,25 +6392,28 @@ ProjectDialogMorph.prototype.buildFilterField = function () {
     };
 };
 
-// ProjectDialogMorph ops
+// SaveOpenDialogMorph ops
 
-ProjectDialogMorph.prototype.setSource = function (source) {
+SaveOpenDialogMorph.prototype.setSource = function (source) {
     var myself = this,
+        itemName = this.itemName.toLowerCase(),
+        updateMsg = `Updating\n${itemName} list...`,
         msg;
 
     this.source = source; //this.task === 'save' ? 'local' : source;
     this.srcBar.children.forEach(function (button) {
         button.refresh();
     });
-    switch (this.source) {
+    // TODO: Create a "Source" object
+    switch (this.source) {  // FIXME: These sources may be different for libraries...
     case 'cloud':
-        msg = myself.ide.showMessage('Updating\nproject list...');
-        this.projectList = [];
+        msg = myself.ide.showMessage(updateMsg);
+        this.itemsList = [];
         SnapCloud.getProjectList(
-            function (projectList) {
+            function (itemsList) {
                 // Don't show cloud projects if user has since switch panes.
                 if (myself.source === 'cloud') {
-                    myself.installCloudProjectList(projectList);
+                    myself.installCloudProjectList(itemsList);
                 }
                 msg.destroy();
             },
@@ -6450,13 +6424,13 @@ ProjectDialogMorph.prototype.setSource = function (source) {
         );
         return;
     case 'cloud-shared':
-        msg = myself.ide.showMessage('Updating\nproject list...');
-        this.projectList = [];
+        msg = myself.ide.showMessage(updateMsg);
+        this.itemsList = [];
         SnapCloud.getSharedProjectList(
-            function (projectList) {
+            function (itemsList) {
                 // Don't show cloud projects if user has since switch panes.
                 if (myself.source === 'cloud-shared') {
-                    myself.installSharedCloudProjectList(projectList);
+                    myself.installSharedCloudProjectList(itemsList);
                 }
                 msg.destroy();
             },
@@ -6467,17 +6441,17 @@ ProjectDialogMorph.prototype.setSource = function (source) {
         );
         return;
     case 'examples':
-        this.projectList = this.getExamplesProjectList();
+        this.itemsList = this.getExamplesProjectList();
         break;
     case 'local':
-        this.projectList = this.getLocalProjectList();
+        this.itemsList = this.getLocalProjectList();
         break;
     }
 
     this.listField.destroy();
     this.listField = new ListMorph(
-        this.projectList,
-        this.projectList.length > 0 ?
+        this.itemsList,
+        this.itemsList.length > 0 ?
                 function (element) {
                     return element.name || element;
                 } : null,
@@ -6504,7 +6478,7 @@ ProjectDialogMorph.prototype.setSource = function (source) {
             }
             if (myself.task === 'open') {
 
-                src = localStorage['-snap-project-' + item.name];
+                src = localStorage['-snap-' + itemName + '-' + item.name];
 
                 if (src) {
                     xml = myself.ide.serializer.parse(src);
@@ -6562,189 +6536,7 @@ ProjectDialogMorph.prototype.setSource = function (source) {
     }
 };
 
-ProjectDialogMorph.prototype.getLocalProjectList = function () {
-    var stored, name, dta,
-        projects = [];
-    for (stored in localStorage) {
-        if (Object.prototype.hasOwnProperty.call(localStorage, stored)
-                && stored.substr(0, 14) === '-snap-project-') {
-            name = stored.substr(14);
-            dta = {
-                name: name,
-                thumb: null,
-                notes: null
-            };
-            projects.push(dta);
-        }
-    }
-    projects.sort(function (x, y) {
-        return x.name.toLowerCase() < y.name.toLowerCase() ? -1 : 1;
-    });
-    return projects;
-};
-
-ProjectDialogMorph.prototype.getExamplesProjectList = function () {
-    return this.ide.getMediaList('Examples');
-};
-
-ProjectDialogMorph.prototype.installSharedCloudProjectList = function (pl) {
-    var myself = this;
-    this.projectList = pl || [];
-    this.projectList.sort(function (x, y) {
-        return x.ProjectName.toLowerCase() < y.ProjectName.toLowerCase() ?
-            -1 : 1;
-    });
-
-    this.listField.destroy();
-    this.listField = new ListMorph(
-        this.projectList,
-        this.projectList.length > 0 ?
-            function (element) {
-                return element.ProjectName || element;
-            } : null,
-        [ // format: display shared project names bold
-            [
-                'bold',
-                function (proj) {return proj.Public === 'true'; }
-            ]
-        ],
-        function () {myself.ok(); }
-    );
-    this.fixListFieldItemColors();
-    this.listField.fixLayout = nop;
-    this.listField.edge = InputFieldMorph.prototype.edge;
-    this.listField.fontSize = InputFieldMorph.prototype.fontSize;
-    this.listField.typeInPadding = InputFieldMorph.prototype.typeInPadding;
-    this.listField.contrast = InputFieldMorph.prototype.contrast;
-    this.listField.drawNew = InputFieldMorph.prototype.drawNew;
-    this.listField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
-
-    this.listField.action = function (item) {
-        if (item === undefined) {return; }
-        if (myself.nameField) {
-            myself.nameField.setContents(item.ProjectName || '');
-        }
-        if (myself.task === 'open') {
-            myself.notesText.text = item.Notes || '';
-            myself.notesText.drawNew();
-            myself.notesField.contents.adjustBounds();
-            myself.preview.texture = item.Thumbnail || null;
-            myself.preview.cachedTexture = null;
-            myself.preview.drawNew();
-            (new SpeechBubbleMorph(new TextMorph(
-                localize('owner') + ': ' + item.Owner + '\n' +
-                localize('last changed') + '\n' + item.Updated,
-                null,
-                null,
-                null,
-                null,
-                'center'
-            ))).popUp(
-                myself.world(),
-                myself.preview.rightCenter().add(new Point(2, 0))
-            );
-        }
-        if (item.Public === 'true') {
-            myself.shareButton.hide();
-            myself.unshareButton.show();
-        } else {
-            myself.unshareButton.hide();
-            myself.shareButton.show();
-        }
-        myself.buttons.fixLayout();
-        myself.fixLayout();
-        myself.edit();
-    };
-    this.body.add(this.listField);
-    this.shareButton.show();
-    this.unshareButton.hide();
-    this.deleteButton.show();
-    this.buttons.fixLayout();
-    this.fixLayout();
-    if (this.task === 'open') {
-        this.clearDetails();
-    }
-};
-
-ProjectDialogMorph.prototype.installCloudProjectList = function (pl) {
-    var myself = this;
-    this.projectList = pl || [];
-    this.projectList.sort(function (x, y) {
-        return x.ProjectName.toLowerCase() < y.ProjectName.toLowerCase() ?
-                 -1 : 1;
-    });
-
-    this.listField.destroy();
-    this.listField = new ListMorph(
-        this.projectList,
-        this.projectList.length > 0 ?
-                function (element) {
-                    return element.ProjectName || element;
-                } : null,
-        [ // format: display shared project names bold
-            [
-                'bold',
-                function (proj) {return proj.Public === 'true'; }
-            ]
-        ],
-        function () {myself.ok(); }
-    );
-    this.fixListFieldItemColors();
-    this.listField.fixLayout = nop;
-    this.listField.edge = InputFieldMorph.prototype.edge;
-    this.listField.fontSize = InputFieldMorph.prototype.fontSize;
-    this.listField.typeInPadding = InputFieldMorph.prototype.typeInPadding;
-    this.listField.contrast = InputFieldMorph.prototype.contrast;
-    this.listField.drawNew = InputFieldMorph.prototype.drawNew;
-    this.listField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
-
-    this.listField.action = function (item) {
-        if (item === undefined) {return; }
-        if (myself.nameField) {
-            myself.nameField.setContents(item.ProjectName || '');
-        }
-        if (myself.task === 'open') {
-            myself.notesText.text = item.Notes || '';
-            myself.notesText.drawNew();
-            myself.notesField.contents.adjustBounds();
-            myself.preview.texture = item.Thumbnail || null;
-            myself.preview.cachedTexture = null;
-            myself.preview.drawNew();
-            (new SpeechBubbleMorph(new TextMorph(
-                localize('last changed') + '\n' + item.Updated,
-                null,
-                null,
-                null,
-                null,
-                'center'
-            ))).popUp(
-                myself.world(),
-                myself.preview.rightCenter().add(new Point(2, 0))
-            );
-        }
-        if (item.Public === 'true') {
-            myself.shareButton.hide();
-            myself.unshareButton.show();
-        } else {
-            myself.unshareButton.hide();
-            myself.shareButton.show();
-        }
-        myself.buttons.fixLayout();
-        myself.fixLayout();
-        myself.edit();
-    };
-    this.body.add(this.listField);
-    this.shareButton.show();
-    this.unshareButton.hide();
-    this.deleteButton.show();
-    this.buttons.fixLayout();
-    this.fixLayout();
-    if (this.task === 'open') {
-        this.clearDetails();
-    }
-};
-
-ProjectDialogMorph.prototype.clearDetails = function () {
+SaveOpenDialogMorph.prototype.clearDetails = function () {
     this.notesText.text = '';
     this.notesText.drawNew();
     this.notesField.contents.adjustBounds();
@@ -6753,299 +6545,7 @@ ProjectDialogMorph.prototype.clearDetails = function () {
     this.preview.drawNew();
 };
 
-ProjectDialogMorph.prototype.openProject = function () {
-    var proj = this.listField.selected,
-        src;
-    if (!proj) {return; }
-    this.ide.source = this.source;
-    if (this.source === 'cloud') {
-        this.openCloudProject(proj);
-    } else if (this.source === 'examples') {
-        // Note "file" is a property of the parseResourceFile function.
-        src = this.ide.getURL(this.ide.resourceURL('Examples', proj.fileName));
-        SnapActions.disableCollaboration();
-        SnapUndo.reset();
-        this.ide.openProjectString(src);
-        this.destroy();
-    } else { // 'local'
-        this.ide.openProject(proj.name);
-        this.destroy();
-    }
-};
-
-ProjectDialogMorph.prototype.openCloudProject = function (project) {
-    var myself = this;
-    myself.ide.nextSteps([
-        function () {
-            myself.ide.showMessage('Fetching project\nfrom the cloud...');
-        },
-        function () {
-            myself.rawOpenCloudProject(project);
-        }
-    ]);
-};
-
-ProjectDialogMorph.prototype.rawOpenCloudProject = function (proj) {
-    var myself = this;
-    SnapCloud.reconnect(
-        function () {
-            SnapCloud.callService(
-                'getRawProject',
-                function (response) {
-                    SnapCloud.disconnect();
-                    /*
-                    if (myself.world().currentKey === 16) {
-                        myself.ide.download(response);
-                        return;
-                    }
-                    */
-                    myself.ide.source = 'cloud';
-                    myself.ide.droppedText(response);
-                    if (proj.Public === 'true') {
-                        location.hash = '#present:Username=' +
-                            encodeURIComponent(SnapCloud.username) +
-                            '&ProjectName=' +
-                            encodeURIComponent(proj.ProjectName);
-                    }
-                },
-                myself.ide.cloudError(),
-                [proj.ProjectName]
-            );
-        },
-        myself.ide.cloudError()
-    );
-    this.destroy();
-};
-
-ProjectDialogMorph.prototype.saveProject = function () {
-    var name = this.nameField.contents().text.text,
-        notes = this.notesText.text,
-        myself = this;
-
-    this.ide.projectNotes = notes || this.ide.projectNotes;
-    if (/[\.@]+/.test(name)) {
-        this.ide.inform(
-            'Invalid Project Name',
-            'Could not save project because\n' +
-            'the provided name contains illegal characters.',
-            this.world()
-        );
-        return;
-    }
-
-    if (this.source === 'cloud') {
-        if (detect(
-                this.projectList,
-                function (item) {return item.ProjectName === name; }
-            )) {
-            this.ide.confirm(
-                localize(
-                    'Are you sure you want to replace'
-                ) + '\n"' + name + '"?',
-                'Replace Project',
-                function () {
-                    myself.saveCloudProject(name);
-                }
-            );
-        } else {
-            myself.saveCloudProject(name);
-        }
-    } else { // 'local'
-        if (detect(
-                this.projectList,
-                function (item) {return item.name === name; }
-            )) {
-            this.ide.confirm(
-                localize(
-                    'Are you sure you want to replace'
-                ) + '\n"' + name + '"?',
-                'Replace Project',
-                function () {
-                    myself.ide.room.name = name;
-                    myself.ide.source = 'local';
-                    myself.ide.saveProject(name);
-                    myself.destroy();
-                }
-            );
-        } else {
-            this.ide.room.name = name;
-            myself.ide.source = 'local';
-            this.ide.saveProject(name);
-            this.destroy();
-        }
-    }
-};
-
-ProjectDialogMorph.prototype.saveCloudProject = function (name) {
-    var myself = this;
-    this.ide.showMessage('Saving project\nto the cloud...');
-    SnapCloud.saveProject(
-        this.ide,
-        function (result) {
-            if (result.name) {
-                myself.ide.room.silentSetRoomName(result.name);
-            }
-            myself.ide.source = 'cloud';
-            myself.ide.showMessage('Saved to cloud!', 2);
-        },
-        this.ide.cloudError(),
-        true,
-        name
-    );
-    this.destroy();
-};
-
-ProjectDialogMorph.prototype.deleteProject = function () {
-    var myself = this,
-        proj,
-        idx,
-        name;
-
-    if (this.source === 'cloud') {
-        proj = this.listField.selected;
-        if (proj) {
-            this.ide.confirm(
-                localize(
-                    'Are you sure you want to delete'
-                ) + '\n"' + proj.ProjectName + '"?',
-                'Delete Project',
-                function () {
-                    SnapCloud.reconnect(
-                        function () {
-                            SnapCloud.callService(
-                                'deleteProject',
-                                function () {
-                                    SnapCloud.disconnect();
-                                    myself.ide.hasChangedMedia = true;
-                                    idx = myself.projectList.indexOf(proj);
-                                    myself.projectList.splice(idx, 1);
-                                    myself.installCloudProjectList(
-                                        myself.projectList
-                                    ); // refresh list
-                                },
-                                myself.ide.cloudError(),
-                                [proj.ProjectName]
-                            );
-                        },
-                        myself.ide.cloudError()
-                    );
-                }
-            );
-        }
-    } else { // 'local, examples'
-        if (this.listField.selected) {
-            name = this.listField.selected.name;
-            this.ide.confirm(
-                localize(
-                    'Are you sure you want to delete'
-                ) + '\n"' + name + '"?',
-                'Delete Project',
-                function () {
-                    delete localStorage['-snap-project-' + name];
-                    myself.setSource(myself.source); // refresh list
-                }
-            );
-        }
-    }
-};
-
-ProjectDialogMorph.prototype.shareProject = function () {
-    var myself = this,
-        ide = this.ide,
-        proj = this.listField.selected,
-        entry = this.listField.active;
-
-    if (proj) {
-        this.ide.confirm(
-            localize(
-                'Are you sure you want to publish'
-            ) + '\n"' + proj.ProjectName + '"?',
-            'Share Project',
-            function () {
-                myself.ide.showMessage('sharing\nproject...');
-                SnapCloud.reconnect(
-                    function () {
-                        SnapCloud.callService(
-                            'publishProject',
-                            function () {
-                                SnapCloud.disconnect();
-                                proj.Public = 'true';
-                                myself.unshareButton.show();
-                                myself.shareButton.hide();
-                                entry.label.isBold = true;
-                                entry.label.drawNew();
-                                entry.label.changed();
-                                myself.buttons.fixLayout();
-                                myself.drawNew();
-                                myself.ide.showMessage('shared.', 2);
-                            },
-                            myself.ide.cloudError(),
-                            [proj.ProjectName]
-                        );
-                        // Set the Shared URL if the project is currently open
-                        if (proj.ProjectName === ide.projectName) {
-                            var usr = SnapCloud.username,
-                                projectId = 'Username=' +
-                                    encodeURIComponent(usr.toLowerCase()) +
-                                    '&ProjectName=' +
-                                    encodeURIComponent(proj.ProjectName);
-                            location.hash = 'present:' + projectId;
-                        }
-                    },
-                    myself.ide.cloudError()
-                );
-            }
-        );
-    }
-};
-
-ProjectDialogMorph.prototype.unshareProject = function () {
-    var myself = this,
-        ide = this.ide,
-        proj = this.listField.selected,
-        entry = this.listField.active;
-
-
-    if (proj) {
-        this.ide.confirm(
-            localize(
-                'Are you sure you want to unpublish'
-            ) + '\n"' + proj.ProjectName + '"?',
-            'Unshare Project',
-            function () {
-                myself.ide.showMessage('unsharing\nproject...');
-                SnapCloud.reconnect(
-                    function () {
-                        SnapCloud.callService(
-                            'unpublishProject',
-                            function () {
-                                SnapCloud.disconnect();
-                                proj.Public = 'false';
-                                myself.shareButton.show();
-                                myself.unshareButton.hide();
-                                entry.label.isBold = false;
-                                entry.label.drawNew();
-                                entry.label.changed();
-                                myself.buttons.fixLayout();
-                                myself.drawNew();
-                                myself.ide.showMessage('unshared.', 2);
-                            },
-                            myself.ide.cloudError(),
-                            [proj.ProjectName]
-                        );
-                        // Remove the shared URL if the project is open.
-                        if (proj.ProjectName === ide.projectName) {
-                            location.hash = '';
-                        }
-                    },
-                    myself.ide.cloudError()
-                );
-            }
-        );
-    }
-};
-
-ProjectDialogMorph.prototype.edit = function () {
+SaveOpenDialogMorph.prototype.edit = function () {
     if (this.nameField) {
         this.nameField.edit();
     } else if (this.filterField) {
@@ -7053,9 +6553,9 @@ ProjectDialogMorph.prototype.edit = function () {
     }
 };
 
-// ProjectDialogMorph layout
+// SaveOpenDialogMorph layout
 
-ProjectDialogMorph.prototype.fixLayout = function () {
+SaveOpenDialogMorph.prototype.fixLayout = function () {
     var th = fontHeight(this.titleFontSize) + this.titlePadding * 2,
         thin = this.padding / 2,
         inputField = this.nameField || this.filterField,
@@ -7129,124 +6629,171 @@ ProjectDialogMorph.prototype.fixLayout = function () {
     this.changed();
 };
 
-// LibraryImportDialogMorph ///////////////////////////////////////////
-// I am preview dialog shown before importing a library.
-// I inherit from a DialogMorph but look similar to 
-// ProjectDialogMorph, and BlockImportDialogMorph
 
-LibraryImportDialogMorph.prototype = new DialogBoxMorph();
-LibraryImportDialogMorph.prototype.constructor = LibraryImportDialogMorph;
-LibraryImportDialogMorph.uber = DialogBoxMorph.prototype;
+SaveOpenDialogMorph.prototype.popUp = function (world) {
+    if (world) {
+        SaveOpenDialogMorph.uber.popUp.call(this, world);
+        this.handle = new HandleMorph(
+            this,
+            350,
+            300,
+            this.corner,
+            this.corner
+        );
+    }
+};
 
-// LibraryImportDialogMorph instance creation:
+// ProjectDialogMorph ////////////////////////////////////////////////////
 
-function LibraryImportDialogMorph(ide, librariesData) {
-    this.init(ide, librariesData);
+// ProjectDialogMorph inherits from DialogBoxMorph:
+
+ProjectDialogMorph.prototype = new SaveOpenDialogMorph();
+ProjectDialogMorph.prototype.constructor = ProjectDialogMorph;
+ProjectDialogMorph.uber = SaveOpenDialogMorph.prototype;
+
+// ProjectDialogMorph instance creation:
+
+function ProjectDialogMorph(ide, label) {
+    this.init(ide, label);
 }
 
-LibraryImportDialogMorph.prototype.init = function (ide, librariesData) {
-    // initialize inherited properties:
-    LibraryImportDialogMorph.uber.init.call(
-        this,
-        this, // target
-        null, // function
-        null  // environment
-    );
-
+ProjectDialogMorph.prototype.init = function (ide, task) {
     this.ide = ide;
-    this.key = 'importLibrary';
-    this.librariesData = librariesData; // [{name: , fileName: , description:}]
-
-    // I contain a cached version of the libaries I have displayed,
-    // because users may choose to explore a library many times before
-    // importing.
-    this.libraryCache = {}; // {fileName: [blocks-array] }
-
-    this.handle = null;
-    this.listField = null;
-    this.palette = null;
-    this.notesText = null;
-    this.notesField = null;
-
-    this.labelString = 'Import library';
-    this.createLabel();
-
-    this.buildContents();
-};
-
-LibraryImportDialogMorph.prototype.buildContents = function () {
-    this.addBody(new Morph());
-    this.body.color = this.color;
-
-    this.initializePalette();
-    this.initializeLibraryDescription();
-    this.installLibrariesList();
-
-    this.addButton('importLibrary', 'Import');
-    this.addButton('cancel', 'Cancel');
-
-    this.setExtent(new Point(460, 455));
-    this.fixLayout();
-};
-
-LibraryImportDialogMorph.prototype.initializePalette = function () {
-    // I will display a scrolling list of blocks.
-    if (this.palette) {this.palette.destroy(); }
-
-    this.palette = new ScrollFrameMorph(
-        null,
-        null,
-        SpriteMorph.prototype.sliderColor
+    const sources = [
+        new SaveOpenDialogMorph.Source(
+            'Cloud',  // name
+            'cloud',  // icon
+        ),
+    ];
+    if (task === 'open') {
+        sources.push(new SaveOpenDialogMorph.Source(  // TODO: If task is open
+            'Shared with me',
+            'cloud',
+            null,  // open
+            null,  // save
+            'cloud-shared',  // id
+        ));
+    }
+    sources.push(new SaveOpenDialogMorph.Source(  // TODO: If task is open
+        'Browser',  // name
+        'storage',  // icon
+        null,  // open
+        null,  // save
+        'local',  // id
+    ));
+    if (task === 'open') {
+        sources.push(new SaveOpenDialogMorph.Source(  // TODO: If task is open
+            'Examples',  // name
+            'poster',  // icon
+        );
+    }
+    ProjectDialogMorph.uber.init.call(
+        this,
+        task,
+        'Project',
+        sources,
+        {
+            name: ide.room.name,
+            notes: ide.projectNotes
+        },
+        ide.source || 'local',
     );
-    this.palette.color = SpriteMorph.prototype.paletteColor;
-    this.palette.padding = 4;
-    this.palette.isDraggable = false;
-    this.palette.acceptsDrops = false;
-    this.palette.contents.acceptsDrops = false;
-
-    this.body.add(this.palette);
 };
 
-LibraryImportDialogMorph.prototype.initializeLibraryDescription = function () {
-    if (this.notesField) {this.notesField.destroy(); }
+ProjectDialogMorph.prototype.initPreview = function () {
+    this.preview = new Morph();
+    this.preview.fixLayout = nop;
+    this.preview.edge = InputFieldMorph.prototype.edge;
+    this.preview.fontSize = InputFieldMorph.prototype.fontSize;
+    this.preview.typeInPadding = InputFieldMorph.prototype.typeInPadding;
+    this.preview.contrast = InputFieldMorph.prototype.contrast;
+    this.preview.drawNew = function () {
+        InputFieldMorph.prototype.drawNew.call(this);
+        if (this.texture) {
+            this.drawTexture(this.texture);
+        }
+    };
+    this.preview.drawCachedTexture = function () {
+        var context = this.image.getContext('2d');
+        var scale = Math.min(
+                (this.width() / this.cachedTexture.width),
+                (this.height() / this.cachedTexture.height)
+            ),
+            width = scale * this.cachedTexture.width,
+            height = scale * this.cachedTexture.height;
 
-    this.notesField = new ScrollFrameMorph();
-    this.notesField.fixLayout = nop;
+        context.drawImage(this.cachedTexture, this.edge, this.edge,
+            width, height);
 
-    this.notesField.edge = InputFieldMorph.prototype.edge;
-    this.notesField.fontSize = InputFieldMorph.prototype.fontSize;
-    this.notesField.typeInPadding = InputFieldMorph.prototype.typeInPadding;
-    this.notesField.contrast = InputFieldMorph.prototype.contrast;
-    this.notesField.drawNew = InputFieldMorph.prototype.drawNew;
-    this.notesField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
+        this.changed();
+    };
+    this.preview.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
+    this.preview.setExtent(  // FIXME: Move this to the projects version?
+        this.ide.serializer.thumbnailSize.divideBy(4).add(this.preview.edge * 2)
+    );
 
-    this.notesField.acceptsDrops = false;
-    this.notesField.contents.acceptsDrops = false;
-
-    this.notesText = new TextMorph('');
-
-    this.notesField.isTextLineWrapping = true;
-    this.notesField.padding = 3;
-    this.notesField.setContents(this.notesText);
-    this.notesField.setHeight(100);
-
-    this.body.add(this.notesField);
+    this.body.add(this.preview);
+    this.preview.drawNew();
+    if (this.task === 'save') {
+        thumbnail = this.ide.stage.thumbnail(
+            SnapSerializer.prototype.thumbnailSize
+        );
+        this.preview.texture = null;
+        this.preview.cachedTexture = thumbnail;
+        this.preview.drawCachedTexture();
+    }
 };
 
-LibraryImportDialogMorph.prototype.installLibrariesList = function () {
+ProjectDialogMorph.prototype.getLocalProjectList = function () {
+    var stored, name, dta,
+        itemName = this.itemName.toLowerCase(),
+        projects = [];
+    for (stored in localStorage) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, stored)
+                && stored.substr(0, 14) === '-snap-' + itemName + '-') {
+            name = stored.substr(14);
+            dta = {
+                name: name,
+                thumb: null,
+                notes: null
+            };
+            projects.push(dta);
+        }
+    }
+    projects.sort(function (x, y) {
+        return x.name.toLowerCase() < y.name.toLowerCase() ? -1 : 1;
+    });
+    return projects;
+};
+
+ProjectDialogMorph.prototype.getExamplesProjectList = function () {
+    return this.ide.getMediaList('Examples');
+};
+
+ProjectDialogMorph.prototype.installSharedCloudProjectList = function (pl) {
     var myself = this;
+    this.itemsList = pl || [];
+    this.itemsList.sort(function (x, y) {
+        return x.ProjectName.toLowerCase() < y.ProjectName.toLowerCase() ?
+            -1 : 1;
+    });
 
-    if (this.listField) {this.listField.destroy(); }
-
+    this.listField.destroy();
     this.listField = new ListMorph(
-        this.librariesData,
-        function (element) {return element.name; },
-        null,
-        function () {myself.importLibrary(); }
+        this.itemsList,
+        this.itemsList.length > 0 ?
+            function (element) {
+                return element.ProjectName || element;
+            } : null,
+        [ // format: display shared project names bold
+            [
+                'bold',
+                function (proj) {return proj.Public === 'true'; }
+            ]
+        ],
+        function () {myself.ok(); }
     );
-
     this.fixListFieldItemColors();
-
     this.listField.fixLayout = nop;
     this.listField.edge = InputFieldMorph.prototype.edge;
     this.listField.fontSize = InputFieldMorph.prototype.fontSize;
@@ -7256,189 +6803,419 @@ LibraryImportDialogMorph.prototype.installLibrariesList = function () {
     this.listField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
 
     this.listField.action = function (item) {
-        if (isNil(item)) {return; }
-
-        myself.notesText.text = item.description || '';
-        myself.notesText.drawNew();
-        myself.notesField.contents.adjustBounds();
-
-        if (myself.hasCached(item.fileName)) {
-            myself.displayBlocks(item.fileName);
+        if (item === undefined) {return; }
+        if (myself.nameField) {
+            myself.nameField.setContents(item.ProjectName || '');
+        }
+        if (myself.task === 'open') {
+            myself.notesText.text = item.Notes || '';
+            myself.notesText.drawNew();
+            myself.notesField.contents.adjustBounds();
+            myself.preview.texture = item.Thumbnail || null;
+            myself.preview.cachedTexture = null;
+            myself.preview.drawNew();
+            (new SpeechBubbleMorph(new TextMorph(
+                localize('owner') + ': ' + item.Owner + '\n' +
+                localize('last changed') + '\n' + item.Updated,
+                null,
+                null,
+                null,
+                null,
+                'center'
+            ))).popUp(
+                myself.world(),
+                myself.preview.rightCenter().add(new Point(2, 0))
+            );
+        }
+        if (item.Public === 'true') {
+            myself.shareButton.hide();
+            myself.unshareButton.show();
         } else {
-            myself.showMessage(
-                localize('Loading') + '\n' + localize(item.name)
-            );
-            myself.ide.getURL(
-                myself.ide.resourceURL('libraries', item.fileName),
-                function(libraryXML) {
-                    myself.cacheLibrary(
-                        item.fileName,
-                        myself.ide.serializer.loadBlocks(libraryXML)
-                    );
-                    myself.displayBlocks(item.fileName);
-                }
-            );
+            myself.unshareButton.hide();
+            myself.shareButton.show();
         }
+        myself.buttons.fixLayout();
+        myself.fixLayout();
+        myself.edit();
     };
-
-    this.listField.setWidth(200);
     this.body.add(this.listField);
-
+    this.shareButton.show();
+    this.unshareButton.hide();
+    this.deleteButton.show();
+    this.buttons.fixLayout();
     this.fixLayout();
-};
-
-LibraryImportDialogMorph.prototype.popUp = function () {
-    var world = this.ide.world();
-    if (world) {
-        LibraryImportDialogMorph.uber.popUp.call(this, world);
-        this.handle = new HandleMorph(
-            this,
-            300,
-            300,
-            this.corner,
-            this.corner
-        );
+    if (this.task === 'open') {
+        this.clearDetails();
     }
 };
 
-LibraryImportDialogMorph.prototype.fixListFieldItemColors =
-    ProjectDialogMorph.prototype.fixListFieldItemColors;
+ProjectDialogMorph.prototype.installCloudProjectList = function (pl) {
+    var myself = this;
+    this.itemsList = pl || [];
+    this.itemsList.sort(function (x, y) {
+        return x.ProjectName.toLowerCase() < y.ProjectName.toLowerCase() ?
+                 -1 : 1;
+    });
 
-LibraryImportDialogMorph.prototype.clearDetails =
-    ProjectDialogMorph.prototype.clearDetails;
-
-LibraryImportDialogMorph.prototype.fixLayout = function () {
-    var titleHeight = fontHeight(this.titleFontSize) + this.titlePadding * 2,
-        thin = this.padding / 2,
-        oldFlag = Morph.prototype.trackChanges;
-
-    Morph.prototype.trackChanges = false;
-
-    if (this.body) {
-        this.body.setPosition(this.position().add(new Point(
-            this.padding,
-            titleHeight + this.padding
-        )));
-        this.body.setExtent(new Point(
-            this.width() - this.padding * 2,
-            this.height()
-                - this.padding * 3 // top, bottom and button padding.
-                - titleHeight
-                - this.buttons.height()
-        ));
-
-        this.listField.setExtent(new Point(
-            200,
-            this.body.height()
-        ));
-        this.notesField.setExtent(new Point(
-            this.body.width() - this.listField.width() - thin,
-            100
-        ));
-        this.palette.setExtent(new Point(
-            this.notesField.width(),
-            this.body.height() - this.notesField.height() - thin
-        ));
-        this.listField.contents.children[0].adjustWidths();
-
-        this.listField.setPosition(this.body.position());
-        this.palette.setPosition(this.listField.topRight().add(
-            new Point(thin, 0)
-        ));
-        this.notesField.setPosition(this.palette.bottomLeft().add(
-            new Point(0, thin)
-        ));
-    }
-
-    if (this.label) {
-        this.label.setCenter(this.center());
-        this.label.setTop(
-            this.top() + (titleHeight - this.label.height()) / 2
-        );
-    }
-
-    if (this.buttons) {
-        this.buttons.fixLayout();
-        this.buttons.setCenter(this.center());
-        this.buttons.setBottom(this.bottom() - this.padding);
-    }
-
-    Morph.prototype.trackChanges = oldFlag;
-    this.changed();
-};
-    
-// Library Cache Utilities.
-LibraryImportDialogMorph.prototype.hasCached = function (key) {
-    return this.libraryCache.hasOwnProperty(key);
-};
-
-LibraryImportDialogMorph.prototype.cacheLibrary = function (key, blocks) {
-    this.libraryCache[key] = blocks ;
-};
-
-LibraryImportDialogMorph.prototype.cachedLibrary = function (key) {
-    return this.libraryCache[key];
-};
-
-LibraryImportDialogMorph.prototype.importLibrary = function () {
-    var ide = this.ide,
-        selectedLibrary = this.listField.selected.fileName,
-        libraryName = this.listField.selected.name;
-
-    ide.showMessage(localize('Loading') + ' ' + localize(libraryName));
-    ide.getURL(
-        ide.resourceURL('libraries', selectedLibrary),
-        function(libraryText) {
-            ide.droppedText(libraryText, libraryName);
-        }
+    this.listField.destroy();
+    this.listField = new ListMorph(
+        this.itemsList,
+        this.itemsList.length > 0 ?
+                function (element) {
+                    return element.ProjectName || element;
+                } : null,
+        [ // format: display shared project names bold
+            [
+                'bold',
+                function (proj) {return proj.Public === 'true'; }
+            ]
+        ],
+        function () {myself.ok(); }
     );
+    this.fixListFieldItemColors();
+    this.listField.fixLayout = nop;
+    this.listField.edge = InputFieldMorph.prototype.edge;
+    this.listField.fontSize = InputFieldMorph.prototype.fontSize;
+    this.listField.typeInPadding = InputFieldMorph.prototype.typeInPadding;
+    this.listField.contrast = InputFieldMorph.prototype.contrast;
+    this.listField.drawNew = InputFieldMorph.prototype.drawNew;
+    this.listField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
 
+    this.listField.action = function (item) {
+        if (item === undefined) {return; }
+        if (myself.nameField) {
+            myself.nameField.setContents(item.ProjectName || '');
+        }
+        if (myself.task === 'open') {
+            myself.notesText.text = item.Notes || '';
+            myself.notesText.drawNew();
+            myself.notesField.contents.adjustBounds();
+            myself.preview.texture = item.Thumbnail || null;
+            myself.preview.cachedTexture = null;
+            myself.preview.drawNew();
+            (new SpeechBubbleMorph(new TextMorph(
+                localize('last changed') + '\n' + item.Updated,
+                null,
+                null,
+                null,
+                null,
+                'center'
+            ))).popUp(
+                myself.world(),
+                myself.preview.rightCenter().add(new Point(2, 0))
+            );
+        }
+        if (item.Public === 'true') {
+            myself.shareButton.hide();
+            myself.unshareButton.show();
+        } else {
+            myself.unshareButton.hide();
+            myself.shareButton.show();
+        }
+        myself.buttons.fixLayout();
+        myself.fixLayout();
+        myself.edit();
+    };
+    this.body.add(this.listField);
+    this.shareButton.show();
+    this.unshareButton.hide();
+    this.deleteButton.show();
+    this.buttons.fixLayout();
+    this.fixLayout();
+    if (this.task === 'open') {
+        this.clearDetails();
+    }
+};
+
+ProjectDialogMorph.prototype.openItem = function () {
+    var proj = this.listField.selected,
+        src;
+    if (!proj) {return; }
+    this.ide.source = this.source;
+    if (this.source === 'cloud') {
+        this.openCloudProject(proj);
+    } else if (this.source === 'examples') {
+        // Note "file" is a property of the parseResourceFile function.
+        src = this.ide.getURL(this.ide.resourceURL('Examples', proj.fileName));
+        SnapActions.disableCollaboration();
+        SnapUndo.reset();
+        this.ide.openProjectString(src);
+        this.destroy();
+    } else { // 'local'
+        this.ide.openProject(proj.name);
+        this.destroy();
+    }
+};
+
+ProjectDialogMorph.prototype.openCloudProject = function (project) {
+    var myself = this;
+    myself.ide.nextSteps([
+        function () {
+            myself.ide.showMessage('Fetching project\nfrom the cloud...');
+        },
+        function () {
+            myself.rawOpenCloudProject(project);
+        }
+    ]);
+};
+
+ProjectDialogMorph.prototype.rawOpenCloudProject = function (proj) {
+    var myself = this;
+    SnapCloud.reconnect(
+        function () {
+            SnapCloud.callService(
+                'getRawProject',
+                function (response) {
+                    SnapCloud.disconnect();
+                    /*
+                    if (myself.world().currentKey === 16) {
+                        myself.ide.download(response);
+                        return;
+                    }
+                    */
+                    myself.ide.source = 'cloud';
+                    myself.ide.droppedText(response);
+                    if (proj.Public === 'true') {
+                        location.hash = '#present:Username=' +
+                            encodeURIComponent(SnapCloud.username) +
+                            '&ProjectName=' +
+                            encodeURIComponent(proj.ProjectName);
+                    }
+                },
+                myself.ide.cloudError(),
+                [proj.ProjectName]
+            );
+        },
+        myself.ide.cloudError()
+    );
     this.destroy();
 };
 
-LibraryImportDialogMorph.prototype.displayBlocks = function (libraryKey) {
-    var x, y, blockImage, previousCategory, blockContainer,
-        myself = this,
-        padding = 4,
-        blocksList = this.cachedLibrary(libraryKey);
+ProjectDialogMorph.prototype.saveItem = function () {
+    var name = this.nameField.contents().text.text,
+        notes = this.notesText.text,
+        myself = this;
 
-    if (!blocksList.length) {return; }
-    // populate palette, grouped by categories.
-    this.initializePalette();
-    x = this.palette.left() + padding;
-    y = this.palette.top();
+    this.ide.projectNotes = notes || this.ide.projectNotes;
+    if (/[\.@]+/.test(name)) {
+        this.ide.inform(
+            'Invalid Project Name',
+            'Could not save project because\n' +
+            'the provided name contains illegal characters.',
+            this.world()
+        );
+        return;
+    }
 
-    SpriteMorph.prototype.categories.forEach(function (category) {
-        blocksList.forEach(function (definition) {
-            if (definition.category !== category) {return; }
-            if (category !== previousCategory) {
-                y += padding;
-            }
-            previousCategory = category;
-
-            blockImage = definition.templateInstance().fullImage();
-            blockContainer = new Morph();
-            blockContainer.setExtent(
-                new Point(blockImage.width, blockImage.height)
+    if (this.source === 'cloud') {
+        if (detect(
+                this.itemsList,
+                function (item) {return item.ProjectName === name; }
+            )) {
+            this.ide.confirm(
+                localize(
+                    'Are you sure you want to replace'
+                ) + '\n"' + name + '"?',
+                'Replace Project',
+                function () {
+                    myself.saveCloudProject(name);
+                }
             );
-            blockContainer.image = blockImage;
-            blockContainer.setPosition(new Point(x, y));
-            myself.palette.addContents(blockContainer);
-
-            y += blockContainer.fullBounds().height() + padding;
-        });
-    });
-
-    this.palette.scrollX(padding);
-    this.palette.scrollY(padding);
-    this.fixLayout();
+        } else {
+            myself.saveCloudProject(name);
+        }
+    } else { // 'local'
+        if (detect(
+                this.itemsList,
+                function (item) {return item.name === name; }
+            )) {
+            this.ide.confirm(
+                localize(
+                    'Are you sure you want to replace'
+                ) + '\n"' + name + '"?',
+                'Replace Project',
+                function () {
+                    myself.ide.room.name = name;
+                    myself.ide.source = 'local';
+                    myself.ide.saveProject(name);
+                    myself.destroy();
+                }
+            );
+        } else {
+            this.ide.room.name = name;
+            myself.ide.source = 'local';
+            this.ide.saveProject(name);
+            this.destroy();
+        }
+    }
 };
 
-LibraryImportDialogMorph.prototype.showMessage = function (msgText) {
-    var msg = new MenuMorph(null, msgText);
-    this.initializePalette();
-    this.fixLayout();
-    msg.popUpCenteredInWorld(this.palette.contents);
+ProjectDialogMorph.prototype.saveCloudProject = function (name) {
+    var myself = this;
+    this.ide.showMessage('Saving project\nto the cloud...');
+    SnapCloud.saveProject(
+        this.ide,
+        function (result) {
+            if (result.name) {
+                myself.ide.room.silentSetRoomName(result.name);
+            }
+            myself.ide.source = 'cloud';
+            myself.ide.showMessage('Saved to cloud!', 2);
+        },
+        this.ide.cloudError(),
+        true,
+        name
+    );
+    this.destroy();
+};
+
+ProjectDialogMorph.prototype.deleteItem = function () {
+    var myself = this,
+        proj,
+        idx,
+        name;
+
+    if (this.source === 'cloud') {
+        proj = this.listField.selected;
+        if (proj) {
+            this.ide.confirm(
+                localize(
+                    'Are you sure you want to delete'
+                ) + '\n"' + proj.ProjectName + '"?',
+                'Delete Project',
+                function () {
+                    SnapCloud.reconnect(
+                        function () {
+                            SnapCloud.callService(
+                                'deleteProject',
+                                function () {
+                                    SnapCloud.disconnect();
+                                    myself.ide.hasChangedMedia = true;
+                                    idx = myself.itemsList.indexOf(proj);
+                                    myself.itemsList.splice(idx, 1);
+                                    myself.installCloudProjectList(
+                                        myself.itemsList
+                                    ); // refresh list
+                                },
+                                myself.ide.cloudError(),
+                                [proj.ProjectName]
+                            );
+                        },
+                        myself.ide.cloudError()
+                    );
+                }
+            );
+        }
+    } else { // 'local, examples'
+        if (this.listField.selected) {
+            name = this.listField.selected.name;
+            this.ide.confirm(
+                localize(
+                    'Are you sure you want to delete'
+                ) + '\n"' + name + '"?',
+                'Delete Project',
+                function () {
+                    delete localStorage['-snap-project-' + name];
+                    myself.setSource(myself.source); // refresh list
+                }
+            );
+        }
+    }
+};
+
+ProjectDialogMorph.prototype.shareItem = function () {
+    var myself = this,
+        ide = this.ide,
+        proj = this.listField.selected,
+        entry = this.listField.active;
+
+    if (proj) {
+        this.ide.confirm(
+            localize(
+                'Are you sure you want to publish'
+            ) + '\n"' + proj.ProjectName + '"?',
+            'Share Project',
+            function () {
+                myself.ide.showMessage('sharing\nproject...');
+                SnapCloud.reconnect(
+                    function () {
+                        SnapCloud.callService(
+                            'publishProject',
+                            function () {
+                                SnapCloud.disconnect();
+                                proj.Public = 'true';
+                                myself.unshareButton.show();
+                                myself.shareButton.hide();
+                                entry.label.isBold = true;
+                                entry.label.drawNew();
+                                entry.label.changed();
+                                myself.buttons.fixLayout();
+                                myself.drawNew();
+                                myself.ide.showMessage('shared.', 2);
+                            },
+                            myself.ide.cloudError(),
+                            [proj.ProjectName]
+                        );
+                        // Set the Shared URL if the project is currently open
+                        if (proj.ProjectName === ide.projectName) {
+                            var usr = SnapCloud.username,
+                                projectId = 'Username=' +
+                                    encodeURIComponent(usr.toLowerCase()) +
+                                    '&ProjectName=' +
+                                    encodeURIComponent(proj.ProjectName);
+                            location.hash = 'present:' + projectId;
+                        }
+                    },
+                    myself.ide.cloudError()
+                );
+            }
+        );
+    }
+};
+
+ProjectDialogMorph.prototype.unshareItem = function () {
+    var myself = this,
+        ide = this.ide,
+        proj = this.listField.selected,
+        entry = this.listField.active;
+
+    if (proj) {
+        this.ide.confirm(
+            localize(
+                'Are you sure you want to unpublish'
+            ) + '\n"' + proj.ProjectName + '"?',
+            'Unshare Project',
+            function () {
+                myself.ide.showMessage('unsharing\nproject...');
+                SnapCloud.reconnect(
+                    function () {
+                        SnapCloud.callService(
+                            'unpublishProject',
+                            function () {
+                                SnapCloud.disconnect();
+                                proj.Public = 'false';
+                                myself.shareButton.show();
+                                myself.unshareButton.hide();
+                                entry.label.isBold = false;
+                                entry.label.drawNew();
+                                entry.label.changed();
+                                myself.buttons.fixLayout();
+                                myself.drawNew();
+                                myself.ide.showMessage('unshared.', 2);
+                            },
+                            myself.ide.cloudError(),
+                            [proj.ProjectName]
+                        );
+                        // Remove the shared URL if the project is open.
+                        if (proj.ProjectName === ide.projectName) {
+                            location.hash = '';
+                        }
+                    },
+                    myself.ide.cloudError()
+                );
+            }
+        );
+    }
 };
 
 // SpriteIconMorph ////////////////////////////////////////////////////
