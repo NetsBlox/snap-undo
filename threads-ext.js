@@ -1,5 +1,5 @@
 /* global Process, Context, IDE_Morph, Costume, StageMorph, List, SnapActions,
- isObject, newCanvas, Point, SnapCloud, SERVICES_URL */
+ isObject, newCanvas, Point, SnapCloud, Services */
 
 // NetsProcess Overrides
 NetsProcess.prototype = new Process();
@@ -111,6 +111,7 @@ NetsProcess.prototype.doSocketMessage = function (msgInfo) {
 };
 
 //request block
+NetsProcess.prototype.MESSAGE_REPLY_TIMEOUT = 1500;
 NetsProcess.prototype.doSocketRequest = function (msgInfo) {
     var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph),
         targetRole = arguments[arguments.length-1],
@@ -154,6 +155,7 @@ NetsProcess.prototype.doSocketRequest = function (msgInfo) {
             requestId: requestId,
             content: contents
         });
+        this.messageSentAt = Date.now();
     } else if (this.reply) {
         // request has already been made and we received the reply
         requestId = this.requestId;
@@ -162,8 +164,13 @@ NetsProcess.prototype.doSocketRequest = function (msgInfo) {
         if (this.requestId === requestId ) {
             this.requestId = null;
             this.reply = null;
+            this.messageSentAt = null;
         }
         return reply.content.body;
+    } else if (Date.now() - this.messageSentAt > this.MESSAGE_REPLY_TIMEOUT) {
+        var stage = this.homeContext.receiver.parentThatIsA(StageMorph);
+        stage.rpcError = 'Timeout Exceeded';
+        return null;
     }
     this.pushContext('doYield');
     this.pushContext();
@@ -225,18 +232,23 @@ NetsProcess.prototype.receiveSocketMessage = function (fields) {
     varFrame.deleteVar('__message__');
 };
 
-NetsProcess.prototype.createRPCUrl = function (rpc) {
+NetsProcess.prototype.createRPCUrl = function (url) {
     var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph),
         uuid = ide.sockets.uuid,
         projectId = encodeURIComponent(SnapCloud.projectId),
         roleId = encodeURIComponent(SnapCloud.roleId);
 
-    return SERVICES_URL + '/' + rpc + '?uuid=' + uuid + '&projectId=' +
+    url += '?uuid=' + uuid + '&projectId=' +
         projectId + '&roleId=' + roleId;
+
+    if (SnapCloud.username) {
+        url += '&username=' + SnapCloud.username;
+    }
+    return url;
 };
 
-NetsProcess.prototype.callRPC = function (rpc, params, noCache) {
-    var url = this.createRPCUrl(rpc),
+NetsProcess.prototype.callRPC = function (baseUrl, params, noCache) {
+    var url = this.createRPCUrl(baseUrl),
         response,
         contentType,
         stage,
@@ -268,11 +280,14 @@ NetsProcess.prototype.callRPC = function (rpc, params, noCache) {
             return;
         }
         if (this.rpcRequest.status === 404) {
-            return this.errorRPCNotAvailable.apply(this, rpc.split('/'));
+            const [rpc, service] = baseUrl.split('/')
+                .filter(chunk => chunk)
+                .reverse();
+            return this.errorRPCNotAvailable(service, rpc);
         }
         contentType = this.rpcRequest.getResponseHeader('content-type');
         if (contentType && contentType.indexOf('image') === 0) {
-            image = this.getCostumeFromRPC(rpc, params);
+            image = this.getCostumeFromRPC(baseUrl, params);
             if (image) {
                 this.rpcRequest = null;
             }
@@ -298,36 +313,21 @@ NetsProcess.prototype.callRPC = function (rpc, params, noCache) {
     this.pushContext();
 };
 
-NetsProcess.prototype.getCostumeFromRPC = function (rpc, action, params) {
-    var stage = this.homeContext.receiver.parentThatIsA(StageMorph),
-        image;
-
-    if (arguments.length === 2) {
-        params = action;
-    } else {
-        rpc = [encodeURIComponent(rpc), encodeURIComponent(action)].join('/');
-
-        // Add the width and height of the stage as default params
-        if (!params.width) {
-            params.width = stage.width();
-        }
-        if (!params.height) {
-            params.height = stage.height();
-        }
-    }
+NetsProcess.prototype.getCostumeFromRPC = function (url, params) {
+    var image;
 
     // Create the costume (analogous to reportURL)
     if (!this.rpcRequest || this.rpcRequest.readyState !== 4) {
-        return this.callRPC(rpc, params, true);
+        return this.callRPC(url, params, true);
     } else if (!this.requestedImage) {
         var rawPNG = this.rpcRequest.response;
         var contentType = this.rpcRequest.getResponseHeader('content-type');
         var blb = new Blob([rawPNG], {type: contentType});
-        var url = (window.URL || window.webkitURL).createObjectURL(blb);
+        var blobUrl = (window.URL || window.webkitURL).createObjectURL(blb);
 
         this.requestedImage = new Image();
         this.requestedImage.crossOrigin = 'Anonymous';
-        this.requestedImage.src = url;
+        this.requestedImage.src = blobUrl;
     } else if (this.requestedImage.complete && this.requestedImage.naturalWidth) {
         // Clear request
         image = this.requestedImage;
@@ -335,13 +335,13 @@ NetsProcess.prototype.getCostumeFromRPC = function (rpc, action, params) {
 
         var canvas = newCanvas(new Point(image.width, image.height), true);
         canvas.getContext('2d').drawImage(image, 0, 0);
-        return new Costume(canvas, rpc);
+        return new Costume(canvas);
     }
     this.pushContext('doYield');
     this.pushContext();
 };
 
-NetsProcess.prototype.getJSFromRPC = function (rpc, params) {
+NetsProcess.prototype.getJSFromRPC = function (url, params) {
     if (typeof params === 'string') {
         var oldParams = params;
         params = {};
@@ -356,7 +356,7 @@ NetsProcess.prototype.getJSFromRPC = function (rpc, params) {
         });
     }
 
-    var result = this.callRPC(rpc, params, true);
+    var result = this.callRPC(url, params, true);
     if (result) {
         try {  // Try to convert it to JSON
             result = JSON.parse(result);
@@ -427,27 +427,40 @@ NetsProcess.prototype.getJSFromRPCStruct = function (rpc, methodSignature) {
     return this.getJSFromRPCDropdown(rpc, action, query);
 };
 
-NetsProcess.prototype.getJSFromRPCDropdown = function (rpc, action, params) {
-    if (rpc && action) {
-        return this.getJSFromRPC([encodeURIComponent(rpc), encodeURIComponent(action)].join('/'), params);
+NetsProcess.prototype.getJSFromRPCDropdown = function (service, rpc, params) {
+    if (service && rpc) {
+        const isServiceURL = service instanceof Array;
+        const serviceURL = isServiceURL ? service[0] : Services.defaultHost.url + '/' + service;
+        if (!Services.isRegisteredServiceURL(serviceURL)) {
+            const serviceName = serviceURL.split('/').pop();
+            const msg = 'Service "' + serviceName + '" is not available';
+            throw new Error(msg);
+        }
+
+        const url = [
+            serviceURL,
+            encodeURIComponent(rpc),
+        ].join('/');
+        return this.getJSFromRPC(url, params);
     }
 };
 
 // Process Geo
 NetsProcess.prototype.getLocation = function () {
     var myself = this,
+        hasLocation = this.location !== undefined,
+        hasRequestedLocation = this.locationError === null,
         errorName;
 
-    if (this.location === undefined) {
+    if (!hasLocation && !hasRequestedLocation) {
         this.locationError = null;
         navigator.geolocation.getCurrentPosition(function(location) {
             myself.location = location;
         }, function(err) {
-            // Raise an error...
             myself.locationError = err;
             myself.location = null;
         });
-    } else {
+    } else if (hasLocation) {
         var location = this.location;
         this.location = undefined;
         if (this.locationError || !location) {

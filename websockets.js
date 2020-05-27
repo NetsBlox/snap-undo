@@ -74,6 +74,14 @@ WebSocketManager.MessageHandlers = {
             this.ide.exportRoom(msg.content);
         } else if (msg.action === 'save') {
             this.ide.saveRoomLocal(msg.content);
+        } else if (msg.action === 'fetch') {
+            const deferred = this.ide.projectXMLRequests[msg.id];
+            if (deferred) {
+                deferred.resolve(msg.content);
+                delete this.ide.projectXMLRequests[msg.id];
+            } else {
+                console.error(`Project request callback already resolved: ${msg.id}`);
+            }
         }
     },
 
@@ -472,6 +480,7 @@ WebSocketManager.prototype.onMessageReceived = function (message, content, msg) 
 
             // Find the process list for the given block
             this.addProcess({
+                messageType: message,
                 block: block,
                 isThreadSafe: stage.isThreadSafe,
                 context: context
@@ -515,24 +524,31 @@ WebSocketManager.prototype.startProcesses = function () {
     var process,
         block,
         stage = this.ide.stage,
-        activeBlock;
+        activeBlock,
+        expectedMsgType;
 
     // Check each set of processes to see if the block is free
     for (var i = 0; i < this.processes.length; i++) {
         block = this.processes[i][0].block;
         activeBlock = !!stage.threads.findProcess(block);
         if (!activeBlock) {  // Check if the process can be added
+            expectedMsgType = block.inputs()[0].contents().text;
             process = this.processes[i].shift();
-            process.block.updateReadout();
-            stage.threads.startProcess(
-                process.block,
-                process.isThreadSafe,
-                null,
-                null,
-                null,
-                true,
-                process.context
-            );
+            while (process && process.messageType !== expectedMsgType) {
+                process = this.processes[i].shift();
+            }
+            block.updateReadout();
+            if (process) {
+                stage.threads.startProcess(
+                    process.block,
+                    process.isThreadSafe,
+                    null,
+                    null,
+                    null,
+                    true,
+                    process.context
+                );
+            }
             if (!this.processes[i].length) {
                 this.processes.splice(i,1);
                 i--;

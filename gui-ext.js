@@ -220,8 +220,8 @@ IDE_Morph.prototype.openReplayString = function (str) {
     myself.exitReplayMode();
     return SnapActions.openProject()
         .then(function() {
-            myself.serializer.loadReplayHistory(replay);
-            myself.replayEvents(JSON.parse(JSON.stringify(SnapUndo.allEvents)), false);
+            var allEvents = myself.serializer.loadReplayHistory(replay);
+            myself.replayEvents(allEvents, false);
         });
 };
 
@@ -528,7 +528,7 @@ IDE_Morph.prototype.initializeEmbeddedAPI = function () {
         externalVariables = {},
         receiveMessage;
 
-    receiveMessage = function(event) {
+    receiveMessage = async function(event) {
         var data = event.data;
         switch (data.type) {
         case 'import':
@@ -540,6 +540,13 @@ IDE_Morph.prototype.initializeEmbeddedAPI = function () {
         case 'delete-variable':
             delete externalVariables[data.key];
             break;
+        case 'export-project':
+        {
+            const {id} = data;
+            const xml = await self.getProjectXML();
+            window.parent.postMessage({id, xml});
+            break;
+        }
         }
     };
 
