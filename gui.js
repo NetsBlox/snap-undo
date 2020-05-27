@@ -6076,22 +6076,14 @@ function SaveOpenDialogMorph() {
     //this.init(task, label, source);
 }
 
-SaveOpenDialogMorph.Source = function(name, icon, open, save, id) {
-    this.name = name;
-    this.icon = icon;
-    this.save = save;
-    this.open = open;
-    this.id = id || name.toLowerCase();
-};
-
 SaveOpenDialogMorph.prototype.init = function (task, itemName, sources, source, currentData) {
     var myself = this;
 
     // additional properties:
     this.task = task || 'open'; // String describing what do do (open, save)
     this.sources = sources;
-    this.source = source || sources[0].id; // or 'cloud' or 'examples'
-    this.itemsList = []; // [{name: , thumb: , notes:}]  // FIXME
+    this.source = source || sources[0]; // or 'cloud' or 'examples'
+    this.itemsList = []; // [{name: , thumb: , notes:}]
     this.itemName = itemName;
 
     this.handle = null;
@@ -6157,13 +6149,13 @@ SaveOpenDialogMorph.prototype.buildContents = function (currentData) {
     });
     const minHeight = 455;
     baseSize.y = Math.max(this.sources.length * 50 + 305, 455);
-    if (this.task === 'open') {  // FIXME: move this to project version only
+    if (this.task === 'open') {
         this.buildFilterField();  // Why is it doing this here?
     }
     this.srcBar.fixLayout();
     this.body.add(this.srcBar);
 
-    if (this.task === 'save') {  // TODO: Update
+    if (this.task === 'save') {
         const {name} = currentData;
         this.nameField = new InputFieldMorph(name);
         this.body.add(this.nameField);
@@ -6234,9 +6226,15 @@ SaveOpenDialogMorph.prototype.buildContents = function (currentData) {
     this.fixLayout();
 };
 
+SaveOpenDialogMorph.prototype.deleteItem = function() {
+    const item = this.listField.selected;
+    if (item) {
+        this.source.delete(item);
+    }
+};
+
 SaveOpenDialogMorph.prototype.initPreview =
 SaveOpenDialogMorph.prototype.openItem =
-SaveOpenDialogMorph.prototype.deleteItem =
 SaveOpenDialogMorph.prototype.shareItem =
 SaveOpenDialogMorph.prototype.unshareItem = function() {
     throw new Error('Action not supported!');
@@ -6394,71 +6392,50 @@ SaveOpenDialogMorph.prototype.buildFilterField = function () {
 
 // SaveOpenDialogMorph ops
 
-SaveOpenDialogMorph.prototype.setSource = function (source) {
-    var myself = this,
-        itemName = this.itemName.toLowerCase(),
-        updateMsg = `Updating\n${itemName} list...`,
-        msg;
+SaveOpenDialogMorph.prototype.setSource = async function (newSource) {
+    var myself = this;
 
-    this.source = source; //this.task === 'save' ? 'local' : source;
+    this.source = newSource;
     this.srcBar.children.forEach(function (button) {
         button.refresh();
     });
-    // TODO: Create a "Source" object
-    switch (this.source) {  // FIXME: These sources may be different for libraries...
-    case 'cloud':
-        msg = myself.ide.showMessage(updateMsg);
+    const itemName = this.itemName.toLowerCase();
+    const msg = myself.ide.showMessage(`Updating\n${itemName} list...`);
+    try {
         this.itemsList = [];
-        SnapCloud.getProjectList(
-            function (itemsList) {
-                // Don't show cloud projects if user has since switch panes.
-                if (myself.source === 'cloud') {
-                    myself.installCloudProjectList(itemsList);
-                }
-                msg.destroy();
-            },
-            function (err, lbl) {
-                msg.destroy();
-                myself.ide.cloudError().call(null, err, lbl);
-            }
-        );
-        return;
-    case 'cloud-shared':
-        msg = myself.ide.showMessage(updateMsg);
-        this.itemsList = [];
-        SnapCloud.getSharedProjectList(
-            function (itemsList) {
-                // Don't show cloud projects if user has since switch panes.
-                if (myself.source === 'cloud-shared') {
-                    myself.installSharedCloudProjectList(itemsList);
-                }
-                msg.destroy();
-            },
-            function (err, lbl) {
-                msg.destroy();
-                myself.ide.cloudError().call(null, err, lbl);
-            }
-        );
-        return;
-    case 'examples':
-        this.itemsList = this.getExamplesProjectList();
-        break;
-    case 'local':
-        this.itemsList = this.getLocalProjectList();
-        break;
+        const itemsList = await newSource.list();
+        if (this.source === newSource.id) {
+            this.itemsList = itemsList;
+        } else {
+            msg.destroy();
+            return;
+        }
+    } catch (err) {
+        myself.ide.cloudError().call(null, err.label, err.message);
     }
+    msg.destroy();
+
+    // TODO: Make this a generic function
+    this.itemsList.sort(function (x, y) {
+        return x.ProjectName.toLowerCase() < y.ProjectName.toLowerCase() ?
+                 -1 : 1;
+    });
 
     this.listField.destroy();
     this.listField = new ListMorph(
         this.itemsList,
         this.itemsList.length > 0 ?
                 function (element) {
-                    return element.name || element;
+                    return element.ProjectName || element;
                 } : null,
-        null,
+        [ // format: display shared project names bold
+            [
+                'bold',
+                function (proj) {return proj.Public === 'true'; }
+            ]
+        ],
         function () {myself.ok(); }
     );
-
     this.fixListFieldItemColors();
     this.listField.fixLayout = nop;
     this.listField.edge = InputFieldMorph.prototype.edge;
@@ -6468,7 +6445,60 @@ SaveOpenDialogMorph.prototype.setSource = function (source) {
     this.listField.drawNew = InputFieldMorph.prototype.drawNew;
     this.listField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
 
-    if (this.source === 'local') {
+    this.listField.action = function (item) {
+        if (item === undefined) {return; }
+        if (myself.nameField) {
+            myself.nameField.setContents(item.ProjectName || '');
+        }
+        if (myself.task === 'open') {
+            myself.notesText.text = item.Notes || '';
+            myself.notesText.drawNew();
+            myself.notesField.contents.adjustBounds();
+            myself.preview.texture = item.Thumbnail || null;
+            myself.preview.cachedTexture = null;
+            myself.preview.drawNew();
+            (new SpeechBubbleMorph(new TextMorph(
+                localize('last changed') + '\n' + item.Updated,
+                null,
+                null,
+                null,
+                null,
+                'center'
+            ))).popUp(
+                myself.world(),
+                myself.preview.rightCenter().add(new Point(2, 0))
+            );
+        }
+        // TODO: Check the source, not the entry
+        const isShareable = item.Public !== undefined;
+        if (isShareable) {
+            if (item.Public === 'true') {
+                myself.shareButton.hide();
+                myself.unshareButton.show();
+            } else {
+                myself.unshareButton.hide();
+                myself.shareButton.show();
+            }
+        } else {
+            myself.unshareButton.hide();
+            myself.shareButton.hide();
+        }
+        myself.buttons.fixLayout();
+        myself.fixLayout();
+        myself.edit();
+    };
+    this.body.add(this.listField);
+    this.shareButton.show();
+    this.unshareButton.hide();
+    this.deleteButton.show();
+    this.buttons.fixLayout();
+    this.fixLayout();
+    if (this.task === 'open') {
+        this.clearDetails();
+    }
+    // old things:
+
+    if (this.source === 'local') {  // FIXME
         this.listField.action = function (item) {
             var src, xml;
 
@@ -6524,7 +6554,7 @@ SaveOpenDialogMorph.prototype.setSource = function (source) {
     this.body.add(this.listField);
     this.shareButton.hide();
     this.unshareButton.hide();
-    if (this.source === 'local') {
+    if (this.source === 'local') {  // TODO: Add this to Source info
         this.deleteButton.show();
     } else { // examples
         this.deleteButton.hide();
@@ -6643,6 +6673,27 @@ SaveOpenDialogMorph.prototype.popUp = function (world) {
     }
 };
 
+// SaveOpenDialogMorphSource ////////////////////////////////////////////////////
+
+SaveOpenDialogMorphSource.prototype.constructor = SaveOpenDialogMorphSource;
+
+function SaveOpenDialogMorphSource (name, icon, list, id) {
+    this.name = name;
+    this.icon = icon;
+    this.list = list;
+    this.id = id || name.toLowerCase();
+};
+// TODO: Record capabilities: publish, delete
+
+// SaveOpenDialogMorphItem ////////////////////////////////////////////////////
+
+SaveOpenDialogMorphItem.prototype.constructor = SaveOpenDialogMorphItem;
+
+function SaveOpenDialogMorphItem (name, ) {
+};
+// TODO: is shared?
+// TODO: get thumbnail/preview
+
 // ProjectDialogMorph ////////////////////////////////////////////////////
 
 // ProjectDialogMorph inherits from DialogBoxMorph:
@@ -6660,43 +6711,81 @@ function ProjectDialogMorph(ide, label) {
 ProjectDialogMorph.prototype.init = function (ide, task) {
     this.ide = ide;
     const sources = [
-        new SaveOpenDialogMorph.Source(
+        new SaveOpenDialogMorphSource(
             'Cloud',  // name
             'cloud',  // icon
+            function listCloudProjects() {
+                const deferred = utils.defer();
+                SnapCloud.getProjectList(
+                    deferred.resolve,
+                    function (msg, label) {
+                        const err = new CloudError(label, msg);
+                        deferred.reject(err);
+                    }
+                );
+                return deferred.promise;
+            }
         ),
     ];
     if (task === 'open') {
-        sources.push(new SaveOpenDialogMorph.Source(  // TODO: If task is open
+        sources.push(new SaveOpenDialogMorphSource(  // TODO: If task is open
             'Shared with me',
             'cloud',
-            null,  // open
-            null,  // save
+            function listSharedProjects() {
+                const deferred = utils.defer();
+                SnapCloud.getSharedProjectList(
+                    deferred.resolve,
+                    function (msg, label) {
+                        const err = new CloudError(label, msg);
+                        deferred.reject(err);
+                    }
+                );
+                return deferred.promise;
+            },
             'cloud-shared',  // id
         ));
     }
-    sources.push(new SaveOpenDialogMorph.Source(  // TODO: If task is open
+    sources.push(new SaveOpenDialogMorphSource(  // TODO: If task is open
         'Browser',  // name
         'storage',  // icon
-        null,  // open
-        null,  // save
+        function listLocalProjects() {
+            var stored, name, dta,
+                projects = [];
+            for (stored in localStorage) {
+                if (Object.prototype.hasOwnProperty.call(localStorage, stored)
+                        && stored.substr(0, 14) === '-snap-project-') {
+                    name = stored.substr(14);
+                    dta = {
+                        ProjectName: name,
+                        Thumbnail: null,
+                        Notes: null,
+                    };
+                    // TODO: Create local project entry
+                    projects.push(dta);
+                }
+            }
+            return projects;
+        },
         'local',  // id
     ));
     if (task === 'open') {
-        sources.push(new SaveOpenDialogMorph.Source(  // TODO: If task is open
+        sources.push(new SaveOpenDialogMorphSource(
             'Examples',  // name
             'poster',  // icon
         ));
     }
+    const defaultSourceID = ide.source || 'local';
+    const defaultSource = sources.find(source => source.id === defaultSourceID);
     ProjectDialogMorph.uber.init.call(
         this,
         task,
         'Project',
         sources,
+        defaultSource,
         {
             name: ide.room.name,
             notes: ide.projectNotes
         },
-        ide.source || 'local',
     );
 };
 
@@ -6744,28 +6833,6 @@ ProjectDialogMorph.prototype.initPreview = function () {
     }
 };
 
-ProjectDialogMorph.prototype.getLocalProjectList = function () {
-    var stored, name, dta,
-        itemName = this.itemName.toLowerCase(),
-        projects = [];
-    for (stored in localStorage) {
-        if (Object.prototype.hasOwnProperty.call(localStorage, stored)
-                && stored.substr(0, 14) === '-snap-' + itemName + '-') {
-            name = stored.substr(14);
-            dta = {
-                name: name,
-                thumb: null,
-                notes: null
-            };
-            projects.push(dta);
-        }
-    }
-    projects.sort(function (x, y) {
-        return x.name.toLowerCase() < y.name.toLowerCase() ? -1 : 1;
-    });
-    return projects;
-};
-
 ProjectDialogMorph.prototype.getExamplesProjectList = function () {
     return this.ide.getMediaList('Examples');
 };
@@ -6788,7 +6855,7 @@ ProjectDialogMorph.prototype.installSharedCloudProjectList = function (pl) {
         [ // format: display shared project names bold
             [
                 'bold',
-                function (proj) {return proj.Public === 'true'; }
+                function (proj) {return proj.Public === 'true'; }  // FIXME
             ]
         ],
         function () {myself.ok(); }
@@ -6816,84 +6883,6 @@ ProjectDialogMorph.prototype.installSharedCloudProjectList = function (pl) {
             myself.preview.drawNew();
             (new SpeechBubbleMorph(new TextMorph(
                 localize('owner') + ': ' + item.Owner + '\n' +
-                localize('last changed') + '\n' + item.Updated,
-                null,
-                null,
-                null,
-                null,
-                'center'
-            ))).popUp(
-                myself.world(),
-                myself.preview.rightCenter().add(new Point(2, 0))
-            );
-        }
-        if (item.Public === 'true') {
-            myself.shareButton.hide();
-            myself.unshareButton.show();
-        } else {
-            myself.unshareButton.hide();
-            myself.shareButton.show();
-        }
-        myself.buttons.fixLayout();
-        myself.fixLayout();
-        myself.edit();
-    };
-    this.body.add(this.listField);
-    this.shareButton.show();
-    this.unshareButton.hide();
-    this.deleteButton.show();
-    this.buttons.fixLayout();
-    this.fixLayout();
-    if (this.task === 'open') {
-        this.clearDetails();
-    }
-};
-
-ProjectDialogMorph.prototype.installCloudProjectList = function (pl) {
-    var myself = this;
-    this.itemsList = pl || [];
-    this.itemsList.sort(function (x, y) {
-        return x.ProjectName.toLowerCase() < y.ProjectName.toLowerCase() ?
-                 -1 : 1;
-    });
-
-    this.listField.destroy();
-    this.listField = new ListMorph(
-        this.itemsList,
-        this.itemsList.length > 0 ?
-                function (element) {
-                    return element.ProjectName || element;
-                } : null,
-        [ // format: display shared project names bold
-            [
-                'bold',
-                function (proj) {return proj.Public === 'true'; }
-            ]
-        ],
-        function () {myself.ok(); }
-    );
-    this.fixListFieldItemColors();
-    this.listField.fixLayout = nop;
-    this.listField.edge = InputFieldMorph.prototype.edge;
-    this.listField.fontSize = InputFieldMorph.prototype.fontSize;
-    this.listField.typeInPadding = InputFieldMorph.prototype.typeInPadding;
-    this.listField.contrast = InputFieldMorph.prototype.contrast;
-    this.listField.drawNew = InputFieldMorph.prototype.drawNew;
-    this.listField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
-
-    this.listField.action = function (item) {
-        if (item === undefined) {return; }
-        if (myself.nameField) {
-            myself.nameField.setContents(item.ProjectName || '');
-        }
-        if (myself.task === 'open') {
-            myself.notesText.text = item.Notes || '';
-            myself.notesText.drawNew();
-            myself.notesField.contents.adjustBounds();
-            myself.preview.texture = item.Thumbnail || null;
-            myself.preview.cachedTexture = null;
-            myself.preview.drawNew();
-            (new SpeechBubbleMorph(new TextMorph(
                 localize('last changed') + '\n' + item.Updated,
                 null,
                 null,
@@ -7093,6 +7082,7 @@ ProjectDialogMorph.prototype.deleteItem = function () {
                                     myself.ide.hasChangedMedia = true;
                                     idx = myself.itemsList.indexOf(proj);
                                     myself.itemsList.splice(idx, 1);
+                                    // TODO: FIXME
                                     myself.installCloudProjectList(
                                         myself.itemsList
                                     ); // refresh list
