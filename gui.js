@@ -6144,9 +6144,7 @@ SaveOpenDialogMorph.prototype.buildContents = function (currentData) {
         //this.srcBar.add(notification);
     //}
 
-    this.sources.forEach(source => {
-        this.addSourceButton(source.id, localize(source.name), source.icon);
-    });
+    this.sources.forEach(source => this.addSourceButton(source));
     const minHeight = 455;
     baseSize.y = Math.max(this.sources.length * 50 + 305, 455);
     if (this.task === 'open') {
@@ -6233,20 +6231,58 @@ SaveOpenDialogMorph.prototype.deleteItem = function() {
     }
 };
 
+SaveOpenDialogMorph.prototype.shareItem = function() {
+    var myself = this,
+        proj = this.listField.selected,
+        entry = this.listField.active;
+
+    if (proj) {
+        this.ide.confirm(
+            localize(
+                'Are you sure you want to publish'
+            ) + '\n"' + proj.ProjectName + '"?',
+            'Share ' + this.itemName,
+            async function () {
+                myself.ide.showMessage(`sharing\n${this.itemName.toLowerCase()}...`);
+                try {
+                    await myself.source.publish(proj);
+                    proj.Public = 'true';
+                    myself.unshareButton.show();
+                    myself.shareButton.hide();
+                    entry.label.isBold = true;
+                    entry.label.drawNew();
+                    entry.label.changed();
+                    myself.buttons.fixLayout();
+                    myself.drawNew();
+                    myself.ide.showMessage('shared.', 2);
+                    return true;
+                } catch (err){
+                    myself.ide.cloudError().call(null, err.label, err.message);
+                }
+            }
+        );
+    }
+    return false;
+};
+
+SaveOpenDialogMorph.prototype.unshareItem = function() {
+    const item = this.listField.selected;
+    if (item) {
+        this.source.publish(item, false);
+    }
+};
+
 SaveOpenDialogMorph.prototype.initPreview =
 SaveOpenDialogMorph.prototype.openItem =
-SaveOpenDialogMorph.prototype.shareItem =
 SaveOpenDialogMorph.prototype.unshareItem = function() {
     throw new Error('Action not supported!');
 };
 
 // SaveOpenDialogMorph source buttons
 
-SaveOpenDialogMorph.prototype.addSourceButton = function (
-    source,
-    label,
-    symbol
-) {
+SaveOpenDialogMorph.prototype.addSourceButton = function (source) {
+    const label = localize(source.name);
+    const symbol = source.icon;
     var myself = this,
         lbl1 = new StringMorph(
             label,
@@ -6404,7 +6440,7 @@ SaveOpenDialogMorph.prototype.setSource = async function (newSource) {
     try {
         this.itemsList = [];
         const itemsList = await newSource.list();
-        if (this.source === newSource.id) {
+        if (this.source === newSource) {
             this.itemsList = itemsList;
         } else {
             msg.destroy();
@@ -6469,9 +6505,8 @@ SaveOpenDialogMorph.prototype.setSource = async function (newSource) {
                 myself.preview.rightCenter().add(new Point(2, 0))
             );
         }
-        // TODO: Check the source, not the entry
-        const isShareable = item.Public !== undefined;
-        if (isShareable) {
+
+        if (myself.source.canPublish()) {
             if (item.Public === 'true') {
                 myself.shareButton.hide();
                 myself.unshareButton.show();
@@ -6488,82 +6523,80 @@ SaveOpenDialogMorph.prototype.setSource = async function (newSource) {
         myself.edit();
     };
     this.body.add(this.listField);
-    this.shareButton.show();
-    this.unshareButton.hide();
-    this.deleteButton.show();
-    this.buttons.fixLayout();
-    this.fixLayout();
-    if (this.task === 'open') {
-        this.clearDetails();
+    if (this.source.canPublish()) {
+        this.shareButton.show();
+        this.unshareButton.hide();
+    } else {
+        this.shareButton.hide();
+        this.unshareButton.hide();
     }
-    // old things:
 
-    if (this.source === 'local') {  // FIXME
-        this.listField.action = function (item) {
-            var src, xml;
-
-            if (item === undefined) {return; }
-            if (myself.nameField) {
-                myself.nameField.setContents(item.name || '');
-            }
-            if (myself.task === 'open') {
-
-                src = localStorage['-snap-' + itemName + '-' + item.name];
-
-                if (src) {
-                    xml = myself.ide.serializer.parse(src);
-                    // Select a role to display
-                    xml = xml.children[0].children[0];
-
-                    myself.notesText.text = xml.childNamed('notes').contents
-                        || '';
-                    myself.notesText.drawNew();
-                    myself.notesField.contents.adjustBounds();
-                    myself.preview.texture =
-                        xml.childNamed('thumbnail').contents || null;
-                    myself.preview.cachedTexture = null;
-                    myself.preview.drawNew();
-                }
-            }
-            myself.edit();
-        };
-    } else { // 'examples'; 'cloud' is initialized elsewhere
-        this.listField.action = function (item) {
-            var src, xml;
-            if (item === undefined) {return; }
-            if (myself.nameField) {
-                myself.nameField.setContents(item.name || '');
-            }
-            src = myself.ide.getURL(
-                myself.ide.resourceURL('Examples', item.fileName)
-            );
-
-            xml = myself.ide.serializer.parse(src);
-            xml = xml.children[0].children[0];  // get project info of first role
-            myself.notesText.text = xml.childNamed('notes').contents
-                || '';
-            myself.notesText.drawNew();
-            myself.notesField.contents.adjustBounds();
-            myself.preview.texture = xml.childNamed('thumbnail').contents
-                || null;
-            myself.preview.cachedTexture = null;
-            myself.preview.drawNew();
-            myself.edit();
-        };
-    }
-    this.body.add(this.listField);
-    this.shareButton.hide();
-    this.unshareButton.hide();
-    if (this.source === 'local') {  // TODO: Add this to Source info
+    if (this.source.canDelete()) {
         this.deleteButton.show();
-    } else { // examples
+    } else {
         this.deleteButton.hide();
     }
+
     this.buttons.fixLayout();
     this.fixLayout();
     if (this.task === 'open') {
         this.clearDetails();
     }
+
+    //if (this.source === 'local') {  // FIXME
+        //this.listField.action = function (item) {
+            //var src, xml;
+
+            //if (item === undefined) {return; }
+            //if (myself.nameField) {
+                //myself.nameField.setContents(item.name || '');
+            //}
+            //if (myself.task === 'open') {
+
+                //src = localStorage['-snap-' + itemName + '-' + item.name];
+
+                //if (src) {
+                    //xml = myself.ide.serializer.parse(src);
+                    //// Select a role to display
+                    //xml = xml.children[0].children[0];
+
+                    //myself.notesText.text = xml.childNamed('notes').contents
+                        //|| '';
+                    //myself.notesText.drawNew();
+                    //myself.notesField.contents.adjustBounds();
+                    //myself.preview.texture =
+                        //xml.childNamed('thumbnail').contents || null;
+                    //myself.preview.cachedTexture = null;
+                    //myself.preview.drawNew();
+                //}
+            //}
+            //myself.edit();
+        //};
+    //} else { // 'examples'; 'cloud' is initialized elsewhere
+        //this.listField.action = function (item) {
+            //var src, xml;
+            //if (item === undefined) {return; }
+            //if (myself.nameField) {
+                //myself.nameField.setContents(item.name || '');
+            //}
+            //src = myself.ide.getURL(
+                //myself.ide.resourceURL('Examples', item.fileName)
+            //);
+
+            //xml = myself.ide.serializer.parse(src);
+            //xml = xml.children[0].children[0];  // get project info of first role
+            //myself.notesText.text = xml.childNamed('notes').contents
+                //|| '';
+            //myself.notesText.drawNew();
+            //myself.notesField.contents.adjustBounds();
+            //myself.preview.texture = xml.childNamed('thumbnail').contents
+                //|| null;
+            //myself.preview.cachedTexture = null;
+            //myself.preview.drawNew();
+            //myself.edit();
+        //};
+    //}
+    //this.body.add(this.listField);
 };
 
 SaveOpenDialogMorph.prototype.clearDetails = function () {
@@ -6682,15 +6715,45 @@ function SaveOpenDialogMorphSource (name, icon, list, id) {
     this.icon = icon;
     this.list = list;
     this.id = id || name.toLowerCase();
+    this.actions = {};
+}
+
+SaveOpenDialogMorphSource.prototype.enablePublish = function(publishFn) {
+    this.actions.publish = publishFn;
 };
-// TODO: Record capabilities: publish, delete
+
+SaveOpenDialogMorphSource.prototype.enableDelete = function(deleteFn) {
+    this.actions.delete = deleteFn;
+};
+
+SaveOpenDialogMorphSource.prototype.canPublish = function() {
+    return !!this.actions.publish;
+};
+
+SaveOpenDialogMorphSource.prototype.canDelete = function() {
+    return !!this.actions.delete;
+};
+
+SaveOpenDialogMorphSource.prototype.delete = function(item) {
+    if (!this.canDelete()) {
+        throw new Error(localize('Cannot delete projects from ') + localize(this.name));
+    }
+    return this.actions.delete(item);
+};
+
+SaveOpenDialogMorphSource.prototype.publish = function(item, public=true) {
+    if (!this.canPublish()) {
+        throw new Error(localize('Cannot publish projects from ') + localize(this.name));
+    }
+    return this.actions.publish(item, public);
+};
 
 // SaveOpenDialogMorphItem ////////////////////////////////////////////////////
 
 SaveOpenDialogMorphItem.prototype.constructor = SaveOpenDialogMorphItem;
 
-function SaveOpenDialogMorphItem (name, ) {
-};
+function SaveOpenDialogMorphItem (name) {
+}
 // TODO: is shared?
 // TODO: get thumbnail/preview
 
@@ -6710,23 +6773,51 @@ function ProjectDialogMorph(ide, label) {
 
 ProjectDialogMorph.prototype.init = function (ide, task) {
     this.ide = ide;
-    const sources = [
-        new SaveOpenDialogMorphSource(
-            'Cloud',  // name
-            'cloud',  // icon
-            function listCloudProjects() {
-                const deferred = utils.defer();
-                SnapCloud.getProjectList(
-                    deferred.resolve,
-                    function (msg, label) {
-                        const err = new CloudError(label, msg);
-                        deferred.reject(err);
+    const cloud = new SaveOpenDialogMorphSource(
+        'Cloud',  // name
+        'cloud',  // icon
+        function listCloudProjects() {
+            console.log('listing cloud projects');
+            const deferred = utils.defer();
+            SnapCloud.getProjectList(
+                deferred.resolve,
+                function (msg, label) {
+                    const err = new CloudError(label, msg);
+                    deferred.reject(err);
+                }
+            );
+            return deferred.promise;
+        }
+    );
+    cloud.enablePublish(
+        function() {
+            SnapCloud.reconnect(
+                function () {
+                    SnapCloud.callService(
+                        'publishProject',
+                        function () {
+                            SnapCloud.disconnect();
+                        },
+                        myself.ide.cloudError(),
+                        [proj.ProjectName]
+                    );
+
+                    // Set the Shared URL if the project is currently open
+                    if (proj.ProjectName === ide.projectName) {
+                        var usr = SnapCloud.username,
+                            projectId = 'Username=' +
+                                encodeURIComponent(usr.toLowerCase()) +
+                                '&ProjectName=' +
+                                encodeURIComponent(proj.ProjectName);
+                        location.hash = 'present:' + projectId;
                     }
-                );
-                return deferred.promise;
-            }
-        ),
-    ];
+                },
+                myself.ide.cloudError()
+            );
+        }
+    );
+    //cloud.enableDelete();
+    const sources = [cloud];
     if (task === 'open') {
         sources.push(new SaveOpenDialogMorphSource(  // TODO: If task is open
             'Shared with me',
@@ -6772,6 +6863,15 @@ ProjectDialogMorph.prototype.init = function (ide, task) {
         sources.push(new SaveOpenDialogMorphSource(
             'Examples',  // name
             'poster',  // icon
+            function listExampleProjects() {
+                const projects = ide.getMediaList('Examples');
+                return projects.map(example => ({
+                    ProjectName: example.name,
+                    fileName: example.fileName,
+                    Notes: example.description,
+                    Thumbnail: null,  // TODO
+                }));
+            }
         ));
     }
     const defaultSourceID = ide.source || 'local';
@@ -7113,53 +7213,19 @@ ProjectDialogMorph.prototype.deleteItem = function () {
     }
 };
 
-ProjectDialogMorph.prototype.shareItem = function () {
-    var myself = this,
-        ide = this.ide,
-        proj = this.listField.selected,
-        entry = this.listField.active;
-
-    if (proj) {
-        this.ide.confirm(
-            localize(
-                'Are you sure you want to publish'
-            ) + '\n"' + proj.ProjectName + '"?',
-            'Share Project',
-            function () {
-                myself.ide.showMessage('sharing\nproject...');
-                SnapCloud.reconnect(
-                    function () {
-                        SnapCloud.callService(
-                            'publishProject',
-                            function () {
-                                SnapCloud.disconnect();
-                                proj.Public = 'true';
-                                myself.unshareButton.show();
-                                myself.shareButton.hide();
-                                entry.label.isBold = true;
-                                entry.label.drawNew();
-                                entry.label.changed();
-                                myself.buttons.fixLayout();
-                                myself.drawNew();
-                                myself.ide.showMessage('shared.', 2);
-                            },
-                            myself.ide.cloudError(),
-                            [proj.ProjectName]
-                        );
-                        // Set the Shared URL if the project is currently open
-                        if (proj.ProjectName === ide.projectName) {
-                            var usr = SnapCloud.username,
-                                projectId = 'Username=' +
-                                    encodeURIComponent(usr.toLowerCase()) +
-                                    '&ProjectName=' +
-                                    encodeURIComponent(proj.ProjectName);
-                            location.hash = 'present:' + projectId;
-                        }
-                    },
-                    myself.ide.cloudError()
-                );
-            }
-        );
+ProjectDialogMorph.prototype.shareItem = async function () {
+    const shared = await ProjectDialogMorph.uber.shareItem.call(this);
+    if (shared) {
+        const proj = this.listField.selected;
+        // Set the Shared URL if the project is currently open
+        if (proj.ProjectName === this.ide.projectName) {
+            var usr = SnapCloud.username,
+                projectId = 'Username=' +
+                    encodeURIComponent(usr.toLowerCase()) +
+                    '&ProjectName=' +
+                    encodeURIComponent(proj.ProjectName);
+            location.hash = 'present:' + projectId;
+        }
     }
 };
 
