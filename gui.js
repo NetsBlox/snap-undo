@@ -6307,7 +6307,7 @@ SaveOpenDialogMorph.prototype.shareItem = function() {
         this.ide.confirm(
             localize(
                 'Are you sure you want to publish'
-            ) + '\n"' + proj.ProjectName + '"?',
+            ) + '\n"' + proj.name + '"?',
             'Share ' + this.itemName,
             async function () {
                 myself.ide.showMessage(`sharing\n${this.itemName.toLowerCase()}...`);
@@ -6351,7 +6351,7 @@ SaveOpenDialogMorph.prototype.saveItem = async function(newItem) {
     const myself = this;
     const existingItem = detect(
         this.itemsList,
-        function (item) {return item.ProjectName === newItem.ProjectName; }
+        function (item) {return item.name === newItem.name; }
     );
     const sourceName = localize(this.source.name.toLowerCase());
     const savingMsg = localize(`Saving ${this.itemName.toLowerCase()}\nto the `) + 
@@ -6363,7 +6363,7 @@ SaveOpenDialogMorph.prototype.saveItem = async function(newItem) {
         this.ide.confirm(
             localize(
                 'Are you sure you want to replace'
-            ) + '\n"' + newItem.ProjectName + '"?',
+            ) + '\n"' + newItem.name + '"?',
             'Replace ' + this.itemName,
             async function () {
                 try {
@@ -6513,17 +6513,8 @@ SaveOpenDialogMorph.prototype.buildFilterField = function () {
 
         myself.listField.elements = 
             myself.itemsList.filter(function (aProject) {
-                var name,
-                    notes;
-
-                // FIXME: Make this uniform?
-                if (aProject.ProjectName) { // cloud
-                    name = aProject.ProjectName;
-                    notes = aProject.Notes;
-                } else { // local or examples
-                    name = aProject.name;
-                    notes = aProject.notes || '';
-                }
+                const name = aProject.name;
+                const notes = aProject.notes || '';
 
                 return name.toLowerCase().indexOf(text.toLowerCase()) > -1 ||
                     notes.toLowerCase().indexOf(text.toLowerCase()) > -1;
@@ -6567,9 +6558,8 @@ SaveOpenDialogMorph.prototype.setSource = async function (newSource) {
     }
     msg.destroy();
 
-    // TODO: Make this a generic function
     this.itemsList.sort(function (x, y) {
-        return x.ProjectName.toLowerCase() < y.ProjectName.toLowerCase() ?
+        return x.name.toLowerCase() < y.name.toLowerCase() ?
                  -1 : 1;
     });
 
@@ -6578,7 +6568,7 @@ SaveOpenDialogMorph.prototype.setSource = async function (newSource) {
         this.itemsList,
         this.itemsList.length > 0 ?
                 function (element) {
-                    return element.ProjectName || element;
+                    return element.name || element;
                 } : null,
         [ // format: display shared project names bold
             [
@@ -6601,7 +6591,7 @@ SaveOpenDialogMorph.prototype.setSource = async function (newSource) {
         if (item === undefined) {return; }
         const previewInfo = await myself.source.getPreview(item);
         if (myself.nameField) {
-            myself.nameField.setContents(item.ProjectName || '');
+            myself.nameField.setContents(item.name || '');
         }
         if (myself.task === 'open') {
             myself.notesText.text = previewInfo.notes || '';
@@ -6827,16 +6817,16 @@ NetsBloxCloudProjectsSource.prototype.publish = function(proj) {
                     SnapCloud.disconnect();
                 },
                 myself.ide.cloudError(),
-                [proj.ProjectName]
+                [proj.name]
             );
 
             // Set the Shared URL if the project is currently open
-            if (proj.ProjectName === myself.ide.projectName) {
+            if (proj.name === myself.ide.projectName) {
                 var usr = SnapCloud.username,
                     projectId = 'Username=' +
                         encodeURIComponent(usr.toLowerCase()) +
                         '&ProjectName=' +
-                        encodeURIComponent(proj.ProjectName);
+                        encodeURIComponent(proj.name);
                 location.hash = 'present:' + projectId;
             }
         },
@@ -6855,7 +6845,7 @@ NetsBloxCloudProjectsSource.prototype.getContent = async function(proj) {
                     deferred.resolve(response);
                 },
                 deferred.reject,
-                [proj.ProjectName]
+                [proj.name]
             );
         },
         deferred.reject
@@ -6866,7 +6856,12 @@ NetsBloxCloudProjectsSource.prototype.getContent = async function(proj) {
 NetsBloxCloudProjectsSource.prototype.list = function() {
     const deferred = utils.defer();
     SnapCloud.getProjectList(
-        deferred.resolve,
+        function (projectList) {
+            projectList.forEach(proj => {
+                proj.name = proj.ProjectName;
+            });
+            deferred.resolve(projectList);
+        },
         function (msg, label) {
             const err = new CloudError(label, msg);
             deferred.reject(err);
@@ -6878,7 +6873,7 @@ NetsBloxCloudProjectsSource.prototype.list = function() {
 NetsBloxCloudProjectsSource.prototype.getPreview = function(project) {
     return {
         thumbnail: project.Thumbnail,
-        notes: project.Notes,
+        notes: project.notes,
         details: localize('last changed') + '\n' + project.Updated
     };
 };
@@ -6900,7 +6895,7 @@ NetsBloxCloudProjectsSource.prototype.save = function(newProject) {
             deferred.reject(err);
         },
         true,
-        newProject.ProjectName
+        newProject.name
     );
 
     return deferred.promise;
@@ -6923,7 +6918,12 @@ function SharedCloudProjectsSource(ide) {
 SharedCloudProjectsSource.prototype.list = function() {
     const deferred = utils.defer();
     SnapCloud.getSharedProjectList(
-        deferred.resolve,
+        function(projectList) {
+            projectList.forEach(proj => {
+                proj.name = proj.ProjectName;
+            });
+            deferred.resolve(projectList);
+        },
         function (msg, label) {
             const err = new CloudError(label, msg);
             deferred.reject(err);
@@ -6947,7 +6947,7 @@ function BrowserProjectsSource(ide) {
 }
 
 BrowserProjectsSource.prototype.getContent = function(item) {
-    return localStorage['-snap-project-' + item.ProjectName];
+    return localStorage['-snap-project-' + item.name];
 };
 
 BrowserProjectsSource.prototype.list = function() {
@@ -6957,10 +6957,7 @@ BrowserProjectsSource.prototype.list = function() {
         if (Object.prototype.hasOwnProperty.call(localStorage, stored)
                 && stored.substr(0, 14) === '-snap-project-') {
             name = stored.substr(14);
-            dta = {
-                ProjectName: name,
-            };
-            // TODO: Create local project entry
+            dta = {name};
             projects.push(dta);
         }
     }
@@ -6968,7 +6965,7 @@ BrowserProjectsSource.prototype.list = function() {
 };
 
 BrowserProjectsSource.prototype.save = function(newItem) {
-    this.ide.room.name = newItem.ProjectName;
+    this.ide.room.name = newItem.name;
     this.ide.saveProject(name);
 };
 
@@ -6995,9 +6992,9 @@ CloudProjectExamples.prototype.getContent = function(project) {
 CloudProjectExamples.prototype.list = function() {
     const projects = this.ide.getMediaList('Examples');
     return projects.map(example => ({
-        ProjectName: example.name,
+        name: example.name,
         fileName: example.fileName,
-        Notes: example.description,
+        notes: example.description,
     }));
 };
 
@@ -7103,89 +7100,9 @@ ProjectDialogMorph.prototype.initPreview = function () {
     }
 };
 
-ProjectDialogMorph.prototype.installSharedCloudProjectList = function (pl) {
-    var myself = this;
-    this.itemsList = pl || [];
-    this.itemsList.sort(function (x, y) {
-        return x.ProjectName.toLowerCase() < y.ProjectName.toLowerCase() ?
-            -1 : 1;
-    });
-
-    this.listField.destroy();
-    this.listField = new ListMorph(
-        this.itemsList,
-        this.itemsList.length > 0 ?
-            function (element) {
-                return element.ProjectName || element;
-            } : null,
-        [ // format: display shared project names bold
-            [
-                'bold',
-                function (proj) {return proj.Public === 'true'; }  // FIXME
-            ]
-        ],
-        function () {myself.ok(); }
-    );
-    this.fixListFieldItemColors();
-    this.listField.fixLayout = nop;
-    this.listField.edge = InputFieldMorph.prototype.edge;
-    this.listField.fontSize = InputFieldMorph.prototype.fontSize;
-    this.listField.typeInPadding = InputFieldMorph.prototype.typeInPadding;
-    this.listField.contrast = InputFieldMorph.prototype.contrast;
-    this.listField.drawNew = InputFieldMorph.prototype.drawNew;
-    this.listField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
-
-    this.listField.action = function (item) {
-        if (item === undefined) {return; }
-        if (myself.nameField) {
-            myself.nameField.setContents(item.ProjectName || '');
-        }
-        if (myself.task === 'open') {
-            myself.notesText.text = item.Notes || '';
-            myself.notesText.drawNew();
-            myself.notesField.contents.adjustBounds();
-            myself.preview.texture = item.Thumbnail || null;
-            myself.preview.cachedTexture = null;
-            myself.preview.drawNew();
-            (new SpeechBubbleMorph(new TextMorph(
-                localize('owner') + ': ' + item.Owner + '\n' +
-                localize('last changed') + '\n' + item.Updated,
-                null,
-                null,
-                null,
-                null,
-                'center'
-            ))).popUp(
-                myself.world(),
-                myself.preview.rightCenter().add(new Point(2, 0))
-            );
-        }
-        if (item.Public === 'true') {
-            myself.shareButton.hide();
-            myself.unshareButton.show();
-        } else {
-            myself.unshareButton.hide();
-            myself.shareButton.show();
-        }
-        myself.buttons.fixLayout();
-        myself.fixLayout();
-        myself.edit();
-    };
-    this.body.add(this.listField);
-    this.shareButton.show();
-    this.unshareButton.hide();
-    this.deleteButton.show();
-    this.buttons.fixLayout();
-    this.fixLayout();
-    if (this.task === 'open') {
-        this.clearDetails();
-    }
-};
-
 ProjectDialogMorph.prototype.saveItem = function () {
     var name = this.nameField.contents().text.text,
-        notes = this.notesText.text,
-        myself = this;
+        notes = this.notesText.text;
 
     this.ide.projectNotes = notes || this.ide.projectNotes;
     if (/[\.@]+/.test(name)) {
@@ -7199,53 +7116,11 @@ ProjectDialogMorph.prototype.saveItem = function () {
     }
 
     const newProjectDetails = {
-        ProjectName: name,
-        Notes: notes,
+        name: name,
+        notes: notes,
     };
     // TODO: Set the current room name?
     ProjectDialogMorph.uber.saveItem.call(this, newProjectDetails);
-
-    //if (this.source === 'cloud') {
-        //if (detect(
-                //this.itemsList,
-                //function (item) {return item.ProjectName === name; }
-            //)) {
-            //this.ide.confirm(
-                //localize(
-                    //'Are you sure you want to replace'
-                //) + '\n"' + name + '"?',
-                //'Replace Project',
-                //function () {
-                    //myself.saveCloudProject(name);
-                //}
-            //);
-        //} else {
-            //myself.saveCloudProject(name);
-        //}
-    //} else { // 'local'
-        //if (detect(
-                //this.itemsList,
-                //function (item) {return item.name === name; }
-            //)) {
-            //this.ide.confirm(
-                //localize(
-                    //'Are you sure you want to replace'
-                //) + '\n"' + name + '"?',
-                //'Replace Project',
-                //function () {
-                    //myself.ide.room.name = name;
-                    //myself.ide.source = 'local';
-                    //myself.ide.saveProject(name);
-                    //myself.destroy();
-                //}
-            //);
-        //} else {
-            //this.ide.room.name = name;
-            //myself.ide.source = 'local';
-            //this.ide.saveProject(name);
-            //this.destroy();
-        //}
-    //}
 };
 
 ProjectDialogMorph.prototype.saveCloudProject = function (name) {
@@ -7279,7 +7154,7 @@ ProjectDialogMorph.prototype.deleteItem = function () {
             this.ide.confirm(
                 localize(
                     'Are you sure you want to delete'
-                ) + '\n"' + proj.ProjectName + '"?',
+                ) + '\n"' + proj.name + '"?',
                 'Delete Project',
                 function () {
                     SnapCloud.reconnect(
@@ -7297,7 +7172,7 @@ ProjectDialogMorph.prototype.deleteItem = function () {
                                     ); // refresh list
                                 },
                                 myself.ide.cloudError(),
-                                [proj.ProjectName]
+                                [proj.name]
                             );
                         },
                         myself.ide.cloudError()
@@ -7327,12 +7202,12 @@ ProjectDialogMorph.prototype.shareItem = async function () {
     if (shared) {
         const proj = this.listField.selected;
         // Set the Shared URL if the project is currently open
-        if (proj.ProjectName === this.ide.projectName) {
+        if (proj.name === this.ide.projectName) {
             var usr = SnapCloud.username,
                 projectId = 'Username=' +
                     encodeURIComponent(usr.toLowerCase()) +
                     '&ProjectName=' +
-                    encodeURIComponent(proj.ProjectName);
+                    encodeURIComponent(proj.name);
             location.hash = 'present:' + projectId;
         }
     }
@@ -7348,9 +7223,10 @@ ProjectDialogMorph.prototype.unshareItem = function () {
         this.ide.confirm(
             localize(
                 'Are you sure you want to unpublish'
-            ) + '\n"' + proj.ProjectName + '"?',
+            ) + '\n"' + proj.name + '"?',
             'Unshare Project',
             function () {
+                // TODO: Move this to the sources
                 myself.ide.showMessage('unsharing\nproject...');
                 SnapCloud.reconnect(
                     function () {
@@ -7369,10 +7245,10 @@ ProjectDialogMorph.prototype.unshareItem = function () {
                                 myself.ide.showMessage('unshared.', 2);
                             },
                             myself.ide.cloudError(),
-                            [proj.ProjectName]
+                            [proj.name]
                         );
                         // Remove the shared URL if the project is open.
-                        if (proj.ProjectName === ide.projectName) {
+                        if (proj.name === ide.projectName) {
                             location.hash = '';
                         }
                     },
