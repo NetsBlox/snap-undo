@@ -6324,16 +6324,17 @@ SaveOpenDialogMorph.prototype.shareItem = function() {
 SaveOpenDialogMorph.prototype.unshareItem = function() {
     const deferred = utils.defer();
     const item = this.listField.selected;
+    const entry = this.listField.active;
 
     if (item) {
         const dialog = this.ide.confirm(
             localize(
                 'Are you sure you want to unpublish'
-            ) + '\n"' + proj.name + '"?',
+            ) + '\n"' + item.name + '"?',
             'Unshare ' + this.itemName,
             async () => {
                 this.ide.showMessage(`unsharing\n${this.itemName.toLowerCase()}...`);
-                await this.source.publish(item, false);
+                await this.source.publish(item, true);
 
                 item.public = false;
                 this.shareButton.show();
@@ -6349,7 +6350,7 @@ SaveOpenDialogMorph.prototype.unshareItem = function() {
             }
         );
         dialog.cancel = () => {
-            deferred.resolve()
+            deferred.resolve();
             dialog.destroy();
         };
     } else {
@@ -6828,41 +6829,12 @@ function CloudProjectsSource(ide) {
 
 CloudProjectsSource.prototype.publish = function(proj, unpublish = false) {
     const serviceName = unpublish ? 'unpublishProject' : 'publishProject';
-
-//SnapCloud.reconnect(
-    //function () {
-        //SnapCloud.callService(
-            //'unpublishProject',
-            //function () {
-                //SnapCloud.disconnect();
-                //proj.public = 'false';
-                //myself.shareButton.show();
-                //myself.unshareButton.hide();
-                //entry.label.isBold = false;
-                //entry.label.drawNew();
-                //entry.label.changed();
-                //myself.buttons.fixLayout();
-                //myself.drawNew();
-                //myself.ide.showMessage('unshared.', 2);
-            //},
-            //myself.ide.cloudError(),
-            //[proj.name]
-        //);
-        //// Remove the shared URL if the project is open.
-        //if (proj.name === ide.projectName) {
-            //location.hash = '';
-        //}
-    //},
-    //myself.ide.cloudError()
-//);
-
-
-
     const myself = this;
+
     SnapCloud.reconnect(
         function () {
             SnapCloud.callService(
-                'publishProject',
+                serviceName,
                 function () {
                     SnapCloud.disconnect();
                 },
@@ -6871,7 +6843,7 @@ CloudProjectsSource.prototype.publish = function(proj, unpublish = false) {
             );
 
             // Set the Shared URL if the project is currently open
-            if (proj.name === myself.ide.projectName) {
+            if (!unpublish && proj.name === myself.ide.projectName) {
                 var usr = SnapCloud.username,
                     projectId = 'Username=' +
                         encodeURIComponent(usr.toLowerCase()) +

@@ -116,7 +116,11 @@
     TestUtils.unpublishProject = async function(projectName, dialog) {
         await performOpenProjectAction(projectName, dialog, 'unshareItem');
 
-        const confirmDialog = driver.dialogs().find(dialog => dialog.key.startsWith('decideUnshare'));
+        const getConfirmDialog = () => driver.dialogs()
+            .find(dialog => dialog.key && dialog.key.startsWith('decideUnshare'));
+
+        await driver.expect(getConfirmDialog, 'Confirm dialog did not show up');
+        const confirmDialog = getConfirmDialog();
         confirmDialog.ok();
 
         dialog = await TestUtils.openProjectsBrowser();
@@ -139,10 +143,11 @@
             () => TestUtils.getProjectList(dialog).includes(projectName),
             `Could not find ${projectName} in project list`
         );
+        await driver.sleep(50);  // FIXME: bug when deleting (async texture drawing)
         const projectList = dialog.listField.listContents.children;
         const listItem = projectList.find(item => item.labelString === projectName);
-        await driver.sleep(50);  // FIXME: bug when deleting (async texture drawing)
         driver.click(listItem);
+        await driver.sleep(50);  // FIXME: bug when deleting (async texture drawing)
         const shareBtn = dialog.buttons.children.find(btn => btn.action === action);
         if (!shareBtn.isVisible) {
             const source = dialog.source.name.toLowerCase();
