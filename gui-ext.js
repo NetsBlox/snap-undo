@@ -3,27 +3,6 @@
    detect, Point
    */
 
-ProjectDialogMorph.prototype._deleteProject =
-    ProjectDialogMorph.prototype.deleteProject;
-
-ProjectDialogMorph.prototype.deleteProject = function () {
-    if (this.source === 'cloud-shared') {
-        // Remove self from list of collabs
-        var name = this.listField.selected.ProjectName;
-        this.ide.confirm(
-            localize(
-                'Are you sure you want to delete'
-            ) + '\n"' + name + '"?',
-            'Delete Project',
-            function() {
-                SnapCloud.evictCollaborator(SnapCloud.username);
-            }
-        );
-    } else {
-        this._deleteProject();
-    }
-};
-
 // adapted from installCloudProjectList
 ProjectDialogMorph.prototype._openProject = ProjectDialogMorph.prototype.openProject;
 ProjectDialogMorph.prototype.openProject = function () {
@@ -121,22 +100,6 @@ ProjectDialogMorph.prototype.openCloudProject = function (project) {
             msg.destroy();
         }
     ]);
-};
-
-// TODO: Why is this one so much different?
-ProjectDialogMorph.prototype.rawOpenCloudProject = function (proj) {
-    var myself = this,
-        msg = myself.ide.showMessage('Fetching project\nfrom the cloud...');
-
-    SnapCloud.getProject(
-        proj.ID,
-        function (xml) {
-            msg.destroy();
-            myself.ide.rawLoadCloudProject(xml, proj.Public);
-        },
-        myself.ide.cloudError()
-    );
-    this.destroy();
 };
 
 ////////////////////////////////////////////////////

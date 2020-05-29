@@ -3215,13 +3215,7 @@ IDE_Morph.prototype.projectMenu = function () {
     menu.addPair('New', 'createNewProject', '^N');
     menu.addPair('Open...', 'openProjectsBrowser', '^O');
     menu.addPair('Save', "save", '^S');
-    menu.addItem('Save As...', function() {
-            if (myself.isPreviousVersion()) {
-                return myself.showMessage('Please exit replay mode before saving');
-            }
-
-            myself.saveProjectsBrowser();
-        });
+    menu.addItem('Save As...', 'saveAs');
     if (shiftClicked) {
         menu.addItem(
             localize('Replay events from file'),
@@ -3946,6 +3940,14 @@ IDE_Morph.prototype.isPreviousVersion = function () {
         }).length - newHistoryLen;
 
     return lostEventCount > 0;
+};
+
+IDE_Morph.prototype.saveAs = function () {
+    if (this.isPreviousVersion()) {
+        return this.showMessage('Please exit replay mode before saving');
+    }
+
+    this.saveProjectsBrowser();
 };
 
 IDE_Morph.prototype.save = function () {
@@ -6040,11 +6042,13 @@ IDE_Morph.prototype.inform = function (title, message) {
 };
 
 IDE_Morph.prototype.confirm = function (message, title, action) {
-    new DialogBoxMorph(null, action).askYesNo(
+    const dialog = new DialogBoxMorph(null, action);
+    dialog.askYesNo(
         title,
         localize(message),
         this.world()
     );
+    return dialog;
 };
 
 IDE_Morph.prototype.prompt = function (message, callback, choices, key) {
@@ -6057,43 +6061,18 @@ IDE_Morph.prototype.prompt = function (message, callback, choices, key) {
     );
 };
 
-// SaveOpenDialogMorphItem ////////////////////////////////////////////////////
-
-SaveOpenDialogMorphItem.prototype.constructor = SaveOpenDialogMorphItem;
-
-function SaveOpenDialogMorphItem (name) {
-}
-
-SaveOpenDialogMorphItem.prototype.content = function() {
-};
-
-SaveOpenDialogMorphItem.prototype.thumbnail = function() {
-};
-
-// TODO: is shared?
-// TODO: get thumbnail/preview
-
 // SaveOpenDialogMorphSource ////////////////////////////////////////////////////
 
 SaveOpenDialogMorphSource.prototype.constructor = SaveOpenDialogMorphSource;
 
-function SaveOpenDialogMorphSource (name, icon, list, id) {
-    this.init(name, icon, list, id);
+function SaveOpenDialogMorphSource (name, icon, id) {
+    this.init(name, icon, id);
 }
 
-SaveOpenDialogMorphSource.prototype.init = function(name, icon, list, id) {
+SaveOpenDialogMorphSource.prototype.init = function(name, icon, id) {
     this.name = name;
     this.icon = icon;
-    this.list = list || this.list;
     this.id = id || name.toLowerCase();
-};
-
-SaveOpenDialogMorphSource.prototype.enablePublish = function(publishFn) {
-    this.actions.publish = publishFn;
-};
-
-SaveOpenDialogMorphSource.prototype.enableDelete = function(deleteFn) {
-    this.actions.delete = deleteFn;
 };
 
 SaveOpenDialogMorphSource.prototype.getContent = function(/*item*/) {
@@ -6294,7 +6273,17 @@ SaveOpenDialogMorph.prototype.buildContents = function (currentData) {
 SaveOpenDialogMorph.prototype.deleteItem = function() {
     const item = this.listField.selected;
     if (item) {
-        this.source.delete(item);
+        this.ide.confirm(
+            localize(
+                'Are you sure you want to delete'
+            ) + '\n"' + item.name + '"?',
+            'Delete ' + this.itemName,
+            async () => {
+                await this.source.delete(item);
+                // TODO: There may be a more efficient way to handle this
+                this.setSource(this.source);
+            }
+        );
     }
 };
 
@@ -6310,10 +6299,10 @@ SaveOpenDialogMorph.prototype.shareItem = function() {
             ) + '\n"' + proj.name + '"?',
             'Share ' + this.itemName,
             async function () {
-                myself.ide.showMessage(`sharing\n${this.itemName.toLowerCase()}...`);
+                myself.ide.showMessage(`sharing\n${myself.itemName.toLowerCase()}...`);
                 try {
                     await myself.source.publish(proj);
-                    proj.Public = 'true';
+                    proj.public = true;
                     myself.unshareButton.show();
                     myself.shareButton.hide();
                     entry.label.isBold = true;
@@ -6333,16 +6322,47 @@ SaveOpenDialogMorph.prototype.shareItem = function() {
 };
 
 SaveOpenDialogMorph.prototype.unshareItem = function() {
+    const deferred = utils.defer();
     const item = this.listField.selected;
+
     if (item) {
-        this.source.publish(item, false);
+        const dialog = this.ide.confirm(
+            localize(
+                'Are you sure you want to unpublish'
+            ) + '\n"' + proj.name + '"?',
+            'Unshare ' + this.itemName,
+            async () => {
+                this.ide.showMessage(`unsharing\n${this.itemName.toLowerCase()}...`);
+                await this.source.publish(item, false);
+
+                item.public = false;
+                this.shareButton.show();
+                this.unshareButton.hide();
+                entry.label.isBold = false;
+                entry.label.drawNew();
+                entry.label.changed();
+                this.buttons.fixLayout();
+                this.drawNew();
+
+                this.ide.showMessage('unshared.', 2);
+                deferred.resolve(item);
+            }
+        );
+        dialog.cancel = () => {
+            deferred.resolve()
+            dialog.destroy();
+        };
+    } else {
+        deferred.resolve();
     }
+
+    return deferred.promise;
 };
 
 SaveOpenDialogMorph.prototype.openItem = async function() {
     const item = this.listField.selected;
     if (item) {
-        this.ide.droppedText(await this.source.getContent(item));
+        await this.source.open(item);
         this.destroy();
     }
 };
@@ -6389,8 +6409,7 @@ SaveOpenDialogMorph.prototype.saveItem = async function(newItem) {
     }
 };
 
-SaveOpenDialogMorph.prototype.initPreview =
-SaveOpenDialogMorph.prototype.unshareItem = function() {
+SaveOpenDialogMorph.prototype.initPreview = function() {
     throw new Error('Action not supported!');
 };
 
@@ -6573,7 +6592,7 @@ SaveOpenDialogMorph.prototype.setSource = async function (newSource) {
         [ // format: display shared project names bold
             [
                 'bold',
-                function (proj) {return proj.Public === 'true'; }
+                function (proj) {return proj.public === true; }
             ]
         ],
         function () {myself.ok(); }
@@ -6617,7 +6636,7 @@ SaveOpenDialogMorph.prototype.setSource = async function (newSource) {
         }
 
         if (myself.source.canPublish()) {
-            if (item.Public === 'true') {
+            if (item.public) {
                 myself.shareButton.hide();
                 myself.unshareButton.show();
             } else {
@@ -6774,7 +6793,7 @@ function ProjectsDialogSource(ide) {
 }
 
 ProjectsDialogSource.prototype.init = function(ide, name, icon, id) {
-    ProjectsDialogSource.uber.init.call(this, name, icon, null, id);
+    ProjectsDialogSource.uber.init.call(this, name, icon, id);
     this.ide = ide;
 };
 
@@ -6789,25 +6808,56 @@ ProjectsDialogSource.prototype.getPreview = async function(project) {
     };
 };
 
-ProjectsDialogSource.prototype.open = function(project) {
-    return this.getContent(project);
+ProjectsDialogSource.prototype.open = async function(project) {
+    return this.ide.droppedText(await this.getContent(project));
 };
 
-// NetsBloxCloudProjectsSource ////////////////////////////////////////////////////
+// CloudProjectsSource ////////////////////////////////////////////////////
 
-// NetsBloxCloudProjectsSource inherits from DialogBoxMorph:
+// CloudProjectsSource inherits from DialogBoxMorph:
 
-NetsBloxCloudProjectsSource.prototype = Object.create(ProjectsDialogSource.prototype);
-NetsBloxCloudProjectsSource.prototype.constructor = NetsBloxCloudProjectsSource;
-NetsBloxCloudProjectsSource.uber = ProjectsDialogSource.prototype;
+CloudProjectsSource.prototype = Object.create(ProjectsDialogSource.prototype);
+CloudProjectsSource.prototype.constructor = CloudProjectsSource;
+CloudProjectsSource.uber = ProjectsDialogSource.prototype;
 
-// NetsBloxCloudProjectsSource instance creation:
+// CloudProjectsSource instance creation:
 
-function NetsBloxCloudProjectsSource(ide) {
+function CloudProjectsSource(ide) {
     this.init(ide, 'Cloud', 'cloud');
 }
 
-NetsBloxCloudProjectsSource.prototype.publish = function(proj) {
+CloudProjectsSource.prototype.publish = function(proj, unpublish = false) {
+    const serviceName = unpublish ? 'unpublishProject' : 'publishProject';
+
+//SnapCloud.reconnect(
+    //function () {
+        //SnapCloud.callService(
+            //'unpublishProject',
+            //function () {
+                //SnapCloud.disconnect();
+                //proj.public = 'false';
+                //myself.shareButton.show();
+                //myself.unshareButton.hide();
+                //entry.label.isBold = false;
+                //entry.label.drawNew();
+                //entry.label.changed();
+                //myself.buttons.fixLayout();
+                //myself.drawNew();
+                //myself.ide.showMessage('unshared.', 2);
+            //},
+            //myself.ide.cloudError(),
+            //[proj.name]
+        //);
+        //// Remove the shared URL if the project is open.
+        //if (proj.name === ide.projectName) {
+            //location.hash = '';
+        //}
+    //},
+    //myself.ide.cloudError()
+//);
+
+
+
     const myself = this;
     SnapCloud.reconnect(
         function () {
@@ -6834,31 +6884,30 @@ NetsBloxCloudProjectsSource.prototype.publish = function(proj) {
     );
 };
 
-NetsBloxCloudProjectsSource.prototype.getContent = async function(proj) {
+CloudProjectsSource.prototype.open = async function(proj) {
     const deferred = utils.defer();
-    SnapCloud.reconnect(
-        function () {
-            SnapCloud.callService(
-                'getRawProject',
-                function (response) {
-                    SnapCloud.disconnect();
-                    deferred.resolve(response);
-                },
-                deferred.reject,
-                [proj.name]
-            );
+    SnapCloud.getProject(
+        proj.ID,
+        async projectInfo => {
+            await this.ide.rawLoadCloudProject(projectInfo);
+            deferred.resolve(projectInfo);
         },
-        deferred.reject
+        function(msg, label) {
+            const err = new CloudError(label, msg);
+            deferred.reject(err);
+        }
     );
+
     return deferred.promise;
 };
 
-NetsBloxCloudProjectsSource.prototype.list = function() {
+CloudProjectsSource.prototype.list = function() {
     const deferred = utils.defer();
     SnapCloud.getProjectList(
         function (projectList) {
             projectList.forEach(proj => {
                 proj.name = proj.ProjectName;
+                proj.public = proj.Public === 'true';
             });
             deferred.resolve(projectList);
         },
@@ -6870,7 +6919,7 @@ NetsBloxCloudProjectsSource.prototype.list = function() {
     return deferred.promise;
 };
 
-NetsBloxCloudProjectsSource.prototype.getPreview = function(project) {
+CloudProjectsSource.prototype.getPreview = function(project) {
     return {
         thumbnail: project.Thumbnail,
         notes: project.notes,
@@ -6878,7 +6927,7 @@ NetsBloxCloudProjectsSource.prototype.getPreview = function(project) {
     };
 };
 
-NetsBloxCloudProjectsSource.prototype.save = function(newProject) {
+CloudProjectsSource.prototype.save = function(newProject) {
     const deferred = utils.defer();
 
     const myself = this;
@@ -6899,6 +6948,23 @@ NetsBloxCloudProjectsSource.prototype.save = function(newProject) {
     );
 
     return deferred.promise;
+};
+
+CloudProjectsSource.prototype.delete = function(project) {
+    SnapCloud.reconnect(
+        () => {
+            SnapCloud.callService(
+                'deleteProject',
+                () => {
+                    SnapCloud.disconnect();
+                    this.ide.hasChangedMedia = true;
+                },
+                this.ide.cloudError(),
+                [project.name]
+            );
+        },
+        this.ide.cloudError()
+    );
 };
 
 // SharedCloudProjectsSource ////////////////////////////////////////////////////
@@ -6930,6 +6996,21 @@ SharedCloudProjectsSource.prototype.list = function() {
         }
     );
     return deferred.promise;
+};
+
+SharedCloudProjectsSource.prototype.delete = function(project) {
+    // FIXME: specify the project!
+    SnapCloud.evictCollaborator(SnapCloud.username);
+};
+
+SharedCloudProjectsSource.prototype.open = function(project) {
+    SnapCloud.joinActiveProject(
+        project.ID,
+        async xml => {
+            this.ide.rawLoadCloudProject(xml, project.public);
+        },
+        this.ide.cloudError()
+    );
 };
 
 // BrowserProjectsSource ////////////////////////////////////////////////////
@@ -6969,6 +7050,10 @@ BrowserProjectsSource.prototype.save = function(newItem) {
     this.ide.saveProject(name);
 };
 
+BrowserProjectsSource.prototype.delete = function(item) {
+    delete localStorage['-snap-project-' + item.name];
+};
+
 // CloudProjectExamples ////////////////////////////////////////////////////
 
 // CloudProjectExamples inherits from DialogBoxMorph:
@@ -6998,27 +7083,6 @@ CloudProjectExamples.prototype.list = function() {
     }));
 };
 
-// NetsBloxCloudSharedProjectsSource ////////////////////////////////////////////////////
-
-// NetsBloxCloudSharedProjectsSource inherits from NetsBloxCloudProjectsSource:
-
-NetsBloxCloudSharedProjectsSource.prototype = Object.create(NetsBloxCloudProjectsSource.prototype);
-NetsBloxCloudSharedProjectsSource.prototype.constructor = NetsBloxCloudSharedProjectsSource;
-NetsBloxCloudSharedProjectsSource.uber = NetsBloxCloudProjectsSource.prototype;
-
-// NetsBloxCloudProjectsSource instance creation:
-
-function NetsBloxCloudSharedProjectsSource(ide) {
-    this.init(ide);
-}
-
-NetsBloxCloudSharedProjectsSource.prototype.init = function(ide) {
-    // FIXME
-};
-
-NetsBloxCloudSharedProjectsSource.prototype.list = function() {
-};
-
 // ProjectDialogMorph ////////////////////////////////////////////////////
 
 // ProjectDialogMorph inherits from DialogBoxMorph:
@@ -7036,7 +7100,7 @@ function ProjectDialogMorph(ide, label) {
 ProjectDialogMorph.prototype.init = function (ide, task) {
     this.ide = ide;
     const sources = [
-        new NetsBloxCloudProjectsSource(ide),
+        new CloudProjectsSource(ide),
         new SharedCloudProjectsSource(ide),
         new BrowserProjectsSource(ide),
         new CloudProjectExamples(ide),
@@ -7142,61 +7206,6 @@ ProjectDialogMorph.prototype.saveCloudProject = function (name) {
     this.destroy();
 };
 
-ProjectDialogMorph.prototype.deleteItem = function () {
-    var myself = this,
-        proj,
-        idx,
-        name;
-
-    if (this.source === 'cloud') {
-        proj = this.listField.selected;
-        if (proj) {
-            this.ide.confirm(
-                localize(
-                    'Are you sure you want to delete'
-                ) + '\n"' + proj.name + '"?',
-                'Delete Project',
-                function () {
-                    SnapCloud.reconnect(
-                        function () {
-                            SnapCloud.callService(
-                                'deleteProject',
-                                function () {
-                                    SnapCloud.disconnect();
-                                    myself.ide.hasChangedMedia = true;
-                                    idx = myself.itemsList.indexOf(proj);
-                                    myself.itemsList.splice(idx, 1);
-                                    // TODO: FIXME
-                                    myself.installCloudProjectList(
-                                        myself.itemsList
-                                    ); // refresh list
-                                },
-                                myself.ide.cloudError(),
-                                [proj.name]
-                            );
-                        },
-                        myself.ide.cloudError()
-                    );
-                }
-            );
-        }
-    } else { // 'local, examples'
-        if (this.listField.selected) {
-            name = this.listField.selected.name;
-            this.ide.confirm(
-                localize(
-                    'Are you sure you want to delete'
-                ) + '\n"' + name + '"?',
-                'Delete Project',
-                function () {
-                    delete localStorage['-snap-project-' + name];
-                    myself.setSource(myself.source); // refresh list
-                }
-            );
-        }
-    }
-};
-
 ProjectDialogMorph.prototype.shareItem = async function () {
     const shared = await ProjectDialogMorph.uber.shareItem.call(this);
     if (shared) {
@@ -7213,49 +7222,10 @@ ProjectDialogMorph.prototype.shareItem = async function () {
     }
 };
 
-ProjectDialogMorph.prototype.unshareItem = function () {
-    var myself = this,
-        ide = this.ide,
-        proj = this.listField.selected,
-        entry = this.listField.active;
-
-    if (proj) {
-        this.ide.confirm(
-            localize(
-                'Are you sure you want to unpublish'
-            ) + '\n"' + proj.name + '"?',
-            'Unshare Project',
-            function () {
-                // TODO: Move this to the sources
-                myself.ide.showMessage('unsharing\nproject...');
-                SnapCloud.reconnect(
-                    function () {
-                        SnapCloud.callService(
-                            'unpublishProject',
-                            function () {
-                                SnapCloud.disconnect();
-                                proj.Public = 'false';
-                                myself.shareButton.show();
-                                myself.unshareButton.hide();
-                                entry.label.isBold = false;
-                                entry.label.drawNew();
-                                entry.label.changed();
-                                myself.buttons.fixLayout();
-                                myself.drawNew();
-                                myself.ide.showMessage('unshared.', 2);
-                            },
-                            myself.ide.cloudError(),
-                            [proj.name]
-                        );
-                        // Remove the shared URL if the project is open.
-                        if (proj.name === ide.projectName) {
-                            location.hash = '';
-                        }
-                    },
-                    myself.ide.cloudError()
-                );
-            }
-        );
+ProjectDialogMorph.prototype.unshareItem = async function () {
+    const project = await ProjectDialogMorph.uber.unshareItem.call(this);
+    if (project && project.name === this.ide.projectName) {
+        location.hash = '';
     }
 };
 
