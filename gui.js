@@ -6111,14 +6111,6 @@ SaveOpenDialogMorph.prototype.constructor = SaveOpenDialogMorph;
 SaveOpenDialogMorph.uber = DialogBoxMorph.prototype;
 
 function SaveOpenDialogMorph() {
-    // TODO: Need to know
-    //  - [ ] task
-    //  - [ ] type/label
-    //  - [ ] current name (if saving)
-    //  - [ ] current description (if saving)
-    //  - [ ] sources (maybe implemented as function in subclass)
-    //  - [ ] how to create preview
-    //this.init(task, label, source);
 }
 
 SaveOpenDialogMorph.prototype.init = function (task, itemName, sources, source, currentData) {
@@ -6234,7 +6226,7 @@ SaveOpenDialogMorph.prototype.buildContents = function (currentData) {
     this.body.add(this.notesField);
 
     if (this.task === 'open') {
-        this.addButton('openItem', 'Open');  // TODO: "Import"
+        this.addButton('openItem', 'Open');
         this.action = 'openItem';
     } else { // 'save'
         this.addButton('saveItem', 'Save');
