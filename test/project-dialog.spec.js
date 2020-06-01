@@ -44,7 +44,7 @@ describe('ProjectDialogMorph', function() {
             await TestUtils.deleteProject(name, openDialog);
         });
 
-        it.only('should be able to publish/unpublish project', async function() {
+        it('should be able to publish/unpublish project', async function() {
             this.timeout(10000);
             const dialog = await TestUtils.saveProjectsBrowser();
             TestUtils.setProjectsBrowserSource(dialog, 'cloud');
@@ -65,10 +65,18 @@ describe('ProjectDialogMorph', function() {
     });
 
     describe('cloud-shared', function() {
-        it('should be able to open project', function() {
+        const name = 'SharedProject';
+        
+        it('should be able to open project', async function() {
+            const openDialog = await TestUtils.openProjectsBrowser();
+            TestUtils.setProjectsBrowserSource(openDialog, 'cloud-shared');
+            await TestUtils.openProject(name, openDialog);
         });
 
-        it('should be able to delete (evict self from) project', function() {
+        it('should be able to delete (evict self from) project', async function() {
+            const openDialog = await TestUtils.openProjectsBrowser();
+            TestUtils.setProjectsBrowserSource(openDialog, 'cloud-shared');
+            await TestUtils.deleteProject(name, openDialog);
         });
 
         //it('should be able to publish project', function() {

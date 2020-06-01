@@ -69,13 +69,9 @@
         driver.click(listItem);
         dialog.accept();
 
-        // Check for the if-else block
         await driver.expect(
-            () => {
-                const blockCount = driver.ide().currentSprite.scripts.children.length;
-                return blockCount > 0;
-            },
-            `Did not see blocks after loading saved project`
+            () => driver.ide().room.name === projectName,
+            'Did not see the project name update'
         );
     };
 
