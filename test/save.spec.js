@@ -34,7 +34,7 @@ describe('save', function() {
                     return driver.setProjectName(projectName)
                         .then(() => TestUtils.saveProject())
                         .then(() => driver.reset())
-                        .then(() => TestUtils.openSavedProject(projectName));
+                        .then(() => TestUtils.openProject(projectName));
                 });
 
                 it('should overwrite on rename', function() {
@@ -75,7 +75,7 @@ describe('save', function() {
                             .then(() => driver.addBlock('doIfElse'))
                             .then(() => TestUtils.saveProject())
                             .then(() => driver.reset())
-                            .then(() => TestUtils.openSavedProject(projectName))
+                            .then(() => TestUtils.openProject(projectName))
                             .then(() => {
                                 saveAsName = `new${projectName}-saveAs`;
                                 return driver.saveProjectAs(saveAsName);
@@ -158,7 +158,7 @@ describe('save', function() {
                         const menu = driver.dialogs().pop();
                         menu.ok();
                         await driver.expect(
-                            showingSaveMsg,
+                            TestUtils.showingSaveMsg,
                             `Did not show save message on overwrite`
                         );
                         const browser = await TestUtils.openProjectsBrowser();
@@ -173,7 +173,7 @@ describe('save', function() {
                         await driver.saveProjectAs(existingName, false);
                         const menu = driver.dialog();
                         menu.cancel();
-                        const dialog = driver.dialog();
+                        const [dialog] = driver.dialogs();
                         expect(dialog.task).toBe('save');
                     });
                 });
@@ -202,7 +202,7 @@ describe('save', function() {
                     const dialog = driver.dialog();
                     const saveACopyBtn = dialog.children.find(item => item.action === 'saveACopy');
                     driver.click(saveACopyBtn);
-                    return driver.expect(showingSaveMsg, `Did not see save message after "Save Copy"`)
+                    return driver.expect(TestUtils.showingSaveMsg, `Did not see save message after "Save Copy"`)
                         .then(() => TestUtils.openProjectsBrowser())
                         .then(projectDialog => {
                             const copyName = `Copy of ${projectName}`;
