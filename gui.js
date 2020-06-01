@@ -70,7 +70,7 @@ fontHeight, hex_sha512, sb, CommentMorph, CommandBlockMorph,
 BlockLabelPlaceHolderMorph, Audio, SpeechBubbleMorph, ScriptFocusMorph,
 XML_Element, WatcherMorph, BlockRemovalDialogMorph, saveAs, TableMorph,
 isSnapObject, isRetinaEnabled, disableRetinaSupport, enableRetinaSupport,
-isRetinaSupported, SliderMorph, Animation, utils*/
+isRetinaSupported, SliderMorph, Animation, utils, CloudError*/
 
 // Global stuff ////////////////////////////////////////////////////////
 
@@ -6166,33 +6166,19 @@ SaveOpenDialogMorph.prototype.init = function (task, itemName, sources, source, 
 };
 
 SaveOpenDialogMorph.prototype.buildContents = function (currentData) {
-    var thumbnail, notification, baseSize = new Point(455, 335);
+    var baseSize = new Point(455, 146);
 
     this.addBody(new Morph());
     this.body.color = this.color;
 
     this.srcBar = new AlignmentMorph('column', this.padding / 2);
 
-    //if (this.ide.cloudMsg) {  // Is this needed?
-        //notification = new TextMorph(
-            //this.ide.cloudMsg,
-            //10,
-            //null, // style
-            //false, // bold
-            //null, // italic
-            //null, // alignment
-            //null, // width
-            //null, // font name
-            //new Point(1, 1), // shadow offset
-            //new Color(255, 255, 255) // shadowColor
-        //);
-        //notification.refresh = nop;
-        //this.srcBar.add(notification);
-    //}
-
-    this.sources.forEach(source => this.addSourceButton(source));
-    const minHeight = 455;
-    baseSize.y = Math.max(this.sources.length * 50 + 305, 455);
+    this.sources.forEach(source => {
+        const button = this.addSourceButton(source);
+        baseSize.y += button.height();
+    });
+    const minHeight = 335;
+    baseSize.y = Math.max(baseSize.y, minHeight);
     if (this.task === 'open') {
         this.buildFilterField();  // Why is it doing this here?
     }
@@ -6262,11 +6248,7 @@ SaveOpenDialogMorph.prototype.buildContents = function (currentData) {
     this.deleteButton = this.addButton('deleteItem', 'Delete');
     this.addButton('cancel', 'Cancel');
 
-    if (notification) {
-        this.setExtent(baseSize.add(notification.extent()));
-    } else {
-        this.setExtent(baseSize);
-    }
+    this.setExtent(baseSize);
     this.fixLayout();
 };
 
@@ -6497,6 +6479,7 @@ SaveOpenDialogMorph.prototype.addSourceButton = function (source) {
     button.fixLayout();
     button.refresh();
     this.srcBar.add(button);
+    return button;
 };
 
 // SaveOpenDialogMorph list field control
