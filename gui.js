@@ -3411,7 +3411,6 @@ IDE_Morph.prototype.projectMenu = function () {
                 myself.resourceURL('libraries', 'LIBRARIES'),
                 function (txt) {
                     var libraries = myself.parseResourceFile(txt);
-                    // TODO: Update this
                     new LibraryImportDialogMorph(myself, libraries).popUp();
                 }
             );
