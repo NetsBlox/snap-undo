@@ -6971,8 +6971,7 @@ SharedCloudProjectsSource.prototype.list = function() {
 };
 
 SharedCloudProjectsSource.prototype.delete = function(project) {
-    // FIXME: specify the project!
-    SnapCloud.evictCollaborator(SnapCloud.username);
+    SnapCloud.evictCollaborator(SnapCloud.username, project.ID);
 };
 
 SharedCloudProjectsSource.prototype.open = function(project) {
