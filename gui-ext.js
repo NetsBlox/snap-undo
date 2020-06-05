@@ -1,6 +1,6 @@
 /* globals ProjectDialogMorph, ensureFullUrl, localize, nop, Point,
    IDE_Morph, Process, SnapCloud, DialogBoxMorph, SaveOpenDialogMorph,
-   SaveOpenDialogMorphSource, Morph, utils, MenuMorph, SERVER_URL
+   SaveOpenDialogMorphSource, Morph, utils, MenuMorph, SERVER_URL, SnapActions
    */
 
 // adapted from installCloudProjectList
@@ -507,15 +507,21 @@ IDE_Morph.prototype.initializeEmbeddedAPI = function () {
         {
             const {id} = data;
             const xml = await self.getProjectXML();
-            window.parent.postMessage({id, xml});
+            const type = 'reply';
+            window.parent.postMessage({id, type, xml});
             break;
         }
         case 'get-username':
         {
             const {id} = data;
             const {username} = SnapCloud;
-            window.parent.postMessage({id, username});
+            const type = 'reply';
+            window.parent.postMessage({id, type, username});
             break;
+        }
+        case 'emit-actions':
+        {
+            SnapActions.emitActions = true;
         }
         }
     };
