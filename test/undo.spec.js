@@ -1,4 +1,4 @@
-/* globals driver, expect */
+/* globals driver, expect, assert */
 describe('undo', function() {
     let SnapUndo, SnapActions, Point;
     before(() => {
@@ -83,7 +83,7 @@ describe('undo', function() {
             await driver.actionsSettled();
         });
 
-        it('should revert (existing) input on undo', async function() {
+        it('should revert (existing) input on undo (position)', async function() {
             const input = await driver.addBlock('yPosition', new Point(500, 500));
             const startPos = input.position();
             const [inputSlot] = command.inputs();
@@ -98,8 +98,43 @@ describe('undo', function() {
             expect(startPos.eq(input.position())).toBe(true, msg);
         });
 
+        it('should revert (existing) input on undo (attached)', async function() {
+            const input = await driver.addBlock('yPosition', new Point(500, 500));
+            const oldCommand = await driver.addBlock('turn', new Point(600, 500));
+            await driver.dragAndDrop(input, oldCommand.inputs()[0].position());
+            await driver.actionsSettled();
+
+            const [inputSlot] = command.inputs();
+            await driver.dragAndDrop(input, inputSlot.position());
+            await driver.actionsSettled();
+
+            const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
+            await SnapUndo.undo(undoId);
+            await driver.actionsSettled();
+
+            let msg = `Input should be reverted to x position block`;
+            expect(command.inputs()[0]).toBe(firstInput, msg);
+
+            msg = `Expected block to be moved back to turn block`;
+            assert.equal(input.parent, oldCommand);
+        });
+
         it('should revert (new) input on undo', async function() {
-            // TODO:
+            driver.selectCategory('motion');
+            const input = driver.palette().contents.children
+                .find(block => block.selector === 'yPosition');
+
+            const [inputSlot] = command.inputs();
+            await driver.dragAndDrop(input, inputSlot.position());
+            await driver.actionsSettled();
+            const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
+            await SnapUndo.undo(undoId);
+            await driver.waitUntil(() => SnapUndo.undoCount[undoId] === 1);
+            let msg = `Input should be reverted to x position block`;
+            expect(command.inputs()[0]).toBe(firstInput, msg);
+
+            msg = 'Block not removed on undo';
+            expect(SnapActions._blocks[input.id]).toBe(undefined, );
         });
     });
 
@@ -114,7 +149,7 @@ describe('undo', function() {
         it('should clear RPC field on service field change', async function() {
             await selectService(block, 'PublicRoles');
             const [rpcName] = block.inputs()[1].evaluate();
-            driver.assert.notEqual(rpcName, 'setVariable');
+            assert.notEqual(rpcName, 'setVariable');
         });
 
         it('should reset RPC field on undo service field change', async function() {
@@ -124,9 +159,9 @@ describe('undo', function() {
             await SnapUndo.undo(undoId);
 
             const service = block.inputs()[0].evaluate();
-            driver.assert.equal(service, 'CloudVariables');
+            assert.equal(service, 'CloudVariables');
             const [rpcName] = block.inputs()[1].evaluate();
-            driver.assert.equal(rpcName, 'setVariable');
+            assert.equal(rpcName, 'setVariable');
         });
 
         it('should restore inputs on undo RPC field change', async function() {
@@ -144,11 +179,11 @@ describe('undo', function() {
             await SnapUndo.undo(undoId);
 
             const service = block.inputs()[0].evaluate();
-            driver.assert.equal(service, 'CloudVariables');
+            assert.equal(service, 'CloudVariables');
             const [rpcName] = block.inputs()[1].evaluate();
             const argValue = block.inputs()[2].evaluate();
-            driver.assert.equal(rpcName, 'setVariable');
-            driver.assert.equal(argValue, 'name2');
+            assert.equal(rpcName, 'setVariable');
+            assert.equal(argValue, 'name2');
         });
 
         async function selectServiceAndRPC(block, service, rpc) {
