@@ -68,7 +68,7 @@
 // Global stuff ////////////////////////////////////////////////////////
 
 /*global PaintEditorMorph, ListWatcherMorph, PushButtonMorph, ToggleMorph,
-DialogBoxMorph, InputFieldMorph, SpriteIconMorph, BlockMorph,
+DialogBoxMorph, InputFieldMorph, SpriteIconMorph, BlockMorph, Process
 ThreadManager, VariableFrame, detect, BlockMorph, BoxMorph, Color,
 CommandBlockMorph, FrameMorph, HatBlockMorph, MenuMorph, Morph, MultiArgMorph,
 Point, ReporterBlockMorph, ScriptsMorph, StringMorph, SyntaxElementMorph,
@@ -79,7 +79,7 @@ contains, copy, degrees, detect, isString, newCanvas, nop, radians, modules,
 IDE_Morph, VariableDialogMorph, Context, List, SpeechBubbleMorph, RingMorph,
 isNil, TableDialogMorph, BlockEditorMorph, BlockDialogMorph,
 PrototypeHatBlockMorph, localize, TableMorph, TableFrameMorph, normalizeCanvas,
-BooleanSlotMorph, VideoMotion*/
+BooleanSlotMorph, VideoMotion, SnapActions*/
 
 modules.objects = '2017-January-13';
 
@@ -4606,7 +4606,11 @@ SpriteMorph.prototype.toggleVariableWatcher = function (varName, isGlobal) {
         return null;
     }
     watcher = this.findVariableWatcher(varName);
-    SnapActions.toggleVariableWatcher(varName, isGlobal, watcher && watcher.isVisible)
+    SnapActions.toggleVariableWatcher(
+        varName,
+        isGlobal,
+        watcher && watcher.isVisible
+    );
     if (watcher !== null) {
         if (watcher.isVisible) {
             watcher.hide();
@@ -4615,6 +4619,7 @@ SpriteMorph.prototype.toggleVariableWatcher = function (varName, isGlobal) {
             watcher.fixLayout(); // re-hide hidden parts
             watcher.keepWithin(stage);
         }
+        this.refreshVariableWatcher(varName);
         return;
     }
 
@@ -4636,7 +4641,36 @@ SpriteMorph.prototype.toggleVariableWatcher = function (varName, isGlobal) {
     stage.add(watcher);
     watcher.fixLayout();
     watcher.keepWithin(stage);
+    this.refreshVariableWatcher(varName);
     return watcher;
+};
+
+SpriteMorph.prototype.findVariableWatcherToggle = function (varName, palette) {
+    palette = palette || this.palette('variables');
+    const paletteItems = palette.contents.children;
+    const isWatcherToggle = item => item instanceof ToggleMorph;
+    let i = 2;
+
+    while (i < paletteItems.length - 2 && isWatcherToggle(paletteItems[i])) {
+        const variable = paletteItems[i + 1];
+        if (variable.blockSpec === varName) {
+            return paletteItems[i];
+        }
+        i += 2;
+    }
+};
+
+SpriteMorph.prototype.refreshVariableWatcher = function (varName) {
+    const ide = this.parentThatIsA(IDE_Morph);
+    if (ide) {
+        const palettes = ide.sprites.asArray().concat(ide.stage)
+            .map(spriteOrStage => spriteOrStage.palette('variables'));
+        const toggles = palettes
+            .map(palette => this.findVariableWatcherToggle(varName, palette))
+            .filter(toggle => !!toggle);
+
+        toggles.forEach(toggle => toggle.refresh());
+    }
 };
 
 SpriteMorph.prototype.showingVariableWatcher = function (varName) {
@@ -7069,6 +7103,12 @@ StageMorph.prototype.findVariableWatcher
 StageMorph.prototype.toggleVariableWatcher
     = SpriteMorph.prototype.toggleVariableWatcher;
 
+StageMorph.prototype.findVariableWatcherToggle
+    = SpriteMorph.prototype.findVariableWatcherToggle;
+
+StageMorph.prototype.refreshVariableWatcher
+    = SpriteMorph.prototype.refreshVariableWatcher;
+
 StageMorph.prototype.showingVariableWatcher
     = SpriteMorph.prototype.showingVariableWatcher;
 
@@ -9255,8 +9295,31 @@ WatcherMorph.prototype.userMenu = function () {
                 });
             }
         }
+        menu.addItem(
+            'hide...',
+            function () {
+                const ide = myself.parentThatIsA(IDE_Morph);
+                const varName = myself.getter;
+                if (myself.isTemporary()) {
+                    myself.destroy();
+                } else {
+                    ide.stage.toggleVariableWatcher(varName);
+                }
+            }
+        );
     }
     return menu;
+};
+
+WatcherMorph.prototype.parseTxt = function () {
+    // experimental!
+    var src = this.target.vars[this.getter].value;
+    this.target.setVar(
+        this.getter,
+        src.indexOf('[') === 0 ?
+            Process.prototype.parseJSON(src)
+                : Process.prototype.parseCSV(src)
+    );
 };
 
 WatcherMorph.prototype.setStyle = function (style) {
