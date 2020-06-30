@@ -114,23 +114,41 @@ describe('undo', function() {
         it('should clear RPC field on service field change', async function() {
             await selectService(block, 'PublicRoles');
             const [rpcName] = block.inputs()[1].evaluate();
-            expect(rpcName).toNotBe('setVariable');
+            driver.assert.notEqual(rpcName, 'setVariable');
         });
 
         it('should reset RPC field on undo service field change', async function() {
             await selectService(block, 'PublicRoles');
             const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
+            await driver.actionsSettled();
             await SnapUndo.undo(undoId);
-            await driver.expect(
-                () => {
-                    const [rpcName] = block.inputs()[1].evaluate();
-                    return rpcName === 'setVariable';
-                },
-                'RPC field not reset on undo service'
-            );
+
+            const service = block.inputs()[0].evaluate();
+            driver.assert.equal(service, 'CloudVariables');
+            const [rpcName] = block.inputs()[1].evaluate();
+            driver.assert.equal(rpcName, 'setVariable');
         });
 
-        it('should restore inputs on undo RPC field change', function() {
+        it('should restore inputs on undo RPC field change', async function() {
+            await driver.expect(
+                () => block.inputs().length > 2,
+                'RPC method signature not loaded'
+            );
+
+            driver.click(block.inputs()[2]);
+            driver.keys('2');
+            await driver.actionsSettled();
+            await selectRPC(block, 'lockVariable');
+            const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
+            await driver.actionsSettled();
+            await SnapUndo.undo(undoId);
+
+            const service = block.inputs()[0].evaluate();
+            driver.assert.equal(service, 'CloudVariables');
+            const [rpcName] = block.inputs()[1].evaluate();
+            const argValue = block.inputs()[2].evaluate();
+            driver.assert.equal(rpcName, 'setVariable');
+            driver.assert.equal(argValue, 'name2');
         });
 
         async function selectServiceAndRPC(block, service, rpc) {
