@@ -58,6 +58,7 @@ describe('undo', function() {
             await SnapActions.moveBlock(block, target);
         });
 
+        // failing
         it('should restore pos after connecting to another block', async function() {
             const bottomBlock = await driver.addBlock('doSayFor', new Point(300, 300));
             const [topTarget] = bottomBlock.attachTargets();
@@ -108,6 +109,7 @@ describe('undo', function() {
             expect(startPos.eq(input.position())).toBe(true, msg);
         });
 
+        // failing
         it('should revert (existing) input on undo (attached)', async function() {
             const input = await driver.addBlock('yPosition', new Point(500, 500));
             const oldCommand = await driver.addBlock('turn', new Point(600, 500));
@@ -165,6 +167,7 @@ describe('undo', function() {
             await driver.actionsSettled();
         });
 
+        // failing
         it('should revert (new) input to cslot on undo', async function() {
             const [block] = Object.values(SnapActions._blocks);
             driver.selectCategory('motion');
@@ -200,6 +203,7 @@ describe('undo', function() {
             await selectServiceAndRPC(block, 'CloudVariables', 'setVariable');
         });
 
+        // failing
         it('should clear RPC field on service field change', async function() {
             await selectService(block, 'PublicRoles');
             const [rpcName] = block.inputs()[1].evaluate();
@@ -218,6 +222,7 @@ describe('undo', function() {
             assert.equal(rpcName, 'setVariable');
         });
 
+        // failing
         it('should restore inputs on undo RPC field change', async function() {
             await driver.expect(
                 () => block.inputs().length > 2,
