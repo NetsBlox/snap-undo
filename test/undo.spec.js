@@ -9,7 +9,7 @@ describe('undo', function() {
 
     beforeEach(() => driver.reset());
 
-    describe('reset position', function() {
+    describe.only('reset position', function() {
         let block, initialPosition;
 
         beforeEach(async () => {
@@ -17,10 +17,10 @@ describe('undo', function() {
             initialPosition = block.position().copy();
         });
 
-        it('should restore pos after moveBlock (top)', async function() {
+        it.skip('should restore pos after moveBlock (top)', async function() {
             const bottomBlock = await driver.addBlock('doSayFor', new Point(300, 300));
             const [target] = bottomBlock.attachTargets();
-            await SnapActions.moveBlock(block, target);
+            await driver.moveBlock(block, target);
             const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
             await SnapUndo.undo(undoId);
             await driver.expect(
@@ -29,10 +29,10 @@ describe('undo', function() {
             );
         });
 
-        it('should restore pos after moveBlock (block)', async function() {
+        it.skip('should restore pos after moveBlock (block)', async function() {
             const bottomBlock = await driver.addBlock('doSayFor', new Point(300, 300));
             const [, , target] = bottomBlock.attachTargets();
-            await SnapActions.moveBlock(block, target);
+            await driver.moveBlock(block, target);
             const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
             await SnapUndo.undo(undoId);
             await driver.expect(
@@ -52,27 +52,51 @@ describe('undo', function() {
             expect(initialPosition.eq(block.position())).toBe(true, msg);
         });
 
-        it('should restore pos after moveBlock, setBlockPosition', async function() {
+        it.skip('should restore pos after moveBlock, setBlockPosition', async function() {
             const bottomBlock = await driver.addBlock('doSayFor', new Point(300, 300));
             const [target] = bottomBlock.attachTargets();
-            await SnapActions.moveBlock(block, target);
+            await driver.moveBlock(block, target);
         });
 
-        // failing
         it('should restore pos after connecting to another block', async function() {
+            this.timeout(10000);
+            await driver.sleep(500);
+            console.log('>>>> test starting');
             const bottomBlock = await driver.addBlock('doSayFor', new Point(300, 300));
             const [topTarget] = bottomBlock.attachTargets();
-            await SnapActions.moveBlock(block, topTarget);
+            await driver.sleep(500);
+            await driver.moveBlock(block, topTarget);
+            const expectedPos = block.position();
+            await driver.sleep(500);
             await SnapActions.setBlockPosition(block, new Point(400, 400));
+            await driver.sleep(500);
             const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
             await SnapUndo.undo(undoId);
-            await driver.expect(
-                () => initialPosition.eq(block.position()),
-                `Block not restored to ${initialPosition} (${block.position()})`
+            await driver.sleep(500);
+            console.log('>>>> test finishing... ');
+
+            assert(
+                expectedPos.eq(block.position()),
+                `Block not restored to ${expectedPos} (${block.position()})`
             );
         });
 
-        it('should restore pos after undo deletion', async function() {
+        it.skip('should preserve other block pos after connection undone', async function() {
+            const bottomBlock = await driver.addBlock('doSayFor', new Point(300, 300));
+            const expectedPos = bottomBlock.position();
+            const dropTarget = bottomBlock.topLeft().add(new Point(block.width()/2, 0));
+            driver.dragAndDrop(block, dropTarget);
+            await driver.actionsSettled();
+            const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
+            await SnapUndo.undo(undoId);
+
+            assert(
+                expectedPos.eq(bottomBlock.position()),
+                `Bottom block moved from ${expectedPos} (${bottomBlock.position()})`
+            );
+        });
+
+        it.skip('should restore pos after undo deletion', async function() {
             driver.dragAndDrop(block, driver.palette().center());
             await driver.actionsSettled();
             const undoId = driver.ide().currentSprite.scripts.undoOwnerId();

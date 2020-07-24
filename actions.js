@@ -737,19 +737,25 @@ ActionManager.isWeakTarget = function(target) {
     return target.loc === 'top' || target.loc === 'wrap';
 };
 
-ActionManager.prototype._getBlockState = function(id) {
+ActionManager.prototype._getBlockState = function(id, grabbed = true) {
     var target = this._targetOf[id],
         isNewBlock = !this._blocks[id],
-        position,
+        currentBlockPos = this.getStandardPosition(this.getBlockFromId(id)),
+        position = grabbed ? this.getLastGrabPosition() || currentBlockPos : currentBlockPos,
         state;
+
+    console.log('is using grab pos?', position !== currentBlockPos);
+    if (position !== currentBlockPos) {
+        const err = new Error();
+        console.log(err.stack);
+        // TODO: Why is it true? W
+    }
 
     // Use the last connection unless the last connection was to the
     // top of a command block and it has a position set
     if (target && !(ActionManager.isWeakTarget(target) && position)) {
         state = [target];
     } else if (!isNewBlock) {
-        position = this.getLastGrabPosition() ||
-            this.getStandardPosition(this.getBlockFromId(id));
         state = [position.x, position.y];
     } else {  // newly created
         state = [];
@@ -977,7 +983,7 @@ ActionManager.prototype._moveBlock = function(block, target, position) {
         ];
 
     } else if (target.loc === 'top' || target.loc === 'wrap') {
-        targetState = this._getBlockState(target.element.id);
+        targetState = this._getBlockState(target.element.id, false);
     }
 
     // Check if "splicing" (ie, target connection is occupied on cmd block)
