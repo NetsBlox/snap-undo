@@ -61,29 +61,30 @@
 
 */
 
-/*global modules, Morph, SpriteMorph, SyntaxElementMorph, Color, Cloud, Audio,
+/*global modules, Morph, SpriteMorph, SyntaxElementMorph, Color, Cloud,
 ListWatcherMorph, TextMorph, newCanvas, useBlurredShadows, VariableFrame, Sound,
 StringMorph, Point, MenuMorph, morphicVersion, DialogBoxMorph, normalizeCanvas,
 ToggleButtonMorph, contains, ScrollFrameMorph, StageMorph, PushButtonMorph, sb,
 InputFieldMorph, FrameMorph, Process, nop, SnapSerializer, ListMorph, detect,
-AlignmentMorph, TabMorph, Costume, MorphicPreferences, Sound, BlockMorph,
+AlignmentMorph, TabMorph, Costume, MorphicPreferences, BlockMorph,
 ToggleMorph, InputSlotDialogMorph, ScriptsMorph, isNil, SymbolMorph,
 BlockExportDialogMorph, BlockImportDialogMorph, SnapTranslator, localize,
-List, ArgMorph, SnapCloud, Uint8Array, HandleMorph, SVG_Costume,
-fontHeight, hex_sha512, sb, CommentMorph, CommandBlockMorph,
-BlockLabelPlaceHolderMorph, Audio, SpeechBubbleMorph, ScriptFocusMorph,
+List, ArgMorph, SnapCloud, HandleMorph, SVG_Costume,
+fontHeight, sb, CommentMorph, CommandBlockMorph, SnapActions
+BlockLabelPlaceHolderMorph, SpeechBubbleMorph, ScriptFocusMorph,
 XML_Element, WatcherMorph, BlockRemovalDialogMorph, saveAs, TableMorph,
 isSnapObject, isRetinaEnabled, disableRetinaSupport, enableRetinaSupport,
-isRetinaSupported, SliderMorph, Animation, utils, CloudError,
+isRetinaSupported, SliderMorph, utils, CloudError,
 AlignmentMorph, TabMorph, Costume, MorphicPreferences,BlockMorph, ToggleMorph,
 InputSlotDialogMorph, ScriptsMorph, isNil, SymbolMorph, fontHeight,  localize,
 BlockExportDialogMorph, BlockImportDialogMorph, SnapTranslator, List, ArgMorph,
-Uint8Array, HandleMorph, SVG_Costume, TableDialogMorph, CommentMorph, saveAs,
+HandleMorph, SVG_Costume, TableDialogMorph, CommentMorph, saveAs,
 CommandBlockMorph, BooleanSlotMorph, RingReporterSlotMorph, ScriptFocusMorph,
 BlockLabelPlaceHolderMorph, SpeechBubbleMorph, XML_Element, WatcherMorph, WHITE,
 BlockRemovalDialogMorph,TableMorph, isSnapObject, isRetinaEnabled, SliderMorph,
-disableRetinaSupport, enableRetinaSupport, isRetinaSupported, MediaRecorder,
-Animation, BoxMorph, BlockEditorMorph, BlockDialogMorph, Note, ZERO, BLACK*/
+disableRetinaSupport, enableRetinaSupport, isRetinaSupported,
+BoxMorph, BlockEditorMorph, BlockDialogMorph, Note, ZERO, BLACK,
+SnapUndo, ReplayControls*/
 
 // Global stuff ////////////////////////////////////////////////////////
 
@@ -673,15 +674,15 @@ IDE_Morph.prototype.interpretUrlAnchors = function (loc) {
         myself.newProject();
     }
 
-    if (location.protocol !== 'file:') {
-        if (!sessionStorage.username) {
-            // check whether login should persist across browser sessions
-            this.cloud.initSession(initUser);
-        } else {
-            // login only persistent during a single browser session
-            this.cloud.checkCredentials(initUser);
-        }
-    }
+    //if (location.protocol !== 'file:') {
+        //if (!sessionStorage.username) {
+            //// check whether login should persist across browser sessions
+            //this.cloud.initSession(initUser);
+        //} else {
+            //// login only persistent during a single browser session
+            //this.cloud.checkCredentials(initUser);
+        //}
+    //}
 
     world.keyboardFocus = this.stage;
     this.warnAboutIE();
@@ -830,9 +831,9 @@ IDE_Morph.prototype.onSetActive = function () {
         this.spriteEditor.hide();
     } else {
         if (this.currentTab === 'scripts') {
-            this.currentSprite.scripts.updateUndoControls();
-        } else if (this.spriteEditor.updateUndoControls) {
-            this.spriteEditor.updateUndoControls();
+            this.currentSprite.scripts.updateToolbar();
+        } else if (this.spriteEditor.updateToolbar) {
+            this.spriteEditor.updateToolbar();
         }
     }
 };
@@ -1186,7 +1187,7 @@ IDE_Morph.prototype.createControlBar = function () {
     button.contrast = this.buttonContrast;
     // button.hint = 'cloud operations';
     button.fixLayout();
-    button.refresh();
+    //button.refresh();
     cloudButton = button;
     this.controlBar.add(cloudButton);
     this.controlBar.cloudButton = cloudButton; // for menu positioning & refresh
@@ -2065,11 +2066,10 @@ IDE_Morph.prototype.createCorral = function () {
 };
 
 IDE_Morph.prototype.createReplayControls = function () {
-    var myself = this;
     this.replayControls = new ReplayControls(this);
 
     this.add(this.replayControls);
-    this.replayControls.drawNew();
+    //this.replayControls.rerender();
     this.replayControls.hide();
 };
 
@@ -2333,7 +2333,7 @@ IDE_Morph.prototype.droppedSVG = function (anImage, name) {
     SnapActions.addCostume(costume, this.currentSprite, true);
 };
 
-IDE_Morph.prototype.droppedAudio = function (anAudio, name) {
+IDE_Morph.prototype.droppedAudio = async function (anAudio, name) {
     anAudio.src = await this.getAudioAsBase64(anAudio.src);
 
     const sound = new Sound(anAudio, name.split('.')[0]);  // up to period
@@ -3732,42 +3732,40 @@ IDE_Morph.prototype.settingsMenu = function () {
     }
     addPreference(
         'Replay Mode',
-        function() {
-            if (myself.isReplayMode) {  // exiting replay mode
+        () => {
+            if (this.isReplayMode) {  // exiting replay mode
 
-                if (myself.isPreviousVersion()) {
-                    myself.confirm(
+                if (this.isPreviousVersion()) {
+                    this.confirm(
                         'Exiting replay mode now will revert the project to\n' +
                         'the current point in history (losing any unapplied ' + 
                         'changes)\n\nAre you sure you want to exit replay mode?',
                         'Exit Replay Mode?',
-                        function () {
-                            myself.exitReplayMode();
-                        }
+                        () => this.exitReplayMode()
                     );
                     return;
                 }
-                return myself.exitReplayMode();
+                return this.exitReplayMode();
             }
             // entering replay mode
             if (SnapUndo.allEvents.length < 2) {
-                return myself.showMessage('Nothing to replay!', 2);
+                return this.showMessage('Nothing to replay!', 2);
             }
             if (SnapActions.isCollaborating()) {
                 this.confirm(
                     'Cannot enter replay mode while collaborating. \nWould you ' +
                     'like to disable collaboration and enter replay mode?',
                     'Disable Collaboration?',
-                    function () {
+                    () => {
                         SnapActions.disableCollaboration();
-                        myself.replayEvents();
+                        this.replayEvents();
                     }
                 );
             } else {
-                myself.replayEvents();
+                this.replayEvents();
             }
         },
-        myself.isReplayMode,
+        this.isReplayMode,
         'uncheck to disable replay mode',
         'check to enable replay mode',
         false
@@ -4696,8 +4694,6 @@ IDE_Morph.prototype.save = function () {
             this.saveProject(this.room.name);
         } else { // 'cloud'
             this.saveProjectToCloud(this.room.name);
-        } else {
-            this.saveProjectsBrowser();
         }
     } else {
         this.saveProjectsBrowser();
@@ -7352,66 +7348,6 @@ SaveOpenDialogMorph.prototype.addSourceButton = function (source) {
     const symbol = source.icon;
     var myself = this,
         lbl1 = new StringMorph(
-=======
-// ProjectDialogMorph action buttons
-
-ProjectDialogMorph.prototype.createButtons = function () {
-    if (this.buttons) {
-        this.buttons.destroy();
-    }
-    this.buttons = new AlignmentMorph('column', this.padding / 3);
-    this.buttons.bottomRow = new AlignmentMorph('row', this.padding);
-    this.buttons.topRow = new AlignmentMorph('row', this.padding);
-    this.buttons.add(this.buttons.topRow);
-    this.buttons.add(this.buttons.bottomRow);
-    this.add(this.buttons);
-
-    this.buttons.fixLayout = function () {
-        if (this.topRow.children.some(function (any) {
-            return any.isVisible;
-        })) {
-            this.topRow.show();
-            this.topRow.fixLayout();
-        } else {
-            this.topRow.hide();
-        }
-        this.bottomRow.fixLayout();
-        AlignmentMorph.prototype.fixLayout.call(this);
-    };
-};
-
-ProjectDialogMorph.prototype.addButton = function (action, label, topRow) {
-    var button = new PushButtonMorph(
-        this,
-        action || 'ok',
-        '  ' + localize((label || 'OK')) + '  '
-    );
-    button.fontSize = this.buttonFontSize;
-    button.corner = this.buttonCorner;
-    button.edge = this.buttonEdge;
-    button.outline = this.buttonOutline;
-    button.outlineColor = this.buttonOutlineColor;
-    button.outlineGradient = this.buttonOutlineGradient;
-    button.padding = this.buttonPadding;
-    button.contrast = this.buttonContrast;
-    button.fixLayout();
-    if (topRow) {
-        this.buttons.topRow.add(button);
-    } else {
-        this.buttons.bottomRow.add(button);
-    }
-    return button;
-};
-
-// ProjectDialogMorph source buttons
-
-ProjectDialogMorph.prototype.addSourceButton = function (
-    source,
-    label,
-    symbol
-) {
-    var lbl1 = new StringMorph(
->>>>>>> e69714a1e1099b0e382b89d41a91baed2a3d4483:src/gui.js
             label,
             10,
             null,
@@ -7657,6 +7593,8 @@ SaveOpenDialogMorph.prototype.setPreview = async function (item) {
         ))).popUp(
             this.world(),
             this.preview.rightCenter().add(new Point(2, 0))
+        );
+    }
 };
 
 SaveOpenDialogMorph.prototype.clearPreview = function () {
@@ -8433,66 +8371,6 @@ ProjectDialogMorph.prototype.shareItem = async function () {
         }
     }
 };
-=======
-LibraryImportDialogMorph.prototype.importLibrary = function () {
-    if (!this.listField.selected) {return; }
-
-    var blocks,
-        ide = this.ide,
-        selectedLibrary = this.listField.selected.fileName,
-        libraryName = this.listField.selected.name;
-
-    if (this.hasCached(selectedLibrary)) {
-        blocks = this.cachedLibrary(selectedLibrary);
-        blocks.forEach(def => {
-            def.receiver = ide.stage;
-            ide.stage.globalBlocks.push(def);
-            ide.stage.replaceDoubleDefinitionsFor(def);
-        });
-        ide.showMessage(localize('Imported') + ' ' + localize(libraryName), 2);
-    } else {
-        ide.showMessage(localize('Loading') + ' ' + localize(libraryName));
-        ide.getURL(
-            ide.resourceURL('libraries', selectedLibrary),
-            function(libraryText) {
-                ide.droppedText(libraryText, libraryName);
-            }
-        );
-    }
-};
-
-LibraryImportDialogMorph.prototype.displayBlocks = function (libraryKey) {
-    var x, y, blockImage, previousCategory, blockContainer,
-        padding = 4,
-        blocksList = this.cachedLibrary(libraryKey);
-
-    if (!blocksList.length) {return; }
-    // populate palette, grouped by categories.
-    this.initializePalette();
-    x = this.palette.left() + padding;
-    y = this.palette.top();
-
-    SpriteMorph.prototype.categories.forEach(category => {
-        blocksList.forEach(definition => {
-            if (definition.category !== category) {return; }
-            if (category !== previousCategory) {
-                y += padding;
-            }
-            previousCategory = category;
-
-            blockImage = definition.templateInstance().fullImage();
-            blockContainer = new Morph();
-            blockContainer.isCachingImage = true;
-            blockContainer.bounds.setWidth(blockImage.width);
-            blockContainer.bounds.setHeight(blockImage.height);
-            blockContainer.cachedImage = blockImage;
-            blockContainer.setPosition(new Point(x, y));
-            this.palette.addContents(blockContainer);
-
-            y += blockContainer.fullBounds().height() + padding;
-        });
-    });
->>>>>>> e69714a1e1099b0e382b89d41a91baed2a3d4483:src/gui.js
 
 ProjectDialogMorph.prototype.isCurrentProject = function (project) {
     return project.ID === SnapCloud.projectId;
@@ -9621,6 +9499,7 @@ WardrobeMorph.prototype.paintNew = function () {
         null,
         () => SnapActions.addCostume(cos, this.sprite)
     );
+};
 
 WardrobeMorph.prototype.newFromCam = function () {
     var camDialog,
@@ -10661,7 +10540,6 @@ SoundRecorderDialogMorph.prototype.ok = function () {
             this.play();
         }
     };
-
 };
 
 SoundRecorderDialogMorph.prototype.destroy = function () {

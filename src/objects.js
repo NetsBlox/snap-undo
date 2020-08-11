@@ -70,19 +70,20 @@
 
 /*global PaintEditorMorph, ListWatcherMorph, PushButtonMorph, ToggleMorph, ZERO,
 DialogBoxMorph, InputFieldMorph, SpriteIconMorph, BlockMorph, SymbolMorph,
-ThreadManager, VariableFrame, detect, BlockMorph, BoxMorph, Color, Animation,
+ThreadManager, VariableFrame, detect, BlockMorph, BoxMorph, Color,
 CommandBlockMorph, FrameMorph, HatBlockMorph, MenuMorph, Morph, MultiArgMorph,
 Point, ReporterBlockMorph, ScriptsMorph, StringMorph, SyntaxElementMorph,  nop,
-TextMorph, contains, degrees, detect, newCanvas, radians, Array, CursorMorph,
-Date, FrameMorph, Math, MenuMorph, Morph, invoke, MorphicPreferences, WHITE,
-Object, PenMorph, Point, Rectangle, ScrollFrameMorph, SliderMorph, String,
-StringMorph, TextMorph, contains, copy, degrees, detect, document, isNaN,
-isString, newCanvas, nop, parseFloat, radians, window, modules, IDE_Morph,
-VariableDialogMorph, HTMLCanvasElement, Context, List, RingMorph, VideoMotion,
-SpeechBubbleMorph, InputSlotMorph, isNil, FileReader, TableDialogMorph,
+TextMorph, contains, degrees, detect, newCanvas, radians, CursorMorph,
+FrameMorph, MenuMorph, Morph, invoke, MorphicPreferences, WHITE,
+PenMorph, Point, Rectangle, ScrollFrameMorph, SliderMorph,
+StringMorph, TextMorph, contains, copy, degrees, detect,
+isString, newCanvas, nop, radians, modules, IDE_Morph,
+VariableDialogMorph, Context, List, RingMorph, VideoMotion,
+SpeechBubbleMorph, InputSlotMorph, isNil, TableDialogMorph,
 BlockEditorMorph, BlockDialogMorph, PrototypeHatBlockMorph,  BooleanSlotMorph,
 localize, TableMorph, TableFrameMorph, normalizeCanvas, VectorPaintEditorMorph,
-HandleMorph, AlignmentMorph, Process, XML_Element, WorldMap, copyCanvas*/
+HandleMorph, AlignmentMorph, Process, XML_Element, copyCanvas,
+UndoManager, SnapUndo*/
 
 modules.objects = '2020-August-07';
 
@@ -98,7 +99,6 @@ var Microphone;
 var CellMorph;
 var WatcherMorph;
 var StagePrompterMorph;
-var Note;
 var SpriteHighlightMorph;
 
 function isSnapObject(thing) {
@@ -7633,7 +7633,7 @@ StageMorph.prototype.init = function (globals) {
     this.videoMotion = null;
 
     // world map client - experimental, transient
-    this.worldMap = new WorldMap();
+    //this.worldMap = new WorldMap();
 
     // Snap! API event listeners - experimental, transient
     this.messageCallbacks = {}; // name : [functions]
@@ -12980,7 +12980,6 @@ ReplayControls.prototype.pause = function() {
 
 ReplayControls.prototype.fixLayout = function() {
     var center = this.center(),
-        bottom = this.bottom(),
         top = this.top(),
         width = this.width(),
         height = this.height(),
@@ -12992,39 +12991,39 @@ ReplayControls.prototype.fixLayout = function() {
     this.playButton.size = btnSize;
 
     this.playButton.setTop(top + sliderHeight + margin);
-    this.playButton.drawNew();
+    this.playButton.rerender();
     this.jumpBackwardButton.setCenter(this.playButton.center());
     this.stepBackwardButton.setCenter(this.playButton.center());
 
     this.jumpBackwardButton.setLeft(this.left() + 2.5*margin);
-    this.jumpBackwardButton.drawNew();
+    this.jumpBackwardButton.rerender();
 
     this.stepBackwardButton.setLeft(this.jumpBackwardButton.right() + 1.5*margin);
-    this.stepBackwardButton.drawNew();
+    this.stepBackwardButton.rerender();
 
     this.playButton.setLeft(this.stepBackwardButton.right() + 2*margin);
-    this.playButton.drawNew();
+    this.playButton.rerender();
 
     this.stepForwardButton.setCenter(this.playButton.center());
     this.stepForwardButton.setLeft(this.playButton.right() + 2*margin);
-    this.stepForwardButton.drawNew();
+    this.stepForwardButton.rerender();
 
     this.jumpForwardButton.setCenter(this.stepForwardButton.center());
     this.jumpForwardButton.setLeft(this.stepForwardButton.right() + 1.5*margin);
-    this.jumpForwardButton.drawNew();
+    this.jumpForwardButton.rerender();
 
     this.displayTime.setCenter(this.playButton.center());
     this.displayTime.setLeft(this.jumpForwardButton.right() + 4*margin);
-    this.displayTime.drawNew();
+    this.displayTime.rerender();
 
     // Buttons on the right
     this.settingsButton.setTop(top + sliderHeight + margin);
     this.settingsButton.setRight(this.right() - 3*margin);
-    this.settingsButton.drawNew();
+    this.settingsButton.rerender();
 
     this.captionsButton.setTop(top + sliderHeight + margin);
     this.captionsButton.setRight(this.settingsButton.left() - margin);
-    this.captionsButton.drawNew();
+    this.captionsButton.rerender();
 
 
     this.slider.setWidth(width - 2*margin);
@@ -13032,8 +13031,7 @@ ReplayControls.prototype.fixLayout = function() {
     this.slider.setCenter(new Point(center.x, 0));
     this.slider.setTop(top);
 
-    this.slider.drawNew();
-    this.slider.changed();
+    this.slider.rerender();
 };
 
 ReplayControls.prototype.enable = function() {

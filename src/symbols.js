@@ -471,6 +471,10 @@ SymbolMorph.prototype.renderShape = function (ctx, aColor) {
     case 'flipHorizontal':
         this.renderSymbolFlipHorizontal(ctx, aColor);
         break;
+    case 'plus':
+        return this.drawSymbolPlus(ctx, aColor);
+    case 'mail':
+        return this.drawSymbolMail(ctx, aColor);
     default:
         throw new Error('unknown symbol name: "' + this.name + '"');
     }
@@ -2205,12 +2209,28 @@ SymbolMorph.prototype.renderSymbolFlipHorizontal = function (ctx, color) {
     ctx.closePath();
     ctx.stroke();
     ctx.fill();
-    };
+};
     
 SymbolMorph.prototype.renderSymbolFlipVertical = function (ctx, color) {
     ctx.translate(0, this.size);
     ctx.rotate(radians(-90));
     this.renderSymbolFlipHorizontal(ctx, color);
+};
+
+SymbolMorph.prototype.drawSymbolPlus = function (ctx, color) {
+    var w = this.symbolWidth(),
+        l = Math.max(w / 12, 1),
+        h = this.size;
+
+    ctx.lineWidth = l;
+    ctx.strokeStyle = color.toString();
+    ctx.fillStyle = color.toString();
+
+    ctx.moveTo(0, h/2);
+    ctx.lineTo(w, h/2);
+    ctx.moveTo(w/2, 0);
+    ctx.lineTo(w/2, h);
+    ctx.stroke();
 };
 
 

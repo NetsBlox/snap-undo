@@ -144,22 +144,24 @@
     constructor for further details.
 */
 
-/*global Array, BoxMorph,
-Color, ColorPaletteMorph, FrameMorph, Function, HandleMorph, Math, MenuMorph,
-Morph, MorphicPreferences, Object, Point, ScrollFrameMorph, ShadowMorph, ZERO,
-String, StringMorph, TextMorph, contains, degrees, detect, PianoMenuMorph,
-document, getDocumentPositionOf, isNaN, isString, newCanvas, nop, parseFloat,
+/*global BoxMorph, StructInputSlotMorph,
+Color, ColorPaletteMorph, FrameMorph, HandleMorph, MenuMorph,
+Morph, MorphicPreferences, Point, ScrollFrameMorph, ShadowMorph, ZERO,
+StringMorph, TextMorph, contains, degrees, detect, PianoMenuMorph,
+getDocumentPositionOf, isString, nop, 
 radians, useBlurredShadows, SpeechBubbleMorph, modules, StageMorph, Sound,
 fontHeight, TableFrameMorph, SpriteMorph, Context, ListWatcherMorph, Rectangle,
 DialogBoxMorph, BlockInputFragmentMorph, PrototypeHatBlockMorph, WHITE, BLACK,
 Costume, IDE_Morph, BlockDialogMorph, BlockEditorMorph, localize, isNil, CLEAR,
 isSnapObject, PushButtonMorph, SpriteIconMorph, Process, AlignmentMorph,
-CustomCommandBlockMorph, SymbolMorph, ToggleButtonMorph, DialMorph*/
+CustomCommandBlockMorph, SymbolMorph, ToggleButtonMorph, DialMorph, utils,
+SnapActions, SnapUndo*/
 
 // Global stuff ////////////////////////////////////////////////////////
 
 modules.blocks = '2020-August-08';
 
+/*
 var SyntaxElementMorph;
 var BlockMorph;
 var BlockLabelMorph;
@@ -189,6 +191,7 @@ var CommentMorph;
 var ArgLabelMorph;
 var TextSlotMorph;
 var ScriptFocusMorph;
+*/
 
 // SyntaxElementMorph //////////////////////////////////////////////////
 
@@ -498,7 +501,7 @@ SyntaxElementMorph.prototype.revertToDefaultInput = function (arg, noValues) {
             deflt = this.labelPart(this.parseSpec(this.blockSpec)[idx]);
             if (this.isCustomBlock) {
                 def = this.isGlobal ? this.definition
-                        : this.scriptTarget().getMethod(this.blockSpec);
+                    : this.scriptTarget().getMethod(this.blockSpec);
                 if (deflt instanceof InputSlotMorph) {
                     deflt.setChoices.apply(
                         deflt,
@@ -7228,11 +7231,8 @@ ScriptsMorph.prototype.closestBlock = function (comment, hand) {
 ScriptsMorph.prototype.userMenu = function () {
     var menu = new MenuMorph(this),
         ide = this.parentThatIsA(IDE_Morph),
-        shiftClicked = this.world().currentKey === 16,
         blockEditor,
-        obj = this.scriptTarget(),
-        hasUndropQueue,
-        stage = obj.parentThatIsA(StageMorph);
+        obj = this.scriptTarget();
 
     function addOption(label, toggle, test, onHint, offHint) {
         menu.addItem(
@@ -7426,17 +7426,21 @@ ScriptsMorph.prototype.addComment = function () {
 };
 
 ScriptsMorph.prototype.definitionOrSprite = function () {
-    var gparent = this.parent.parent,
-        owner = this.owner;
+    var gparent = this.parent.parent;
 
     if (gparent instanceof BlockEditorMorph) {
-        owner = gparent.definition;
+        return gparent.definition;
     }
-    return owner;
+    return this.scriptTarget();
 };
 
 ScriptsMorph.prototype.undoOwnerId = function () {
-    return this.definitionOrSprite().id + '/' + this.undoCategory;
+    try {
+        const target = this.scriptTarget();
+        return target.id + '/' + this.undoCategory;
+    } catch (err) {
+        return null;
+    }
 };
 
 ScriptsMorph.prototype.addToolbar = function () {
@@ -7448,7 +7452,7 @@ ScriptsMorph.prototype.addToolbar = function () {
     toolBar.undoButton = new PushButtonMorph(
         this,
         function() {
-            SnapUndo.undo(myself.undoOwnerId());
+            SnapUndo.undo(this.undoOwnerId());
         },
         new SymbolMorph("turnBack", 12)
     );
@@ -7508,13 +7512,13 @@ ScriptsMorph.prototype.updateToolbar = function () {
         changed = true;
     }
     if (this.enableKeyboard) { // TODO: mark it as changed?
-    	sf.toolBar.keyboardButton.show();
-    	sf.toolBar.keyboardButton.refresh();
+        sf.toolBar.keyboardButton.show();
+        sf.toolBar.keyboardButton.refresh();
     } else {
         sf.toolBar.keyboardButton.hide();
     }
 
-    if (SnapUndo.canUndo(owner)) {
+    if (owner && SnapUndo.canUndo(owner)) {
         if (!sf.toolBar.undoButton.isEnabled()) {
             sf.toolBar.undoButton.enable();
             changed = true;
@@ -7524,7 +7528,7 @@ ScriptsMorph.prototype.updateToolbar = function () {
         changed = true;
     }
 
-    if (SnapUndo.canRedo(owner)) {
+    if (owner && SnapUndo.canRedo(owner)) {
         if (!sf.toolBar.redoButton.isEnabled()) {
             sf.toolBar.redoButton.enable();
             sf.toolBar.undoButton.mouseLeave();
@@ -7544,7 +7548,7 @@ ScriptsMorph.prototype.updateToolbar = function () {
 
     if (changed || !sf.toolBar.isVisible) {
         sf.toolBar.isVisible = true;
-	    sf.toolBar.fixLayout();
+        sf.toolBar.fixLayout();
     }
 
     sf.adjustToolBar();
@@ -7668,7 +7672,7 @@ ScriptsMorph.prototype.setBlockPosition = function (block, hand) {
             hand.grabOrigin.origin.add(block);
 
             // copy the blocks and add them to the new editor
-            var dup = block.fullCopy();
+            var dup = block.fullCopy(),
                 ownerId = this.definitionOrSprite().id;
 
             return SnapActions.addBlock(dup, this, position, ownerId)
@@ -9087,7 +9091,7 @@ InputSlotMorph.prototype.userSetContents = function (aStringOrFloat) {
 
 // InputSlotMorph drop-down menu:
 
-InputSlotMorph.prototype.dropDownMenu = function (enableKeyboard) {
+InputSlotMorph.prototype.dropDownMenu = async function (enableKeyboard) {
     var position = this.world().hand.position(),
         menu = await this.menuFromDict(this.choices, null, enableKeyboard);
     if (!menu) { // has already happened
@@ -9110,7 +9114,7 @@ InputSlotMorph.prototype.menuFromDict = async function (
     enableKeyboard)
 {
     var key, dial, flag,
-    	myself = this,
+        myself = this,
         menu = new MenuMorph(
             this.userSetContents,
             null,
@@ -9118,10 +9122,10 @@ InputSlotMorph.prototype.menuFromDict = async function (
             this.fontSize
         );
 
-	function update(num) {
-    	myself.setContents(num);
+    function update(num) {
+        myself.setContents(num);
         myself.reactToSliderEdit();
- 	}
+    }
 
     function getImg(block) {
         return () => block.fullImage();
@@ -9148,16 +9152,16 @@ InputSlotMorph.prototype.menuFromDict = async function (
                     choices[key]
                 );
             } else if (key.indexOf('§_dir') === 0) {
-			    dial = new DialMorph();
-    			dial.rootForGrab = function () {return this; };
-    			dial.target = this;
-       			dial.action = update;
-       			dial.fillColor = this.parent.color;
-          		dial.setRadius(this.fontSize * 3);
-				dial.setValue(+this.evaluate(), false, true);
-       			menu.addLine();
-			    menu.items.push(dial);
-            	menu.addLine();
+                dial = new DialMorph();
+                dial.rootForGrab = function () {return this; };
+                dial.target = this;
+                dial.action = update;
+                dial.fillColor = this.parent.color;
+                dial.setRadius(this.fontSize * 3);
+                dial.setValue(+this.evaluate(), false, true);
+                menu.addLine();
+                menu.items.push(dial);
+                menu.addLine();
             } else if (key.indexOf('§_') === 0) {
                 // prefixing a key with '§_' only makes the menu item
                 // appear when the user holds down the shift-key

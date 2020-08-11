@@ -7089,8 +7089,6 @@ SliderMorph.prototype.fixLayout = function () {
     this.button.setPosition(
         new Point(posX, posY).add(this.bounds.origin)
     );
-    this.button.drawNew();
-    this.button.changed();
 
     // Update the tick marks
     var tickMark,

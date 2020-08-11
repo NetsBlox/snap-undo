@@ -23,17 +23,20 @@ window.onload = function () {
             };
             return utils.requestPromise(request, data)
                 .then(function(res) {
-                    if (!res.responseText) throw new Error('Access denied. You are not logged in.');
-                    let user = JSON.parse(res.responseText);
-                    return user;
+                    if (res.responseText) {
+                        let user = JSON.parse(res.responseText);
+                        return user;
+                    }
                 });
         };
 
         // check to see if loggedin
         getProfile().then(user => {
             // notify the client that we are logged in
-            SnapCloud.username = user.username;
-            SnapCloud.password = true;
+            if (user) {
+                SnapCloud.username = user.username;
+                SnapCloud.password = true;
+            }
         });
 
     }

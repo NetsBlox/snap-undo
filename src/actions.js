@@ -1713,7 +1713,7 @@ ActionManager.prototype.onMoveBlock = function(id, rawTarget) {
 
         block.snap(target);
         if (!isTargetDragging) {
-            scripts.drawNew();
+            scripts.rerender();
         }
 
         if (isNewBlock) {
@@ -1884,6 +1884,7 @@ ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
         scripts,
         parent,
         afterRemove = function() {
+            // FIXME: make sure processes have stopped
             block[method]();
 
             myself.__updateBlockDefinitions(block);
@@ -1953,8 +1954,7 @@ ActionManager.prototype._onRemoveBlock = function(id, userDestroy, callback) {
             parent.changed();
         }
         if (scripts) {
-            scripts.drawNew();
-            scripts.changed();
+            scripts.rerender();
         }
     }
 };
@@ -1981,8 +1981,7 @@ ActionManager.prototype.__updateScriptsMorph = function(block) {
 
     if (!isDragging) {
         scripts.adjustBounds();
-        scripts.drawNew();
-        scripts.changed();
+        scripts.rerender();
     }
 };
 
@@ -2038,8 +2037,7 @@ ActionManager.prototype.disconnectBlock = function(block, scripts) {
         oldParent.changed();
 
         if (scripts) {
-            scripts.drawNew();
-            scripts.changed();
+            scripts.rerender();
         }
     }
 
@@ -2117,8 +2115,7 @@ ActionManager.prototype.onSetCommentText = function(id, text) {
 
     this.ensureNotDragging(block);
     block.contents.text = text;
-    block.contents.drawNew();
-    block.contents.changed();
+    block.contents.rerender();
     block.layoutChanged();
     block.lastValue = text;
 
@@ -2288,7 +2285,18 @@ ActionManager.prototype._onDeleteCustomBlock = function(id, ownerId) {
         if (idx !== -1) {
             rcvr.customBlocks.splice(idx, 1);
         }
+
+        console.assert('get blockspec!');
+        debugger;
+        // FIXME: How can I get the blockSpec?
+        method = rcvr.getMethod(this.blockSpec);
+        if (method) {
+            rcvr.allDependentInvocationsOf(this.blockSpec).forEach(
+                block => block.refresh(method)
+            );
+        }
     }
+
     ide = rcvr.parentThatIsA(IDE_Morph);
     if (ide) {
         ide.flushPaletteCache();
@@ -2469,11 +2477,10 @@ ActionManager.prototype._registerCostume = function(costume, sprite) {
 
 ActionManager.prototype.onAddCostume = function(savedCostume, ownerId, creatorId) {
     var ide = this.ide(),
-        sprite = this._owners[ownerId],
-        myself = this;
+        sprite = this._owners[ownerId];
 
     // Get the wardrobe morph...
-    this._loadCostume(savedCostume, function(cos) {
+    this._loadCostume(savedCostume, cos => {
         sprite.addCostume(cos);
         if (ide.spriteEditor instanceof WardrobeMorph) {
             ide.spriteEditor.updateList();
@@ -2482,14 +2489,14 @@ ActionManager.prototype.onAddCostume = function(savedCostume, ownerId, creatorId
             ide.currentSprite.wearCostume(cos);
         }
 
-        myself._registerCostume(cos, sprite);
+        this._registerCostume(cos, sprite);
 
-        if (creatorId === myself.id) {
+        if (creatorId === this.id) {
             ide.spriteBar.tabBar.tabTo('costumes');
         }
+        this.__updateActiveEditor();
+        this.completeAction(null, cos);
     });
-    myself.__updateActiveEditor();
-    this.completeAction();
 };
 
 ActionManager.prototype.onUpdateCostume = function(id, savedCostume) {
@@ -2517,14 +2524,15 @@ ActionManager.prototype.onUpdateCostume = function(id, savedCostume) {
 ActionManager.prototype.onRemoveCostume = function(id) {
     var costume = this._costumes[id],
         sprite = this._costumeToOwner[id],
-        idx = sprite.costumes.asArray().indexOf(costume),
-        ide = this.ide();
+        editor = this.ide().spriteEditor,
+        idx = sprite.costumes.asArray().indexOf(costume);
 
     sprite.costumes.remove(idx + 1);
 
     // Check for the wardrobe
-    if (ide.spriteEditor instanceof WardrobeMorph) {
-        ide.spriteEditor.updateList();
+    if (editor instanceof WardrobeMorph) {
+        const off = CamSnapshotDialogMorph.prototype.enableCamera ? 3 : 2;
+        editor.removeCostumeAt(idx - off); // ignore paintbrush and camera buttons
     }
 
     if (sprite.costume === costume) {
@@ -2617,8 +2625,8 @@ ActionManager.prototype.onSetRotationStyle = function(id, rotationStyle) {
 
     sprite.rotationStyle = rotationStyle;
     sprite.changed();
-    sprite.drawNew();
-    sprite.changed();
+    sprite.fixLayout();
+    sprite.rerender();
 
     this.ide().rotationStyleButtons.forEach(function (each) {
         each.refresh();

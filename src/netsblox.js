@@ -249,7 +249,7 @@ NetsBloxMorph.prototype.createControlBar = function () {
             myself.frameColor.darker(myself.buttonContrast)
         );
         this.label.color = myself.buttonLabelColor;
-        this.label.drawNew();
+        this.label.rerender();
         this.add(this.label);
         this.label.setCenter(this.center());
         this.label.setLeft(this.settingsButton.right() + padding);
@@ -341,7 +341,7 @@ NetsBloxMorph.prototype.createSpriteBar = function () {
     tab.labelShadowOffset = new Point(-1, -1);
     tab.labelShadowColor = tabColors[1];
     tab.labelColor = this.buttonLabelColor;
-    tab.drawNew();
+    tab.rerender();
     tab.fixLayout();
     tabBar.add(tab);
 

@@ -109,16 +109,14 @@ RoomMorph.prototype.init = function(ide) {
 RoomMorph.prototype.setReadOnly = function(value) {
     if (value !== this.isReadOnly) {
         this.isReadOnly = value;
-        this.drawNew();
+        this.render();
     }
 };
 
 RoomMorph.prototype.silentSetRoomName = function(name) {
     this.name = name;
     this.roomName.text = name;
-    this.roomName.changed();
-    this.roomName.drawNew();
-    this.roomName.changed();
+    this.roomName.rerender();
 
     this.ide.controlBar.updateLabel();
     return name;
@@ -293,9 +291,8 @@ RoomMorph.prototype.update = function(ownerId, name, roles, collaborators) {
     this.ide.silentSetProjectName(this.getCurrentRoleName());
 
     if (changed) {
-        this.drawNew();
+        this.rerender();
         this.fixLayout();
-        this.changed();
     }
 
     // Update collaborative editing
@@ -445,7 +442,7 @@ RoomMorph.prototype.fixLayout = function() {
     });
 };
 
-RoomMorph.prototype.drawNew = function() {
+RoomMorph.prototype.rerender = function() {
     this.image = newCanvas(this.extent());
 
     // Update the title. Hide it if in replay mode
@@ -455,22 +452,16 @@ RoomMorph.prototype.drawNew = function() {
         this.roomName.show();
     }
 
-    this.getRoles().forEach(function(morph) {
-        morph.drawNew();
-    });
+    this.getRoles().forEach(morph => morph.rerender());
 
-    this.displayedMsgMorphs.forEach(function(morph) {
-        morph.drawNew();
-    });
+    this.displayedMsgMorphs.forEach(morph => morph.rerender());
 };
 
 RoomMorph.prototype.setOwner = function(owner) {
     this.ownerId = owner;
     this.ownerLabel.text = RoomMorph.isSocketUuid(this.ownerId) ?
         localize('myself') : this.ownerId;
-    this.ownerLabel.changed();
-    this.ownerLabel.drawNew();
-    this.ownerLabel.changed();
+    this.ownerLabel.rerender();
 };
 
 RoomMorph.prototype.setCollaborators = function(collaborators) {
@@ -481,9 +472,7 @@ RoomMorph.prototype.setCollaborators = function(collaborators) {
     } else {
         this.collabList.text = 'No collaborators';
     }
-    this.collabList.changed();
-    this.collabList.drawNew();
-    this.collabList.changed();
+    this.collabList.rerender();
 
 };
 
@@ -577,7 +566,7 @@ RoomMorph.prototype.editRole = function(role) {
         world = this.world();
 
     dialog.fixLayout();
-    dialog.drawNew();
+    dialog.rerender();
 
     dialog.popUp(world);
     dialog.setCenter(world.center());
@@ -953,7 +942,7 @@ RoomMorph.prototype.updateDisplayedMsg = function(msg) {
     msg.setCenter(dstPoint.add(srcPoint).divideBy(2));
     msg.endpoint = relEndpoint;
     msg.setMessageColor(srcRole.color.darker());
-    msg.drawNew();
+    msg.rerender();
 };
 
 RoomMorph.prototype.clearBlockHighlights = function() {
@@ -1074,14 +1063,14 @@ SentMessageMorph.prototype.init = function(msg, srcId, dstId, endpoint, label) {
             true
         );
         this.label.color = white;
-        this.label.drawNew();
+        this.label.rerender();
         this.add(this.label);
     }
     this.color = white;
     this.add(this.message);
 };
 
-SentMessageMorph.prototype.drawNew = function() {
+SentMessageMorph.prototype.rerender = function() {
     this.image = newCanvas(this.extent());
     var context = this.image.getContext('2d'),
         isRight = this.endpoint.x > 0,
@@ -1160,7 +1149,7 @@ MessageMorph.prototype.init = function (type, contents) {
     this.setColor(IDE_Morph.prototype.groupColor);
     this.icon = new SymbolMorph('mail', 25);
     this.icon.setHeight(15);
-    this.icon.drawNew();
+    this.icon.rerender();
 
     this.label = new StringMorph(
         type,
@@ -1170,7 +1159,7 @@ MessageMorph.prototype.init = function (type, contents) {
         true
     );
     this.label.color = white;
-    this.label.drawNew();
+    this.label.rerender();
 
     this.add(this.label);
     this.add(this.icon);
@@ -1249,7 +1238,7 @@ MessageInspectorMorph.prototype.setMessage = function (message) {
     this.createLabel();
 
     this.addBody(new TableFrameMorph(this.tableView, true));
-    this.drawNew();
+    this.rerender();
 };
 
 //////////// Network Replay Controls ////////////
@@ -1324,7 +1313,7 @@ NetworkReplayControls.prototype.settingsMenu = function() {
     });
     menu.addMenu('Displayed Message Count...', submenu);
 
-    menu.drawNew();
+    menu.rerender();
     return menu;
 };
 
@@ -1418,13 +1407,13 @@ RoleMorph.prototype.init = function(id, name, users) {
     this.add(this.caption);
     this.acceptsDrops = true;
     this.setOccupants(users);
-    this.drawNew();
+    this.rerender();
 };
 
 RoleMorph.prototype.setName = function(name) {
     this.name = name;
     this.label.text = name;
-    this.label.drawNew();
+    this.label.rerender();
 };
 
 RoleMorph.prototype.wantsDropOf = function(aMorph) {
@@ -1442,20 +1431,16 @@ RoleMorph.prototype.setOccupants = function(users) {
     }
 
     this.caption.text = userText;
-    this.caption.changed();
-    this.caption.drawNew();
-    this.caption.changed();
+    this.caption.rerender();
 };
 
 RoleMorph.prototype.setName = function(name) {
     this.name = name;
     this.label.text = name;
-    this.label.changed();
-    this.label.drawNew();
-    this.label.changed();
+    this.label.rerender();
 };
 
-RoleMorph.prototype.drawNew = function() {
+RoleMorph.prototype.rerender = function() {
     var room = this.parentThatIsA(RoomMorph),
         center,
         height,
@@ -1723,7 +1708,7 @@ RoomEditorMorph.prototype.init = function(room, sliderColor) {
     }
 
     this.add(this.replayControls);
-    this.replayControls.drawNew();
+    this.replayControls.rerender();
 
     var button = new PushButtonMorph(
         this.room,
@@ -1740,7 +1725,7 @@ RoomEditorMorph.prototype.init = function(room, sliderColor) {
     button.labelShadowColor = button.highlightColor;
     button.labelColor = TurtleIconMorph.prototype.labelColor;
     button.contrast = this.buttonContrast;
-    button.drawNew();
+    button.rerender();
 
     button.hint = 'Add a role to the room';
 
@@ -1749,7 +1734,7 @@ RoomEditorMorph.prototype.init = function(room, sliderColor) {
     this.add(button);
     this.addRoleBtn = button;
 
-    this.room.drawNew();
+    this.room.rerender();
     this.updateControlButtons();
 
     this.acceptsDrops = false;
@@ -1788,8 +1773,7 @@ RoomEditorMorph.prototype.updateControlButtons = function() {
     sf.add(sf.toolBar);
 
     //sf.toolBar.isVisible = !this.replayControls.enabled;
-    sf.toolBar.drawNew();
-    sf.toolBar.changed();
+    sf.toolBar.rerender();
 
     sf.adjustToolBar();
     this.updateRoomControls();
@@ -1824,7 +1808,7 @@ RoomEditorMorph.prototype.addToggleReplay = function() {
         );
         replayButton.alpha = 0.2;
         replayButton.labelShadowColor = shade;
-        replayButton.drawNew();
+        replayButton.rerender();
         replayButton.fixLayout();
 
         toolBar.replayButton = replayButton;
@@ -1848,7 +1832,7 @@ RoomEditorMorph.prototype.addToggleReplay = function() {
     recordButton.labelColor = new Color(125, 0, 0);
     recordButton.alpha = 0.2;
     recordButton.labelShadowColor = shade;
-    recordButton.drawNew();
+    recordButton.rerender();
     recordButton.fixLayout();
 
     toolBar.recordButton = recordButton;
@@ -1938,7 +1922,7 @@ RoomEditorMorph.prototype.enterReplayMode = function() {
 
 RoomEditorMorph.prototype.updateRoomControls = function() {
     // Draw the room
-    this.room.drawNew();
+    this.room.rerender();
 
     // Draw the "new role" button
     if (this.room.isEditable() && !this.isReplayMode()) {
@@ -2041,7 +2025,7 @@ UserDialogMorph.prototype.buildContents = function() {
     this.listField.fontSize = InputFieldMorph.prototype.fontSize;
     this.listField.typeInPadding = InputFieldMorph.prototype.typeInPadding;
     this.listField.contrast = InputFieldMorph.prototype.contrast;
-    this.listField.drawNew = InputFieldMorph.prototype.drawNew;
+    this.listField.rerender = InputFieldMorph.prototype.rerender;
     this.listField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
 
     this.body.add(this.listField);
@@ -2081,7 +2065,7 @@ UserDialogMorph.prototype.fixLayout = function () {
             this.body.width() -  this.padding * 6
         );
         inputField.setLeft(this.body.left() + this.padding * 3);
-        inputField.drawNew();
+        inputField.rerender();  // FIXME: what should I passjk:
 
         this.listField.setLeft(this.body.left() + this.padding);
         this.listField.setWidth(
@@ -2252,7 +2236,7 @@ CollaboratorDialogMorph.prototype.buildContents = function() {
     this.listField.fontSize = InputFieldMorph.prototype.fontSize;
     this.listField.typeInPadding = InputFieldMorph.prototype.typeInPadding;
     this.listField.contrast = InputFieldMorph.prototype.contrast;
-    this.listField.drawNew = InputFieldMorph.prototype.drawNew;
+    this.listField.rerender = InputFieldMorph.prototype.rerender;
     this.listField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
 
     this.body.add(this.listField);

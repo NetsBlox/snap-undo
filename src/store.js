@@ -1282,8 +1282,6 @@ SnapSerializer.prototype.loadCustomBlocks = function (
                 object.customBlocks.push(definition);
             }
         }
-
->>>>>>> e69714a1e1099b0e382b89d41a91baed2a3d4483:src/store.js
     });
 };
 
@@ -2364,7 +2362,7 @@ SpriteMorph.prototype.toXML = function (serializer) {
         !this.customBlocks ? '' : serializer.store(this.customBlocks),
         serializer.store(this.variables),
         this.exemplar ? serializer.store(this.inheritedMethods()) : '',
-        noScripts ? '' : serializer.store(this.scripts)
+        noScripts ? '' : serializer.store(this.scripts),
         serializer.isSavingHistory ? serializer.historyXML(this.id): ''
     );
 };
