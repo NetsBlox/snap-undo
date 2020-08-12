@@ -1247,7 +1247,7 @@ SnapSerializer.prototype.loadCustomBlock = function (element, isGlobal) {
         definition.codeMapping = code.contents;
     }
 
-    trans = child.childNamed('translations');
+    var trans = element.childNamed('translations');
     if (trans) {
         definition.updateTranslations(trans.contents);
     }

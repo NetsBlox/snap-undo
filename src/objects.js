@@ -77,7 +77,7 @@ TextMorph, contains, degrees, detect, newCanvas, radians, CursorMorph,
 FrameMorph, MenuMorph, Morph, invoke, MorphicPreferences, WHITE,
 PenMorph, Point, Rectangle, ScrollFrameMorph, SliderMorph,
 StringMorph, TextMorph, contains, copy, degrees, detect,
-isString, newCanvas, nop, radians, modules, IDE_Morph,
+isString, newCanvas, nop, radians, modules, IDE_Morph, SnapActions
 VariableDialogMorph, Context, List, RingMorph, VideoMotion,
 SpeechBubbleMorph, InputSlotMorph, isNil, TableDialogMorph,
 BlockEditorMorph, BlockDialogMorph, PrototypeHatBlockMorph,  BooleanSlotMorph,

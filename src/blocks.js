@@ -3165,8 +3165,7 @@ BlockMorph.prototype.userMenu = function () {
             'only duplicate this block'
         );
     }
-    menu.addItem(
-        "delete", function() {
+    menu.addItem("delete", function() {
         if (this.id) {
             SnapActions.removeBlock(this, true);
         } else {
@@ -3407,8 +3406,8 @@ BlockMorph.prototype.deleteBlock = function () {
     }
     if (this instanceof ReporterBlockMorph &&
 			((this.parent instanceof BlockMorph)
-            	|| (this.parent instanceof MultiArgMorph)
-            	|| (this.parent instanceof ReporterSlotMorph))) {
+                || (this.parent instanceof MultiArgMorph)
+                || (this.parent instanceof ReporterSlotMorph))) {
         this.parent.revertToDefaultInput(this);
     } else { // CommandBlockMorph
         if (this.parent && this.parent.fixLayout) {
