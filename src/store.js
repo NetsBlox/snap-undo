@@ -1271,7 +1271,7 @@ SnapSerializer.prototype.loadCustomBlocks = function (
         if (child.tag !== 'block-definition') {
             return;
         }
-        definition = myself.loadCustomBlock(child, isGlobal);
+        definition = this.loadCustomBlock(child, isGlobal);
         definition.receiver = object;
         if (isDispatch) {
             object.inheritedMethodsCache.push(definition);
