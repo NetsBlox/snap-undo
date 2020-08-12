@@ -4,7 +4,7 @@
  MessageOutputSlotMorph, MessageInputSlotMorph, SymbolMorph, PushButtonMorph, MenuMorph,
  SpeechBubbleMorph, ProjectDialogMorph, HandleMorph, ReplayControls, fontHeight,
  AlignmentMorph, copy, TableDialogMorph, Table, TableMorph, WebSocketManager,
- TableFrameMorph*/
+ TableFrameMorph, WHITE*/
 /* * * * * * * * * RoomMorph * * * * * * * * */
 RoomMorph.prototype = new Morph();
 RoomMorph.prototype.constructor = RoomMorph;
@@ -22,17 +22,14 @@ RoomMorph.isValidName = function(name) {
 };
 
 RoomMorph.isEmptyName = function(name) {
-    return /^\s*$/.test(name);
+    return name.trim().length === 0;
 };
-
-var white = new Color(224, 224, 224);
 
 function RoomMorph(ide) {
     this.init(ide);
 }
 
 RoomMorph.prototype.init = function(ide) {
-    var myself = this;
     // Get the users at the room
     this.version = -1;
     this.isReadOnly = false;
@@ -56,12 +53,9 @@ RoomMorph.prototype.init = function(ide) {
         false,
         null,
         null,
-        white
+        WHITE
     );
-    this.roomName.mouseClickLeft = function() {
-        myself.editRoomName();
-    };
-
+    this.roomName.mouseClickLeft = () => this.editRoomName();
     this.ownerLabel = new StringMorph(
         localize('Owner: myself'),
         false,
@@ -71,7 +65,7 @@ RoomMorph.prototype.init = function(ide) {
         false,
         null,
         null,
-        white
+        WHITE
     );
 
     this.collabList = new StringMorph(
@@ -83,7 +77,7 @@ RoomMorph.prototype.init = function(ide) {
         false,
         null,
         null,
-        white
+        WHITE
     );
     this.nextRoom = null;  // next room info
     // The projectName is used for the roleId
@@ -442,8 +436,8 @@ RoomMorph.prototype.fixLayout = function() {
     });
 };
 
-RoomMorph.prototype.rerender = function() {
-    this.image = newCanvas(this.extent());
+RoomMorph.prototype.render = function(ctx) {
+    //this.image = newCanvas(this.extent());
 
     // Update the title. Hide it if in replay mode
     if (this.isReadOnly) {
@@ -452,9 +446,9 @@ RoomMorph.prototype.rerender = function() {
         this.roomName.show();
     }
 
-    this.getRoles().forEach(morph => morph.rerender());
+    //this.getRoles().forEach(morph => morph.render(ctx));
 
-    this.displayedMsgMorphs.forEach(morph => morph.rerender());
+    //this.displayedMsgMorphs.forEach(morph => morph.render(ctx));
 };
 
 RoomMorph.prototype.setOwner = function(owner) {
@@ -1062,18 +1056,17 @@ SentMessageMorph.prototype.init = function(msg, srcId, dstId, endpoint, label) {
             null,
             true
         );
-        this.label.color = white;
+        this.label.color = WHITE;
         this.label.rerender();
         this.add(this.label);
     }
-    this.color = white;
+    this.color = WHITE;
     this.add(this.message);
 };
 
-SentMessageMorph.prototype.rerender = function() {
-    this.image = newCanvas(this.extent());
-    var context = this.image.getContext('2d'),
-        isRight = this.endpoint.x > 0,
+SentMessageMorph.prototype.render = function(context) {
+    //this.image = newCanvas(this.extent());
+    var isRight = this.endpoint.x > 0,
         isDownwards = this.endpoint.y > 0,
         startX = isRight ? 0 : -this.endpoint.x,
         startY = isDownwards ? 0 : -this.endpoint.y,
@@ -1158,7 +1151,7 @@ MessageMorph.prototype.init = function (type, contents) {
         null,
         true
     );
-    this.label.color = white;
+    this.label.color = WHITE;
     this.label.rerender();
 
     this.add(this.label);
@@ -1373,7 +1366,7 @@ RoleMorph.prototype.init = function(id, name, users) {
         false,
         null,
         null,
-        white
+        WHITE
     );
     this.label.mouseClickLeft = function() {
         var room = this.parentThatIsA(RoomMorph);
@@ -1401,7 +1394,7 @@ RoleMorph.prototype.init = function(id, name, users) {
         false,
         null,
         null,
-        white
+        WHITE
     );
     this.add(this.label);
     this.add(this.caption);
@@ -1440,12 +1433,11 @@ RoleMorph.prototype.setName = function(name) {
     this.label.rerender();
 };
 
-RoleMorph.prototype.rerender = function() {
+RoleMorph.prototype.render = function(cxt) {
     var room = this.parentThatIsA(RoomMorph),
         center,
         height,
-        radius,
-        cxt;
+        radius;
 
     if (room && room.isReadOnly) {
         this.caption.hide();
@@ -1459,9 +1451,6 @@ RoleMorph.prototype.rerender = function() {
     center = new Point(this.width()/2-radius, height/2-radius).add(radius),
 
     // Create the image
-    this.image = newCanvas(this.extent());
-    cxt = this.image.getContext('2d');
-
     cxt.beginPath();
     cxt.fillStyle = this.color.toString();
     cxt.arc(center.x, center.y, radius, 0, 2 * Math.PI, false);
@@ -1561,7 +1550,7 @@ EditRoleMorph.prototype.init = function(room, role) {
         null,
         null,
         MorphicPreferences.isFlat ? null : new Point(1, 1),
-        white
+        WHITE
     );
 
     this.labelString = localize('Edit') + ' ' + name;
