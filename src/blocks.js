@@ -9217,7 +9217,7 @@ InputSlotMorph.prototype.menuFromDict = async function (
 };
 
 InputSlotMorph.prototype.messageTypesMenu = function() {
-    var rcvr = this.parentThatIsA(BlockMorph).receiver(),
+    var rcvr = this.parentThatIsA(BlockMorph).scriptTarget(),
         stage = rcvr.parentThatIsA(StageMorph),
         names = stage.messageTypes.names(),
         dict = {};

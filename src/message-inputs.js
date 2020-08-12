@@ -23,17 +23,17 @@ MessageInputSlotMorph.prototype.setContents = function(name, values, msgType) {
 };
 
 MessageInputSlotMorph.prototype.getMsgFields = function(name) {
-    var block = this.parentThatIsA(BlockMorph),
-        messageType = null,
-        stage,
-        fields;
+    let fields = [];
 
-    if (block && block.receiver()) {
-        stage = block.receiver().parentThatIsA(StageMorph);
-        messageType = stage.messageTypes.getMsgType(name);
-        fields = messageType && messageType.fields;
-    } else {
-        fields = this.cachedMsgType && this.cachedMsgType.fields;
+    if (name) {
+        const world = this.world();
+        if (world) {
+            const stage = world.children[0].stage;
+            const messageType = stage.messageTypes.getMsgType(name);
+            fields = messageType && messageType.fields;
+        } else {
+            fields = this.cachedMsgType && this.cachedMsgType.fields;
+        }
     }
 
     return fields || [];

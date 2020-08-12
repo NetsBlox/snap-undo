@@ -142,7 +142,7 @@ MultiHintArgMorph.prototype.addInput = function () {
         idx = this.children.length - 1;
     newPart.parent = this;
     this.children.splice(idx, 0, newPart);
-    newPart.drawNew();
+    newPart.rerender();
     this.fixLayout();
 };
 
@@ -224,7 +224,7 @@ StructInputSlotMorph.prototype.setContents = function(name, values) {
 
             this.parent.children.splice(index, 0, content);
             content.parent = this.parent;
-            content.drawNew();
+            content.rerender();
 
             this.fieldContent.push(content);
         }
@@ -234,7 +234,7 @@ StructInputSlotMorph.prototype.setContents = function(name, values) {
             inputs[i].setContents(values[i]);
         }
         this.fixLayout();
-        this.drawNew();
+        this.rerender();
         this.parent.cachedInputs = null;
         this.parent.fixLayout();
         this.parent.changed();
@@ -266,13 +266,13 @@ StructInputSlotMorph.prototype.setDefaultFieldArg = function(index) {
         arg.parent = this.parent;
     }
 
-    arg.drawNew();
+    arg.rerender();
     arg.fixLayout();
-    arg.drawNew();
+    arg.rerender();
 
-    this.parent.drawNew();
+    this.parent.rerender();
     this.parent.fixLayout();
-    this.parent.drawNew();
+    this.parent.rerender();
 
     return arg;
 };
@@ -490,7 +490,7 @@ HintInputSlotMorph.prototype.setContents = function(value) {
         color = new Color(100, 100, 100);
     }
     contents.color = color;
-    contents.drawNew();
+    contents.rerender();
 };
 
 // Check if the given morph has been changed
