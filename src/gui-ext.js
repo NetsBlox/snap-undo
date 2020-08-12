@@ -834,7 +834,6 @@ LibraryDialogMorph.prototype.cachedLibrary = function (key) {
 
 LibraryDialogMorph.prototype.displayBlocks = function (libraryKey) {
     var x, y, blockImage, previousCategory, blockContainer,
-        myself = this,
         padding = 4,
         blocksList = this.cachedLibrary(libraryKey);
 
@@ -844,8 +843,8 @@ LibraryDialogMorph.prototype.displayBlocks = function (libraryKey) {
     x = this.palette.left() + padding;
     y = this.palette.top();
 
-    SpriteMorph.prototype.categories.forEach(function (category) {
-        blocksList.forEach(function (definition) {
+    SpriteMorph.prototype.categories.forEach(category => {
+        blocksList.forEach(definition => {
             if (definition.category !== category) {return; }
             if (category !== previousCategory) {
                 y += padding;
@@ -854,12 +853,12 @@ LibraryDialogMorph.prototype.displayBlocks = function (libraryKey) {
 
             blockImage = definition.templateInstance().fullImage();
             blockContainer = new Morph();
-            blockContainer.setExtent(
-                new Point(blockImage.width, blockImage.height)
-            );
-            blockContainer.image = blockImage;
+            blockContainer.isCachingImage = true;
+            blockContainer.bounds.setWidth(blockImage.width);
+            blockContainer.bounds.setHeight(blockImage.height);
+            blockContainer.cachedImage = blockImage;
             blockContainer.setPosition(new Point(x, y));
-            myself.palette.addContents(blockContainer);
+            this.palette.addContents(blockContainer);
 
             y += blockContainer.fullBounds().height() + padding;
         });
