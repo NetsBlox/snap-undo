@@ -840,9 +840,9 @@ IDE_Morph.prototype.onSetActive = function () {
 
 IDE_Morph.prototype.onUnsetActive = function () {
     if (this.currentTab === 'scripts') {
-        this.currentSprite.scripts.hideUndoControls();
-    } else if (this.spriteEditor.hideUndoControls) {
-        this.spriteEditor.hideUndoControls();
+        this.currentSprite.scripts.hideToolbar();
+    } else if (this.spriteEditor.hideToolbar) {
+        this.spriteEditor.hideToolbar();
     }
 };
 

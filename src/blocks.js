@@ -7545,8 +7545,9 @@ ScriptsMorph.prototype.updateToolbar = function () {
     sf.adjustToolBar();
 };
 
-ScriptsMorph.prototype.hideUndoControls = function () {
+ScriptsMorph.prototype.hideToolbar = function () {
     var sf = this.parentThatIsA(ScrollFrameMorph);
+    if (!sf) {return; }
 
     if (sf.toolBar) {
         sf.toolBar.isVisible = false;

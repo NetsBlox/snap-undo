@@ -2113,7 +2113,7 @@ BlockEditorMorph.prototype.onSetActive = function() {
 };
 
 BlockEditorMorph.prototype.onUnsetActive = function() {
-    this.body.contents.hideUndoControls();
+    this.body.contents.hideToolbar();
 };
 
 BlockEditorMorph.prototype.popUp = function (silent) {
