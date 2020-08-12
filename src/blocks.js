@@ -3526,7 +3526,7 @@ BlockMorph.prototype.relabel = function (alternativeSelectors) {
         block.addShadow(new Point(3, 3));
         menu.addItem(
             block.doWithAlpha(1, () => block.fullImage()),
-            () => SnapActions.setSelector(myself, sel),  // FIXME: account for offset: this.setSelector(selector, -offset)
+            () => SnapActions.setSelector(this, selector),  // FIXME: account for offset: this.setSelector(selector, -offset)
         );
     });
     menu.popup(this.world(), this.bottomLeft().subtract(new Point(

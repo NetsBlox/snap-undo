@@ -1,6 +1,7 @@
 /* globals ensureFullUrl, localize, nop, Point, IDE_Morph, Process, SnapCloud,
    SaveOpenDialogMorph, SaveOpenDialogMorphSource, Morph, utils, MenuMorph,
-   SERVER_URL, SnapActions
+   SERVER_URL, SnapActions, fontHeight, TextMorph, ScrollFrameMorph, SpriteMorph,
+   InputFieldMorph,
    */
 
 ////////////////////////////////////////////////////

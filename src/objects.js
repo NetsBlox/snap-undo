@@ -2808,7 +2808,6 @@ SpriteMorph.prototype.makeBlockButton = function (category) {
 SpriteMorph.prototype.makeBlock = function () {
     // prompt the user to make a new block
     var ide = this.parentThatIsA(IDE_Morph),
-        stage = this.parentThatIsA(StageMorph),
         category = ide.currentCategory,
         clr = SpriteMorph.prototype.blockColor[category],
         dlg;
@@ -2817,11 +2816,10 @@ SpriteMorph.prototype.makeBlock = function () {
         null,
         definition => {
             if (definition.spec !== '') {
-                SnapActions.addCustomBlock(definition, myself)
-                    .then(function(def) {
-                        var editor = new BlockEditorMorph(def, myself);
-                        editor.popUp();
-                    });
+                SnapActions.addCustomBlock(definition, this).then(def => {
+                    var editor = new BlockEditorMorph(def, this);
+                    editor.popUp();
+                });
             }
         },
         this
