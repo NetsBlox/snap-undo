@@ -2109,7 +2109,7 @@ BlockEditorMorph.prototype.mouseClickLeft = function() {
 };
 
 BlockEditorMorph.prototype.onSetActive = function() {
-    this.body.contents.updateUndoControls();
+    this.body.contents.updateToolbar();
 };
 
 BlockEditorMorph.prototype.onUnsetActive = function() {
