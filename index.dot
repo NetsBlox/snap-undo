@@ -23,6 +23,7 @@
             {{ var defaultHost = it.servicesHosts.find(host => host.categories.length === 0); if (!defaultHost) { }} SERVICES_HOSTS.push(DEFAULT_SERVICES_HOST); {{ } }}
         </script>
         {{ if (it.isDevMode) { }}
+        <script type="text/javascript" src="src/logo.js"></script>
         <script type="text/javascript" src="src/utils.js"></script>
         <script type="text/javascript" src="src/polyfill.js"></script>
         <script type="text/javascript" src="src/services.js"></script>
