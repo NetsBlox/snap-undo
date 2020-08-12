@@ -5300,18 +5300,9 @@ CommandBlockMorph.prototype.userDestroy = function () {
         return;
     }
 
-    var scripts = this.parentThatIsA(ScriptsMorph),
-        ide = this.parentThatIsA(IDE_Morph),
+    var ide = this.parentThatIsA(IDE_Morph),
         parent = this.parentThatIsA(SyntaxElementMorph),
         cslot = this.parentThatIsA(CSlotMorph);
-
-    // for undrop / redrop
-    if (scripts) {
-        scripts.clearDropInfo();
-        scripts.lastDroppedBlock = this;
-        scripts.recordDrop(this.situation());
-        scripts.dropRecord.action = 'delete';
-    }
 
     this.prepareToBeGrabbed(); // fix outer ring reporter slot
 
