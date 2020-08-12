@@ -142,7 +142,13 @@ SymbolMorph.prototype.names = [
     'globeBig',
     'list',
     'flipVertical',
-    'flipHorizontal'
+    'flipHorizontal',
+
+    // NetsBlox additions
+    'mail',
+    'encircledCircle',
+    'netsbloxLogo',
+    'queue',
 ];
 
 // SymbolMorph instance creation:
@@ -471,10 +477,18 @@ SymbolMorph.prototype.renderShape = function (ctx, aColor) {
     case 'flipHorizontal':
         this.renderSymbolFlipHorizontal(ctx, aColor);
         break;
-    case 'plus':
-        return this.drawSymbolPlus(ctx, aColor);
     case 'mail':
-        return this.drawSymbolMail(ctx, aColor);
+        this.renderSymbolMail(ctx, aColor);
+        break;
+    case 'encircledCircle':
+        this.renderSymbolEncircledCircle(ctx, aColor);
+        break;
+    case 'netsbloxLogo':
+        this.renderSymbolNetsBloxLogo(ctx, aColor);
+        break;
+    case 'queue':
+        this.renderSymbolQueue(ctx, aColor);
+        break;
     default:
         throw new Error('unknown symbol name: "' + this.name + '"');
     }
@@ -2217,22 +2231,139 @@ SymbolMorph.prototype.renderSymbolFlipVertical = function (ctx, color) {
     this.renderSymbolFlipHorizontal(ctx, color);
 };
 
-SymbolMorph.prototype.drawSymbolPlus = function (ctx, color) {
+SymbolMorph.prototype.renderSymbolNetsBloxLogo = function (ctx, color) {
+    var w = this.symbolWidth(),
+        h = this.size,
+        radius = w/14,
+        innerWidth = w - 2*radius;
+
+    ctx.beginPath();
+    ctx.arc(w/2, h/2, 2*radius, radians(180), radians(270));
+
+    ctx.strokeStyle = color.toString();
+    ctx.beginPath();
+    ctx.arc(w/2, h/2, radius, 0, radians(360));
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(w/2, h/2, 2*radius, 0, radians(90));
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(w/2, h/2, 3*radius, 0, radians(90));
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(w/2, h/2, 2*radius, radians(180), radians(270));
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(w/2, h/2, 3*radius, radians(180), radians(270));
+    ctx.stroke();
+
+    function drawLink(x, y, heading, stemLen) {
+        const dx = stemLen * Math.cos(heading);
+        const dy = stemLen * Math.sin(heading);
+        const startX = radius * Math.cos(heading) + x;
+        const startY = radius * Math.sin(heading) + y;
+
+        ctx.beginPath();
+        ctx.arc(x, y, radius, heading, heading + 2*Math.PI);
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(x + dx, y + dy);
+        ctx.stroke();
+    }
+
+    let heading = -60;
+    let x = radius;
+    let y = h/2;
+    let totalLen = innerWidth/2;
+    const thin = w/48;
+    const stemLen = totalLen - 2 * radius - thin;
+    while (heading < 300) {
+        drawLink(x, y, radians(heading), stemLen);
+        x += totalLen * Math.cos(radians(heading));
+        y += totalLen * Math.sin(radians(heading));
+        heading += 60;
+    }
+};
+
+SymbolMorph.prototype.renderSymbolQueue = function (ctx, color) {
+
+    // draws a triangle given the tip position, dimenstions and direction
+    /* opts = {tipPos, dims, direction: pointing dir} */
+    var drawTriangle = function(ctx, color, opts) {
+        var tgHeight = opts.dims.h;
+        var tgWidth = opts.dims.w;
+        var direction = opts.direction === 'left' ? 1 : -1;
+        ctx.fillStyle = color.toString();
+        ctx.beginPath();
+        ctx.moveTo(opts.tipPos.x, opts.tipPos.y);
+        ctx.lineTo(opts.tipPos.x + (direction*tgWidth), opts.tipPos.y + tgHeight/2);
+        ctx.lineTo(opts.tipPos.x + (direction*tgWidth), opts.tipPos.y - tgHeight/2);
+        ctx.fill();
+    };
+
+    var u = this.symbolWidth()/5;
+    var padding = u/2;
+    var rectW = u;
+    var rectH = 3*u;
+    var centerY = 1*padding + rectH/2;
+    var curX = padding;
+
+    ctx.fillStyle = color.toString();
+
+    var drawRightTri = function(startX) {
+        drawTriangle(ctx, color, {
+            tipPos: {x: startX + rectW, y: centerY},
+            dims: {h: rectH/2, w: rectW},
+            direction: 'right'
+        });
+    };
+
+    drawRightTri(curX);
+    curX += rectW+padding;
+
+    ctx.fillRect(curX, padding, rectW, rectH);
+    curX += rectW+padding;
+
+    ctx.fillRect(curX, padding, rectW, rectH);
+    curX += rectW+padding;
+
+    drawRightTri(curX);
+};
+
+SymbolMorph.prototype.renderSymbolMail = function(ctx, color) {
     var w = this.symbolWidth(),
         l = Math.max(w / 12, 1),
         h = this.size;
 
     ctx.lineWidth = l;
-    ctx.strokeStyle = color.toString();
     ctx.fillStyle = color.toString();
+    ctx.strokeStyle = color.darker(50).toString();
+    ctx.fillRect(0, 0, w, h);
 
-    ctx.moveTo(0, h/2);
-    ctx.lineTo(w, h/2);
-    ctx.moveTo(w/2, 0);
-    ctx.lineTo(w/2, h);
+    ctx.rect(0, 0, w, h);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(w/2, 2*h/3);
+    ctx.lineTo(w, 0);
     ctx.stroke();
 };
 
+SymbolMorph.prototype.renderSymbolEncircledCircle = function(ctx, color) {
+    var w = this.symbolWidth(),
+        l = Math.max(w / 30, 0.5);
+
+    ctx.strokeStyle = color.toString();
+    ctx.fillStyle = color.toString();
+
+    ctx.beginPath();
+    ctx.arc(w / 2, w / 2, w / 4, radians(0), radians(360), false);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.lineWidth = l * 2;
+    ctx.arc(w / 2, w / 2, w / 2 - l, radians(0), radians(360), false);
+    ctx.stroke();
+};
 
 /*
 // register examples with the World demo menu

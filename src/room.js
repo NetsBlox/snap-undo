@@ -1702,7 +1702,7 @@ RoomEditorMorph.prototype.init = function(room, sliderColor) {
     var button = new PushButtonMorph(
         this.room,
         'createNewRole',
-        new SymbolMorph('plus', 12)
+        new SymbolMorph('cross', 12)
     );
     button.padding = 0;
     button.corner = 12;
