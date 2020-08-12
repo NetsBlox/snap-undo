@@ -2385,44 +2385,24 @@ BlockEditorMorph.prototype.editTranslations = function () {
 };
 
 // BlockEditorMorph layout
-
-BlockEditorMorph.prototype.setInitialDimensions = function (silent) {
+BlockEditorMorph.prototype.setInitialDimensions = function () {
     var world = this.world(),
         mex = world.extent().subtract(new Point(this.padding, this.padding)),
         th = fontHeight(this.titleFontSize) + this.titlePadding * 2,
         bh = this.buttons.height();
 
-    if (!silent) {
-        if (this.definition.editorDimensions) {
-            this.setPosition(this.definition.editorDimensions.origin);
-            this.setExtent(this.definition.editorDimensions.extent().min(mex));
-            this.keepWithin(world);
-            return;
-        }
-        this.setExtent(
-            this.body.contents.extent().add(
-                new Point(this.padding, this.padding + th + bh)
-            ).min(mex)
-        );
-        this.setCenter(this.world().center());
-    } else {
-        if (this.definition.editorDimensions) {
-            this.silentSetPosition(this.definition.editorDimensions.origin);
-            this.silentSetExtent(this.definition.editorDimensions.extent().min(mex));
-            this.keepWithin(world);
-            return;
-        }
-        this.silentSetExtent(
-            this.body.contents.extent().add(
-                new Point(this.padding, this.padding + th + bh)
-            ).min(mex)
-        );
-        this.silentSetPosition(
-            this.world().center().subtract(
-                this.extent().floorDivideBy(2)
-            )
-        );
+    if (this.definition.editorDimensions) {
+        this.setPosition(this.definition.editorDimensions.origin);
+        this.setExtent(this.definition.editorDimensions.extent().min(mex));
+        this.keepWithin(world);
+        return;
     }
+    this.setExtent(
+        this.body.contents.extent().add(
+            new Point(this.padding, this.padding + th + bh)
+        ).min(mex)
+    );
+    this.setCenter(this.world().center());
 };
 
 BlockEditorMorph.prototype.fixLayout = function () {

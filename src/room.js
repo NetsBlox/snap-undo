@@ -1,4 +1,4 @@
-/* global SnapCloud, StringMorph, DialogBoxMorph, localize, newCanvas, Point, Morph,
+/* global SnapCloud, StringMorph, DialogBoxMorph, localize, Point, Morph,
  Color, nop, InputFieldMorph, ListMorph, IDE_Morph, TurtleIconMorph, SnapActions,
  TextMorph, MorphicPreferences, ScrollFrameMorph, ReporterBlockMorph,
  MessageOutputSlotMorph, MessageInputSlotMorph, SymbolMorph, PushButtonMorph, MenuMorph,

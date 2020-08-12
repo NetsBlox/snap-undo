@@ -4041,7 +4041,7 @@ IDE_Morph.prototype.projectMenu = function () {
                 this.importLocalFile();
                 return;
             }
-            new LibraryDialogMorph(myself).popUp(this.world());
+            new LibraryDialogMorph(this).popUp(this.world());
         },
         'Select categories of additional blocks to add to this project.'
     );

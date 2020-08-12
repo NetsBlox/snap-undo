@@ -344,7 +344,7 @@ IDE_Morph.prototype.mobileMode.createButtons = function() {
     buttons.forEach(function(btn){
         btn.hide();
         btn.fixLayout();
-        btn.drawNew();
+        btn.rerender();
         myself.ideMorph.add(btn);
         btn.corner = 12;
         btn.color = colors[0];
@@ -660,7 +660,7 @@ LibraryDialogMorph.prototype.buildContents = function () {
     if (this.task === 'open') {
         const openButton = this.buttons.children.find(btn => btn.action === 'openItem');
         openButton.labelString = '  ' + localize('Import') + '  ';
-        openButton.drawNew();
+        openButton.rerender();
         openButton.fixLayout();
     } else {
         const cacheKey = 'current-library';
@@ -689,7 +689,7 @@ LibraryDialogMorph.prototype.setPreview = async function (item) {
         this.displayBlocks(cacheKey);
     }
     this.notesText.text = item.notes || '';
-    this.notesText.drawNew();
+    this.notesText.rerender();
 };
 
 LibraryDialogMorph.prototype.initPreview = function () {
@@ -725,7 +725,7 @@ LibraryDialogMorph.prototype.initializeLibraryDescription = function () {
     this.notesField.fontSize = InputFieldMorph.prototype.fontSize;
     this.notesField.typeInPadding = InputFieldMorph.prototype.typeInPadding;
     this.notesField.contrast = InputFieldMorph.prototype.contrast;
-    this.notesField.drawNew = InputFieldMorph.prototype.drawNew;
+    this.notesField.render = InputFieldMorph.prototype.render;
     this.notesField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
 
     this.notesField.acceptsDrops = false;
@@ -769,7 +769,7 @@ LibraryDialogMorph.prototype.fixLayout = function () {
         );
         inputField.setLeft(this.srcBar.right() + this.padding * 3);
         inputField.setTop(this.srcBar.top());
-        inputField.drawNew();
+        inputField.rerender();
 
         this.listField.setLeft(this.srcBar.right() + this.padding);
         this.listField.setWidth(200);
