@@ -6461,7 +6461,6 @@ IDE_Morph.prototype.changeCloudPassword = function () {
         user => this.cloud.changePassword(
             user.oldpassword,
             user.password,
-            user.passwordRepeat,
             () => this.showMessage('password has been changed.', 2),
             this.cloudError()
         )
