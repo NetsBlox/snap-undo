@@ -7426,8 +7426,7 @@ ScriptsMorph.prototype.undoOwnerId = function () {
 
 ScriptsMorph.prototype.addToolbar = function () {
     var toolBar = new AlignmentMorph(),
-        shade = new Color(140, 140, 140),
-        owner = this.undoOwnerId();
+        shade = new Color(140, 140, 140);
 
     toolBar.respectHiddens = true;
     toolBar.undoButton = new PushButtonMorph(
