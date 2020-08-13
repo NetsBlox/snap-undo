@@ -1,6 +1,6 @@
 /* global nop, DialogBoxMorph, ScriptsMorph, BlockMorph, InputSlotMorph, StringMorph, Color
    ReporterBlockMorph, CommandBlockMorph, MultiArgMorph, localize, SnapCloud, contains,
-   world, Services*/
+   world, Services, BLACK*/
 // Extensions to the Snap blocks
 
 
@@ -478,7 +478,7 @@ HintInputSlotMorph.prototype.evaluate = function() {
 };
 
 HintInputSlotMorph.prototype.setContents = function(value) {
-    var color = new Color(0, 0, 0),
+    var color = BLACK,
         contents = this.contents();
 
     // If empty, set to the hint text
@@ -489,6 +489,7 @@ HintInputSlotMorph.prototype.setContents = function(value) {
         contents.text = this.hintText;
         color = new Color(100, 100, 100);
     }
+    contents.fixLayout();
     contents.color = color;
     contents.rerender();
 };
