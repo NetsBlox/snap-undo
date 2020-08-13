@@ -1487,7 +1487,7 @@ IDE_Morph.prototype.createSpriteBar = function () {
             myself, // the IDE is the target
             () => {
                 if (myself.currentSprite instanceof SpriteMorph) {
-                    SnapActions.setRotationStyle(this.currentSprite, rotationStyle);
+                    SnapActions.setRotationStyle(myself.currentSprite, rotationStyle);
                 }
             },
             symbols[rotationStyle], // label
