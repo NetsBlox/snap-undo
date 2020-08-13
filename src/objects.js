@@ -7955,7 +7955,7 @@ StageMorph.prototype.startVideo = function() {
             this.world
         );
         dialog.fixLayout();
-        dialog.drawNew();
+        dialog.rerender();
         if (myself.projectionSource) {
             myself.projectionSource.remove();
             myself.projectionSource = null;
@@ -12636,6 +12636,8 @@ ReplayControls.prototype.init = function() {
     this.add(this.captionsButton);
     this.add(this.settingsButton);
 
+    this.fixLayout();
+    this.rerender();
     this.update();
 };
 
@@ -12690,7 +12692,7 @@ ReplayControls.prototype.settingsMenu = function() {
                         var time = myself.getTimeFromPosition(myself.slider.value);
                         myself.setActions(myself.actions);
                         myself.slider.value = myself.getSliderPositionFromTime(time);
-                        myself.slider.drawNew();
+                        myself.slider.rerender();
                         myself.updateDisplayTime();
                     }
                 }, null, null, myself[key] === value);
@@ -12737,7 +12739,7 @@ ReplayControls.prototype.settingsMenu = function() {
         })
     );
 
-    menu.drawNew();
+    menu.rerender();
     return menu;
 };
 
@@ -12756,7 +12758,7 @@ ReplayControls.prototype.toggleCaptions = function() {
     }
 
     this.captionsButton.color = color;
-    this.captionsButton.drawNew();
+    this.captionsButton.rerender();
     this.captionsButton.changed();
 };
 
@@ -12810,7 +12812,7 @@ ReplayControls.prototype.displayCaption = function(action, originalEvent) {
         this.lastCaption.destroy();
     }
 
-    menu.drawNew();
+    menu.rerender();
     menu.setPosition(pos);
     menu.addShadow(new Point(2, 2), 80);
     menu.keepWithin(world);
@@ -12939,15 +12941,14 @@ ReplayControls.prototype.updateDisplayTime = function() {
     this.displayTime.text = this.formatTime(currentTime) + ' / ' +
         this.formatTime(totalTime);
 
-    this.displayTime.drawNew();
     this.displayTime.changed();
+    this.displayTime.fixLayout();
+    this.displayTime.rerender();
 };
 
 ReplayControls.prototype.playNext = function(dir) {
     // Get the position of the button in the slider and move it
-    var myself = this,
-        currentAction,
-        nextAction,
+    var nextAction,
         value;
 
     dir = dir || 1;
@@ -13145,7 +13146,8 @@ ReplayControls.prototype.setActions = function(actions, atEnd) {
             this.getColorForTick(this.actions[i])
         );
     }
-    this.slider.drawNew();
+    this.slider.fixLayout();
+    this.slider.rerender();
 
     this.updateDisplayTime();
 };

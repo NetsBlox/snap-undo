@@ -149,6 +149,9 @@ SymbolMorph.prototype.names = [
     'encircledCircle',
     'netsbloxLogo',
     'queue',
+    'jumpForward',
+    'jumpBackward',
+    'stepBackward',
 ];
 
 // SymbolMorph instance creation:
@@ -488,6 +491,15 @@ SymbolMorph.prototype.renderShape = function (ctx, aColor) {
         break;
     case 'queue':
         this.renderSymbolQueue(ctx, aColor);
+        break;
+    case 'jumpForward':
+        this.renderSymbolJumpForward(ctx, aColor);
+        break;
+    case 'jumpBackward':
+        this.renderSymbolJumpBackward(ctx, aColor);
+        break;
+    case 'stepBackward':
+        this.renderSymbolStepBackward(ctx, aColor);
         break;
     default:
         throw new Error('unknown symbol name: "' + this.name + '"');
@@ -2364,6 +2376,113 @@ SymbolMorph.prototype.renderSymbolEncircledCircle = function(ctx, color) {
     ctx.arc(w / 2, w / 2, w / 2 - l, radians(0), radians(360), false);
     ctx.stroke();
 };
+
+SymbolMorph.prototype.renderSymbolJumpForward = function (ctx, color) {
+    // answer a canvas showing a double right-pointing triangle
+    // followed by a vertical bar
+    var arrowWidth = 3/7 * this.symbolWidth(),
+        height = 4/7 * this.size,
+        zeroY = 1.5/7 * this.size,
+        rectWidth = 1/7 * this.symbolWidth();
+
+    ctx.fillStyle = color.toString();
+    ctx.beginPath();
+    ctx.moveTo(0, zeroY);
+    ctx.lineTo(arrowWidth, zeroY + Math.round(height / 2));
+    ctx.lineTo(0, zeroY+height);
+    ctx.lineTo(0, zeroY);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(arrowWidth, zeroY);
+    ctx.lineTo(2*arrowWidth, zeroY + Math.round(height / 2));
+    ctx.lineTo(arrowWidth, zeroY+height);
+    ctx.lineTo(arrowWidth, zeroY);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillRect(
+        2*arrowWidth,
+        zeroY,
+        rectWidth,
+        height
+    );
+};
+
+SymbolMorph.prototype.renderSymbolJumpBackward = function (ctx, color) {
+    // answer a canvas showing a double left-pointing triangle
+    // followed by a vertical bar
+    var arrowWidth = 3/7 * this.symbolWidth(),
+        height = 4/7 * this.size,
+        zeroY = 1.5/7 * this.size,
+        rectWidth = 1/7 * this.symbolWidth();
+
+    ctx.fillStyle = color.toString();
+    ctx.beginPath();
+    ctx.moveTo(rectWidth + arrowWidth, zeroY);
+    ctx.lineTo(rectWidth, zeroY + Math.round(height / 2));
+    ctx.lineTo(rectWidth + arrowWidth, zeroY+height);
+    ctx.lineTo(rectWidth + arrowWidth, zeroY);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(rectWidth + 2 * arrowWidth, zeroY);
+    ctx.lineTo(rectWidth + arrowWidth, zeroY + Math.round(height / 2));
+    ctx.lineTo(rectWidth + 2 * arrowWidth, zeroY+height);
+    ctx.lineTo(rectWidth + 2 * arrowWidth, zeroY);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillRect(
+        0,
+        zeroY,
+        rectWidth,
+        height
+    );
+};
+
+SymbolMorph.prototype.renderSymbolStepForward = function (ctx, color) {
+    const width = this.symbolWidth();
+    const height = this.size;
+
+    ctx.fillStyle = color.toString();
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(width * 0.75, Math.round(height / 2));
+    ctx.lineTo(0, height);
+    ctx.lineTo(0, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(
+        width * 0.75,
+        0,
+        width * 0.25,
+        height
+    );
+};
+
+SymbolMorph.prototype.renderSymbolStepBackward = function (ctx, color) {
+    const width = this.symbolWidth();
+    const height = this.size;
+
+    ctx.fillStyle = color.toString();
+    ctx.beginPath();
+    ctx.moveTo(width * 0.25, Math.round(height / 2));
+    ctx.lineTo(width, 0);
+    ctx.lineTo(width, height);
+    ctx.lineTo(width * 0.25, Math.round(height / 2));
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(
+        0,
+        0,
+        width * 0.25,
+        height
+    );
+};
+
 
 /*
 // register examples with the World demo menu
