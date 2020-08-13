@@ -69,7 +69,7 @@ InputFieldMorph, FrameMorph, Process, nop, SnapSerializer, ListMorph, detect,
 AlignmentMorph, TabMorph, Costume, MorphicPreferences, BlockMorph,
 ToggleMorph, InputSlotDialogMorph, ScriptsMorph, isNil, SymbolMorph,
 BlockExportDialogMorph, BlockImportDialogMorph, SnapTranslator, localize,
-List, ArgMorph, SnapCloud, HandleMorph, SVG_Costume,
+List, ArgMorph, SnapCloud, HandleMorph, SVG_Costume, LOGO_IMAGE
 fontHeight, sb, CommentMorph, CommandBlockMorph, SnapActions
 BlockLabelPlaceHolderMorph, SpeechBubbleMorph, ScriptFocusMorph,
 XML_Element, WatcherMorph, BlockRemovalDialogMorph, saveAs, TableMorph,
@@ -722,15 +722,15 @@ IDE_Morph.prototype.createLogo = function () {
 
     this.logo.render = function (ctx) {
         var gradient = ctx.createLinearGradient(
-                0,
-                0,
-                this.width(),
-                0
-            );
+            0,
+            0,
+            this.width(),
+            0
+        );
         gradient.addColorStop(0, 'black');
         gradient.addColorStop(0.5, myself.frameColor.toString());
         ctx.fillStyle = MorphicPreferences.isFlat ?
-                myself.frameColor.toString() : gradient;
+            myself.frameColor.toString() : gradient;
         ctx.fillRect(0, 0, this.width(), this.height());
         if (this.cachedTexture) {
             this.renderCachedTexture(ctx);
@@ -825,11 +825,11 @@ IDE_Morph.prototype.createControlBar = function () {
         cloudButton,
         x,
         colors = MorphicPreferences.isFlat ? this.tabColors
-        : [
-            this.groupColor,
-            this.frameColor.darker(50),
-            this.frameColor.darker(50)
-        ],
+            : [
+                this.groupColor,
+                this.frameColor.darker(50),
+                this.frameColor.darker(50)
+            ],
         myself = this;
 
     if (this.controlBar) {
@@ -949,8 +949,8 @@ IDE_Morph.prototype.createControlBar = function () {
             new SymbolMorph('square', 14)
         ],
         () => this.stage ? // query
-                myself.stage.enableCustomHatBlocks &&
-                    myself.stage.threads.pauseCustomHatBlocks
+            myself.stage.enableCustomHatBlocks &&
+                myself.stage.threads.pauseCustomHatBlocks
             : true
     );
 
@@ -998,7 +998,7 @@ IDE_Morph.prototype.createControlBar = function () {
     button.labelShadowColor = colors[1];
     button.labelColor = MorphicPreferences.isFlat ?
         new Color(220, 185, 0)
-            : new Color(255, 220, 0);
+        : new Color(255, 220, 0);
     button.contrast = this.buttonContrast;
     // button.hint = 'pause/resume\nall scripts';
     button.fixLayout();
@@ -1086,7 +1086,7 @@ IDE_Morph.prototype.createControlBar = function () {
         this,
         function() {
             var menu = myself.settingsMenu(),
-            pos = myself.controlBar.settingsButton.bottomLeft();
+                pos = myself.controlBar.settingsButton.bottomLeft();
             menu.popup(myself.world(), pos);
         },
         new SymbolMorph('gears', 14)
@@ -3069,29 +3069,46 @@ IDE_Morph.prototype.userMenu = function () {
 
 IDE_Morph.prototype.snapMenu = function () {
     var menu,
+        myself = this,
         world = this.world();
 
     menu = new MenuMorph(this);
-    menu.addItem('About...', 'aboutSnap');
+    menu.addItem('About...', 'aboutNetsBlox');
     menu.addLine();
     menu.addItem(
-        'Reference manual',
-        () => {
-            var url = this.resourceURL('help', 'SnapManual.pdf');
+        'NetsBlox website',
+        function () {
+            window.open('https://netsblox.org', 'NetsBloxWebsite');
+        }
+    );
+    menu.addItem(
+        'Snap! manual',
+        function () {
+            var url = myself.resourceURL('help', 'SnapManual.pdf');
             window.open(url, 'SnapReferenceManual');
         }
     );
     menu.addItem(
-        'Snap! website',
-        () => window.open('https://snap.berkeley.edu/', 'SnapWebsite')
+        'Source code',
+        function () {
+            window.open(
+                'https://github.com/netsblox/netsblox'
+            );
+        }
     );
+    menu.addLine();
     menu.addItem(
-        'Download source',
-        () => window.open(
-                'https://github.com/jmoenig/Snap/releases/latest',
-                'SnapSource'
-            )
+        'Report a bug',
+        'reportBug'
     );
+    if (world.currentKey === 16) {
+        menu.addItem(
+            'Load reported bug',
+            'loadBugReport',
+            undefined,
+            new Color(100, 0, 0)
+        );
+    }
     if (world.isDevMode) {
         menu.addLine();
         menu.addItem(
@@ -3125,15 +3142,6 @@ IDE_Morph.prototype.cloudMenu = function () {
     }
 
     menu = new MenuMorph(this);
-    if (shiftClicked) {
-        menu.addItem(
-            'url...',
-            'setCloudURL',
-            null,
-            new Color(100, 0, 0)
-        );
-        menu.addLine();
-    }
     if (!this.cloud.username) {
         menu.addItem(
             'Login...',
@@ -3147,10 +3155,6 @@ IDE_Morph.prototype.cloudMenu = function () {
             'Reset Password...',
             'resetCloudPassword'
         );
-        menu.addItem(
-            'Resend Verification Email...',
-            'resendVerification'
-        );
     } else {
         menu.addItem(
             localize('Logout') + ' ' + this.cloud.username,
@@ -3159,21 +3163,6 @@ IDE_Morph.prototype.cloudMenu = function () {
         menu.addItem(
             'Change Password...',
             'changeCloudPassword'
-        );
-    }
-    if (this.hasCloudProject()) {
-        menu.addLine();
-        menu.addItem(
-            'Open in Community Site',
-            () => {
-                var dict = this.urlParameters();
-                window.open(
-                    this.cloud.showProjectPath(
-                        dict.Username, dict.ProjectName
-                    ),
-                    '_blank'
-                );
-            }
         );
     }
     if (shiftClicked) {
@@ -3204,23 +3193,6 @@ IDE_Morph.prototype.cloudMenu = function () {
                     this.prompt(
                         'Export Project As...',
                         name => this.exportProjectNoMedia(name),
-                        null,
-                        'exportProject'
-                    );
-                }
-            },
-            null,
-            new Color(100, 0, 0)
-        );
-        menu.addItem(
-            'export project as cloud data...',
-            () => {
-                if (this.projectName) {
-                    this.exportProjectAsCloudData(this.projectName);
-                } else {
-                    this.prompt(
-                        'Export Project As...',
-                        name => this.exportProjectAsCloudData(name),
                         null,
                         'exportProject'
                     );
@@ -3284,7 +3256,6 @@ IDE_Morph.prototype.settingsMenu = function () {
     var menu,
         stage = this.stage,
         world = this.world(),
-        pos = this.controlBar.settingsButton.bottomLeft(),
         shiftClicked = (world.currentKey === 16),
         on = new SymbolMorph(
             'checkedBox',

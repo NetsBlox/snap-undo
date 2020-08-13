@@ -90,13 +90,6 @@ NetsBloxMorph.prototype.clearProject = function () {
 NetsBloxMorph.prototype.cloudMenu = function () {
     var menu = NetsBloxMorph.uber.cloudMenu.call(this);
 
-    // Edit the menu
-    menu.children.forEach(function(child) {
-        if (child.action === 'promptCollaboration') {
-            menu.removeChild(child);
-        }
-    });
-
     if (this.cloud.username && this.room.isOwner()) {
         menu.addLine();
         menu.addItem(
@@ -939,70 +932,6 @@ NetsBloxMorph.prototype.updateUrlQueryString = function (room, isPublic, isExamp
 };
 
 // Bug reporting assistance
-NetsBloxMorph.prototype.snapMenu = function () {
-    var menu,
-        myself = this,
-        world = this.world();
-
-    menu = new MenuMorph(this);
-    menu.addItem('About...', 'aboutNetsBlox');
-    menu.addLine();
-    menu.addItem(
-        'NetsBlox website',
-        function () {
-            window.open('https://netsblox.org', 'NetsBloxWebsite');
-        }
-    );
-    menu.addItem(
-        'Snap! manual',
-        function () {
-            var url = myself.resourceURL('help', 'SnapManual.pdf');
-            window.open(url, 'SnapReferenceManual');
-        }
-    );
-    menu.addItem(
-        'Source code',
-        function () {
-            window.open(
-                'https://github.com/netsblox/netsblox'
-            );
-        }
-    );
-    menu.addLine();
-    menu.addItem(
-        'Report a bug',
-        'reportBug'
-    );
-    if (world.currentKey === 16) {
-        menu.addItem(
-            'Load reported bug',
-            'loadBugReport',
-            undefined,
-            new Color(100, 0, 0)
-        );
-    }
-    if (world.isDevMode) {
-        menu.addLine();
-        menu.addItem(
-            'Switch back to user mode',
-            'switchToUserMode',
-            'disable deep-Morphic\ncontext menus'
-                + '\nand show user-friendly ones',
-            new Color(0, 100, 0)
-        );
-    } else if (world.currentKey === 16) { // shift-click
-        menu.addLine();
-        menu.addItem(
-            'Switch to dev mode',
-            'switchToDevMode',
-            'enable Morphic\ncontext menus\nand inspectors,'
-                + '\nnot user-friendly!',
-            new Color(100, 0, 0)
-        );
-    }
-    menu.popup(world, this.logo.bottomLeft());
-};
-
 NetsBloxMorph.prototype.aboutNetsBlox = function () {
     var dlg,
         version = NetsBloxSerializer.prototype.app.split(',')[0],

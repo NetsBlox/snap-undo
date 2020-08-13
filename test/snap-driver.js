@@ -98,17 +98,25 @@ SnapDriver.prototype.selectSprite = function(name) {
 };
 
 SnapDriver.prototype.keys = function(text) {
-    let world = this.world();
-    let keyboard = world.keyboardReceiver;
+    const world = this.world();
 
     text.split('').forEach(letter => {
-        const event = {
-            keyCode: letter.charCodeAt(0)
+        const eventInfo = {
+            key: letter,
+            keyCode: letter.charCodeAt(0),
+            shiftKey: letter !== letter.toLowerCase(),
         };
-        world.currentKey = event.keyCode;
-        keyboard.processKeyPress(event);
-        world.currentKey = null;
+
+        let event = new KeyboardEvent('keydown', eventInfo);
+        world.keyboardHandler.dispatchEvent(event);
+        event = new KeyboardEvent('keypress', eventInfo);
+        world.keyboardHandler.dispatchEvent(event);
+        event = new KeyboardEvent('keyup', eventInfo);
+        world.keyboardHandler.dispatchEvent(event);
     });
+    world.keyboardHandler.value = text;
+    let event = new InputEvent('input');
+    world.keyboardHandler.dispatchEvent(event);
 };
 
 // Add block by spec
