@@ -110,6 +110,8 @@ RoomMorph.prototype.setReadOnly = function(value) {
 RoomMorph.prototype.silentSetRoomName = function(name) {
     this.name = name;
     this.roomName.text = name;
+    this.roomName.changed();
+    this.roomName.fixLayout();
     this.roomName.rerender();
 
     this.ide.controlBar.updateLabel();
@@ -1424,12 +1426,16 @@ RoleMorph.prototype.setOccupants = function(users) {
     }
 
     this.caption.text = userText;
+    this.caption.changed();
+    this.caption.fixLayout();
     this.caption.rerender();
 };
 
 RoleMorph.prototype.setName = function(name) {
     this.name = name;
     this.label.text = name;
+    this.label.changed();
+    this.label.fixLayout();
     this.label.rerender();
 };
 
