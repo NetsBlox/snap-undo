@@ -7415,15 +7415,6 @@ ScriptsMorph.prototype.addComment = function () {
     }
 };
 
-ScriptsMorph.prototype.definitionOrSprite = function () {
-    var gparent = this.parent.parent;
-
-    if (gparent instanceof BlockEditorMorph) {
-        return gparent.definition;
-    }
-    return this.scriptTarget();
-};
-
 ScriptsMorph.prototype.undoOwnerId = function () {
     try {
         const target = this.scriptTarget();
@@ -7616,8 +7607,7 @@ ScriptsMorph.prototype.moveBlock = function (block, target, hand) {
     if (origin !== this && origin instanceof ScriptsMorph) {  // moving between open editors
         // Revert the block back to the origin in case this fails
         var originPosition = hand.grabOrigin.position.add(hand.grabOrigin.origin.position()),
-            dup = block.fullCopy(),
-            ownerId = this.definitionOrSprite().id;
+            dup = block.fullCopy();
 
         if (SnapActions.isCollaborating()) {
             // only revert if collaborating - ow, this can't fail!
@@ -7641,7 +7631,7 @@ ScriptsMorph.prototype.moveBlock = function (block, target, hand) {
 ScriptsMorph.prototype.addBlock = function (block) {
     var position = block.position(),
         scripts = block.parentThatIsA(ScriptsMorph),
-        ownerId = this.definitionOrSprite().id;
+        ownerId = this.scriptTarget().id;
 
     SnapActions.addBlock(block, scripts, position, ownerId);
 
@@ -7664,7 +7654,7 @@ ScriptsMorph.prototype.setBlockPosition = function (block, hand) {
 
             // copy the blocks and add them to the new editor
             var dup = block.fullCopy(),
-                ownerId = this.definitionOrSprite().id;
+                ownerId = this.scriptTarget().id;
 
             return SnapActions.addBlock(dup, this, position, ownerId)
                 // if that succeeds, remove them from the current editor

@@ -1,4 +1,4 @@
-/* global BlockMorph, StageMorph, StructInputSlotMorph */
+/* global StructInputSlotMorph */
 
 // MessageInputSlotMorph //////////////////////////////////////////////
 // I am a dropdown menu with an associated message type

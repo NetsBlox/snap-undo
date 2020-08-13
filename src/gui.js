@@ -9395,7 +9395,7 @@ WardrobeMorph.prototype.updateList = function () {
     this.changed();
 
     this.updateSelection();
-    this.onNextStep = this.updateUndoControls;
+    this.onNextStep = this.updateToolbar;
 };
 
 WardrobeMorph.prototype.updateSelection = function () {
@@ -9482,18 +9482,15 @@ WardrobeMorph.prototype.reactToDropOf = function (icon) {
 };
 
 // Undo/Redo support
-WardrobeMorph.prototype.updateUndoControls =
-    ScriptsMorph.prototype.updateUndoControls;
-
-WardrobeMorph.prototype.addUndoControls =
-    ScriptsMorph.prototype.addUndoControls;
-
-WardrobeMorph.prototype.undoOwnerId =
-    ScriptsMorph.prototype.undoOwnerId;
-
-WardrobeMorph.prototype.definitionOrSprite = function() {
-    return this.sprite;
+WardrobeMorph.prototype.undoOwnerId = function() {
+    return this.sprite.id + '/' + this.undoCategory;
 };
+
+WardrobeMorph.prototype.updateToolbar =
+    ScriptsMorph.prototype.updateToolbar;
+
+WardrobeMorph.prototype.addToolbar =
+    ScriptsMorph.prototype.addToolbar;
 
 // SoundIconMorph ///////////////////////////////////////////////////////
 
@@ -9811,7 +9808,7 @@ JukeboxMorph.prototype.updateList = function () {
 
     this.changed();
     this.updateSelection();
-    this.onNextStep = this.updateUndoControls;
+    this.onNextStep = this.updateToolbar;
 };
 
 JukeboxMorph.prototype.updateSelection = function () {
@@ -9863,18 +9860,14 @@ JukeboxMorph.prototype.reactToDropOf = function (icon) {
 };
 
 // Undo/Redo support
-JukeboxMorph.prototype.updateUndoControls =
-    ScriptsMorph.prototype.updateUndoControls;
+JukeboxMorph.prototype.updateToolbar =
+    ScriptsMorph.prototype.updateToolbar;
 
-JukeboxMorph.prototype.addUndoControls =
-    ScriptsMorph.prototype.addUndoControls;
+JukeboxMorph.prototype.addToolbar =
+    ScriptsMorph.prototype.addToolbar;
 
 JukeboxMorph.prototype.undoOwnerId =
-    ScriptsMorph.prototype.undoOwnerId;
-
-JukeboxMorph.prototype.definitionOrSprite = function() {
-    return this.sprite;
-};
+    WardrobeMorph.prototype.undoOwnerId;
 
 // StageHandleMorph ////////////////////////////////////////////////////////
 
