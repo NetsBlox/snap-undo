@@ -1584,6 +1584,7 @@ EditRoleMorph.prototype.init = function(room, role) {
         this.addButton('deleteRole', 'Delete role');
     }
     this.addButton('cancel', 'Cancel');
+    this.fixLayout();
 };
 
 EditRoleMorph.prototype.inviteUser = function() {
