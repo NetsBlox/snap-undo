@@ -36,6 +36,8 @@
         <script type="text/javascript" src="src/threads.js"></script>
         <script type="text/javascript" src="src/objects.js"></script>
         <script type="text/javascript" src="src/paint.js"></script>
+        <script type="text/javascript" src="src/cloud.js"></script>
+        <script type="text/javascript" src="src/netscloud.js"></script>
         <script type="text/javascript" src="src/gui.js"></script>
         <script type="text/javascript" src="src/paint.js"></script>
         <script type="text/javascript" src="src/video.js"></script>
@@ -45,7 +47,6 @@
         <script type="text/javascript" src="src/tables.js"></script>
         <script type="text/javascript" src="src/xml.js"></script>
         <script type="text/javascript" src="src/store.js"></script>
-        <script type="text/javascript" src="src/cloud.js"></script>
         <script type="text/javascript" src="src/sha512.js"></script>
         <script type="text/javascript" src="src/actions.js"></script>
         <script type="text/javascript" src="src/undo.js"></script>
@@ -56,7 +57,6 @@
         <script type="text/javascript" src="src/widgets-ext.js"></script>
         <script type="text/javascript" src="src/objects-ext.js"></script>
         <script type="text/javascript" src="src/gui-ext.js"></script>
-        <script type="text/javascript" src="src/netscloud.js"></script>
         <script type="text/javascript" src="src/threads-ext.js"></script>
 
         <!-- Additional Components-->

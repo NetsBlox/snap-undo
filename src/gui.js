@@ -247,7 +247,7 @@ IDE_Morph.prototype.init = function (isAutoFill) {
     this.applySavedSettings();
 
     // additional properties:
-    this.cloud = new Cloud();
+    this.cloud = SnapCloud;
     this.cloudMsg = null;
     this.source = null;
     this.serializer = new SnapSerializer();

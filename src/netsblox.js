@@ -97,7 +97,7 @@ NetsBloxMorph.prototype.cloudMenu = function () {
         }
     });
 
-    if (SnapCloud.username && this.room.isOwner()) {
+    if (this.cloud.username && this.room.isOwner()) {
         menu.addLine();
         menu.addItem(
             'Collaborators...',
