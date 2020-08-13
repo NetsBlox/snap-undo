@@ -1,50 +1,8 @@
-/* global Process, Context, IDE_Morph, Costume, StageMorph, List, SnapActions,
+/* global Process, IDE_Morph, Costume, StageMorph, List, SnapActions,
  isObject, newCanvas, Point, SnapCloud, Services */
 
-// NetsProcess Overrides
-NetsProcess.prototype = new Process();
-NetsProcess.prototype.constructor = NetsProcess;
-
-function NetsProcess(topBlock, onComplete, rightAway, context) {
-    this.topBlock = topBlock || null;
-
-    this.readyToYield = false;
-    this.readyToTerminate = false;
-    this.isDead = false;
-    this.isClicked = false;
-    this.isShowingResult = false;
-    this.errorFlag = false;
-    this.context = null;
-    this.homeContext = context || new Context();
-    this.lastYield = Date.now();
-    this.isFirstStep = true;
-    this.isAtomic = false;
-    this.prompter = null;
-    this.httpRequest = null;
-    this.rpcRequest = null;
-    this.isPaused = false;
-    this.pauseOffset = null;
-    this.frameCount = 0;
-    this.exportResult = false;
-    this.onComplete = onComplete || null;
-    this.procedureCount = 0;
-
-    if (topBlock) {
-        this.homeContext.receiver = topBlock.receiver();
-        this.homeContext.variables.parentFrame =
-            this.homeContext.receiver.variables;
-        this.context = new Context(
-            null,
-            topBlock.blockSequence(),
-            this.homeContext
-        );
-        if (!rightAway) {
-            this.pushContext('doYield'); // highlight top block
-        }
-    }
-}
-
-NetsProcess.prototype.doSocketMessage = function (msgInfo) {
+// Additional Process Capabilities
+Process.prototype.doSocketMessage = function (msgInfo) {
     var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph),
         targetRole = arguments[arguments.length-1],
         srcId = [ide.projectName, ide.room.name, ide.room.ownerId].join('@'),
@@ -111,8 +69,8 @@ NetsProcess.prototype.doSocketMessage = function (msgInfo) {
 };
 
 //request block
-NetsProcess.prototype.MESSAGE_REPLY_TIMEOUT = 1500;
-NetsProcess.prototype.doSocketRequest = function (msgInfo) {
+Process.prototype.MESSAGE_REPLY_TIMEOUT = 1500;
+Process.prototype.doSocketRequest = function (msgInfo) {
     var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph),
         targetRole = arguments[arguments.length-1],
         myRole = ide.projectName,  // same as seat name
@@ -177,7 +135,7 @@ NetsProcess.prototype.doSocketRequest = function (msgInfo) {
 };
 
 // reply block
-NetsProcess.prototype.doSocketResponse = function (resource) {
+Process.prototype.doSocketResponse = function (resource) {
     var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph),
         requestId,
         srcId,
@@ -209,7 +167,7 @@ NetsProcess.prototype.doSocketResponse = function (resource) {
  *
  * @return {undefined}
  */
-NetsProcess.prototype.receiveSocketMessage = function (fields) {
+Process.prototype.receiveSocketMessage = function (fields) {
     var varFrame = this.context.outerContext.variables,
         names = varFrame.names(),
         content;
@@ -232,7 +190,7 @@ NetsProcess.prototype.receiveSocketMessage = function (fields) {
     varFrame.deleteVar('__message__');
 };
 
-NetsProcess.prototype.createRPCUrl = function (url) {
+Process.prototype.createRPCUrl = function (url) {
     var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph),
         uuid = ide.sockets.uuid,
         projectId = encodeURIComponent(SnapCloud.projectId),
@@ -247,7 +205,7 @@ NetsProcess.prototype.createRPCUrl = function (url) {
     return url;
 };
 
-NetsProcess.prototype.callRPC = function (baseUrl, params, noCache) {
+Process.prototype.callRPC = function (baseUrl, params, noCache) {
     var url = this.createRPCUrl(baseUrl),
         response,
         contentType,
@@ -313,7 +271,7 @@ NetsProcess.prototype.callRPC = function (baseUrl, params, noCache) {
     this.pushContext();
 };
 
-NetsProcess.prototype.getCostumeFromRPC = function (url, params) {
+Process.prototype.getCostumeFromRPC = function (url, params) {
     var image;
 
     // Create the costume (analogous to reportURL)
@@ -341,7 +299,7 @@ NetsProcess.prototype.getCostumeFromRPC = function (url, params) {
     this.pushContext();
 };
 
-NetsProcess.prototype.getJSFromRPC = function (url, params) {
+Process.prototype.getJSFromRPC = function (url, params) {
     if (typeof params === 'string') {
         var oldParams = params;
         params = {};
@@ -369,7 +327,7 @@ NetsProcess.prototype.getJSFromRPC = function (url, params) {
     return result;
 };
 
-NetsProcess.prototype.parseRPCResult = function (result) {
+Process.prototype.parseRPCResult = function (result) {
     if (result instanceof Array) {
         return new List(result.map(this.parseRPCResult.bind(this)));
     } else if (typeof result === 'string' && result[0] === '<') {
@@ -400,12 +358,12 @@ function listToArray(list) {
     return combinedArray;
 }
 
-NetsProcess.prototype.errorRPCNotAvailable = function (service, rpc) {
+Process.prototype.errorRPCNotAvailable = function (service, rpc) {
     throw new Error('Cannot invoke "' + rpc + '" from "' + service + '". Service or RPC is not available.');
 };
 
-NetsProcess.prototype.doRunRPC =
-NetsProcess.prototype.getJSFromRPCStruct = function (rpc, methodSignature) {
+Process.prototype.doRunRPC =
+Process.prototype.getJSFromRPCStruct = function (rpc, methodSignature) {
     var action = methodSignature[0],
         argNames = methodSignature[1],
         values = Array.prototype.slice.call(arguments, 2, argNames.length + 2),
@@ -427,7 +385,7 @@ NetsProcess.prototype.getJSFromRPCStruct = function (rpc, methodSignature) {
     return this.getJSFromRPCDropdown(rpc, action, query);
 };
 
-NetsProcess.prototype.getJSFromRPCDropdown = function (service, rpc, params) {
+Process.prototype.getJSFromRPCDropdown = function (service, rpc, params) {
     if (service && rpc) {
         const isServiceURL = service instanceof Array;
         const serviceURL = isServiceURL ? service[0] : Services.defaultHost.url + '/' + service;
@@ -446,7 +404,7 @@ NetsProcess.prototype.getJSFromRPCDropdown = function (service, rpc, params) {
 };
 
 // Process Geo
-NetsProcess.prototype.getLocation = function () {
+Process.prototype.getLocation = function () {
     var myself = this,
         hasLocation = this.location !== undefined,
         hasRequestedLocation = this.locationError === null,
@@ -478,14 +436,14 @@ NetsProcess.prototype.getLocation = function () {
     this.pushContext();
 };
 
-NetsProcess.prototype.reportLatitude = function () {
+Process.prototype.reportLatitude = function () {
     var location = this.getLocation();
     if (location) {
         return location.latitude;
     }
 };
 
-NetsProcess.prototype.reportLongitude = function () {
+Process.prototype.reportLongitude = function () {
     var location = this.getLocation();
     if (location) {
         return location.longitude;
@@ -493,12 +451,12 @@ NetsProcess.prototype.reportLongitude = function () {
 };
 
 // TODO: I can probably move these next two to the Sprite/StageMorphs
-NetsProcess.prototype.reportStageWidth = function () {
+Process.prototype.reportStageWidth = function () {
     var stage = this.homeContext.receiver.parentThatIsA(StageMorph);
     return stage.dimensions.x;
 };
 
-NetsProcess.prototype.reportStageHeight = function () {
+Process.prototype.reportStageHeight = function () {
     var stage = this.homeContext.receiver.parentThatIsA(StageMorph);
     return stage.dimensions.y;
 };
@@ -506,7 +464,7 @@ NetsProcess.prototype.reportStageHeight = function () {
 // helps executing async functions in custom js blocks
 // WARN it could be slower than non-promise based approach
 // when calling this function, return only if the return value is not undefined.
-NetsProcess.prototype.runAsyncFn = function (asyncFn, opts) {
+Process.prototype.runAsyncFn = function (asyncFn, opts) {
     opts = opts || {};
     opts = {
         timeout: opts.timeout || 2000,

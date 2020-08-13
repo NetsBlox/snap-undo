@@ -566,8 +566,8 @@ Process.prototype.flashTime = 0; // experimental
 
 function Process(topBlock, receiver, onComplete, yieldFirst) {
     this.topBlock = topBlock || null;
-    this.receiver = receiver;
-    this.instrument = receiver ? receiver.instrument : null;
+    this.receiver = receiver || topBlock.scriptTarget();
+    this.instrument = this.receiver ? this.receiver.instrument : null;
     this.readyToYield = false;
     this.readyToTerminate = false;
     this.isDead = false;
@@ -575,12 +575,13 @@ function Process(topBlock, receiver, onComplete, yieldFirst) {
     this.isShowingResult = false;
     this.errorFlag = false;
     this.context = null;
-    this.homeContext = new Context(null, null, null, receiver);
+    this.homeContext = new Context(null, null, null, this.receiver);
     this.lastYield =  Date.now();
     this.isFirstStep = true;
     this.isAtomic = false;
     this.prompter = null;
     this.httpRequest = null;
+    this.rpcRequest = null;
     this.isPaused = false;
     this.pauseOffset = null;
     this.frameCount = 0;

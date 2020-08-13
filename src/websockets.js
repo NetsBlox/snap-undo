@@ -1,6 +1,6 @@
 /*globals nop, SnapCloud, SERVER_URL, SERVER_ADDRESS, Context, SpriteMorph,
   StageMorph, SnapActions, DialogBoxMorph, IDE_Morph, isObject, NetsBloxSerializer,
-  localize*/
+  localize, VariableFrame*/
 // WebSocket Manager
 
 var WebSocketManager = function (ide) {
@@ -448,7 +448,6 @@ WebSocketManager.prototype.updateRoomInfo = function() {
  */
 WebSocketManager.prototype.onMessageReceived = function (message, content, msg) {
     var hats = [],
-        context,
         idle = !this.processes.length,
         stage = this.ide.stage,
         block;
@@ -469,13 +468,12 @@ WebSocketManager.prototype.onMessageReceived = function (message, content, msg) 
             block = hats[h];
             // Initialize the variable frame with the message content for
             // receiveSocketMessage blocks
-            context = null;
+            let variables = null;
             if (block.selector === 'receiveSocketMessage') {
-                // Create the network context
-                context = new Context();
-                context.variables.addVar('__message__', content);
-                context.variables.addVar('__requestId__', msg.requestId);
-                context.variables.addVar('__srcId__', msg.srcId);
+                variables = new VariableFrame();
+                variables.addVar('__message__', content);
+                variables.addVar('__requestId__', msg.requestId);
+                variables.addVar('__srcId__', msg.srcId);
             }
 
             // Find the process list for the given block
@@ -483,7 +481,7 @@ WebSocketManager.prototype.onMessageReceived = function (message, content, msg) 
                 messageType: message,
                 block: block,
                 isThreadSafe: stage.isThreadSafe,
-                context: context
+                variables: variables
             });
         }
 
@@ -541,12 +539,14 @@ WebSocketManager.prototype.startProcesses = function () {
             if (process) {
                 stage.threads.startProcess(
                     process.block,
+                    null,
                     process.isThreadSafe,
                     null,
                     null,
                     null,
-                    true,
-                    process.context
+                    false,
+                    null,
+                    process.variables
                 );
             }
             if (!this.processes[i].length) {
