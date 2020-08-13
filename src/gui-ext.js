@@ -9,9 +9,9 @@
 ////////////////////////////////////////////////////
 
 IDE_Morph.prototype._getURL = IDE_Morph.prototype.getURL;
-IDE_Morph.prototype.getURL = function (url, callback) {
+IDE_Morph.prototype.getURL = function (url, callback, responseType) {
     url = ensureFullUrl(url);
-    return this._getURL(url, callback);
+    return this._getURL(url, callback, responseType);
 };
 
 IDE_Morph.prototype._rawOpenBlocksString = IDE_Morph.prototype.rawOpenBlocksString;
