@@ -12744,8 +12744,7 @@ ReplayControls.prototype.settingsMenu = function() {
 };
 
 ReplayControls.prototype.toggleCaptions = function() {
-    var myself = this,
-        ide = this.parentThatIsA(IDE_Morph),
+    var ide = this.parentThatIsA(IDE_Morph),
         color;
 
     this.isShowingCaptions = !this.isShowingCaptions;
@@ -12812,13 +12811,7 @@ ReplayControls.prototype.displayCaption = function(action, originalEvent) {
         this.lastCaption.destroy();
     }
 
-    menu.rerender();
-    menu.setPosition(pos);
-    menu.addShadow(new Point(2, 2), 80);
-    menu.keepWithin(world);
-    world.add(menu);
-    menu.world = world; // optionally enable keyboard support
-    menu.fullChanged();
+    menu.popup(world, pos);
     this.lastCaption = menu;
 
     intervalHandle = setInterval(function () {
