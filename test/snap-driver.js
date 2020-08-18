@@ -305,10 +305,10 @@ SnapDriver.prototype.login = async function(name, password='password') {
     this.click(loginBtn);
 
     // enter login credentials
-    console.log(`logging in as ${name}`);
-    this.keys(name);
-    this.keys('\t');
-    this.keys(password);
+    const [form] = this.dialog().body.children;
+    const [, userField, , passwordField] = form.children;
+    userField.setContents(name);
+    passwordField.setContents(password);
     this.dialog().ok();
     await this.expect(
         () => !!this.isShowingDialogTitle(title => title.includes('connected')),
