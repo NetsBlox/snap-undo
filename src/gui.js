@@ -5162,11 +5162,10 @@ IDE_Morph.prototype.rawOpenProjectString = function (str) {
 };
 
 IDE_Morph.prototype.openCloudDataString = function (str) {
-    var msg,
-        size = Math.round(str.length / 1024);
+    const size = Math.round(str.length / 1024);
 
     this.exitReplayMode();
-    msg = myself.showMessage('Opening project\n' + size + ' KB...');
+    const msg = this.showMessage('Opening project\n' + size + ' KB...');
     return SnapActions.openProject(str)
         .then(() => msg.destroy());
 };
@@ -5411,7 +5410,7 @@ IDE_Morph.prototype.rawOpenDataString = function (str, name, type) {
             dlg = new TableDialogMorph(data);
             dlg.labelString = localize(dlg.labelString) + ': ' + vName;
             dlg.createLabel();
-            dlg.popUp(myself.world());
+            dlg.popUp(this.world());
         }
     });
 };

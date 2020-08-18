@@ -5795,10 +5795,10 @@ HatBlockMorph.prototype.updateReadout = function () {
         return;
     }
     if (readout) { // just update the value
+        readout.changed();
         readout.contents = this.msgCount.toString();
-        readout.fullChanged();
-        readout.drawNew();
-        readout.fullChanged();
+        readout.fixLayout();
+        readout.rerender();
     } else { // create the readout
         readout = new SpeechBubbleMorph(
             this.msgCount.toString(),

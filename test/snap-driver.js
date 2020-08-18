@@ -129,9 +129,7 @@ SnapDriver.prototype.addBlock = function(spec, position) {
     var sprite = this.ide().currentSprite;
 
     position = position || new Point(400, 400);
-    let action = SnapActions.addBlock(block, sprite.scripts, position);
-    return action;
-    //return SnapActions.addBlock(block, sprite.scripts, position);
+    return SnapActions.addBlock(block, sprite.scripts, position);
 };
 
 // morphic interactions
