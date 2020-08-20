@@ -750,7 +750,8 @@ ActionManager.prototype._getBlockState = function(id) {
     } else if (isNewBlock) {
         state = [];
     } else {
-        position = this.getStandardPosition(this.getBlockFromId(id));
+        position = this.getLastGrabPosition() ||
+            this.getStandardPosition(this.getBlockFromId(id));
         state = [position.x, position.y];
     }
 
@@ -1376,7 +1377,7 @@ ActionManager.prototype.onSetBlocksPositions = function(ids, positions) {
 ActionManager.prototype.getLastGrabPosition = function() {
     var hand = this.ide().root().hand;
 
-    return hand.grabOrigin.position;
+    return hand.grabOrigin && hand.grabOrigin.position;
 };
 
 ActionManager.prototype.getStandardPosition = function(block, position) {
