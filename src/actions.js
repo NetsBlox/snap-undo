@@ -747,11 +747,11 @@ ActionManager.prototype._getBlockState = function(id) {
     // top of a command block and it has a position set
     if (target && !(ActionManager.isWeakTarget(target) && position)) {
         state = [target];
-    } else if (!isNewBlock) {
+    } else if (isNewBlock) {
+        state = [];
+    } else {
         position = this.getStandardPosition(this.getBlockFromId(id));
         state = [position.x, position.y];
-    } else {  // newly created
-        state = [];
     }
 
     state.unshift(id);

@@ -7600,10 +7600,11 @@ ScriptsMorph.prototype.reactToDropOf = function (droppedMorph, hand) {
 
 ScriptsMorph.prototype.moveBlock = function (block, target, hand) {
     var origin = hand && hand.grabOrigin.origin,
-        position = origin && hand.grabOrigin.position.add(origin.position());
+        position = origin && hand.grabOrigin.position.add(origin.position()),
+        isMovingBtwnEditors = origin !== this && origin instanceof ScriptsMorph;
 
 
-    if (origin !== this && origin instanceof ScriptsMorph) {  // moving between open editors
+    if (isMovingBtwnEditors) {  // moving between open editors
         // Revert the block back to the origin in case this fails
         var originPosition = hand.grabOrigin.position.add(hand.grabOrigin.origin.position()),
             dup = block.fullCopy();
