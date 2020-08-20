@@ -745,10 +745,10 @@ ActionManager.prototype._getBlockState = function(id) {
 
     // Use the last connection unless the last connection was to the
     // top of a command block and it has a position set
-    if (target && !(ActionManager.isWeakTarget(target) && position)) {
-        state = [target];
-    } else if (isNewBlock) {
+    if (isNewBlock) {
         state = [];
+    } else if (target && !ActionManager.isWeakTarget(target)) {
+        state = [target];
     } else {
         position = this.getLastGrabPosition() ||
             this.getStandardPosition(this.getBlockFromId(id));

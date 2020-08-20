@@ -62,13 +62,15 @@ describe('undo', function() {
             const bottomBlock = await driver.addBlock('doSayFor', new Point(300, 300));
             const [topTarget] = bottomBlock.attachTargets();
             await SnapActions.moveBlock(block, topTarget);
+            await driver.actionsSettled();
+            const initialPosition = block.position();
+
             await SnapActions.setBlockPosition(block, new Point(400, 400));
             const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
             await SnapUndo.undo(undoId);
-            await driver.expect(
-                () => initialPosition.eq(block.position()),
-                `Block not restored to ${initialPosition} (${block.position()})`
-            );
+            await driver.actionsSettled();
+            const msg = `Block not restored to ${initialPosition} (${block.position()})`;
+            assert(initialPosition.eq(block.position()), msg);
         });
 
         it('should restore pos after undo deletion', async function() {
