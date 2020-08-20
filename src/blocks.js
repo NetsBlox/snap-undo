@@ -4829,7 +4829,7 @@ BlockMorph.prototype.situation = function () {
         var scripts = this.parentThatIsA(ScriptsMorph);
         if (scripts) {
             return {
-                origin: scripts,
+                origin: this.parent,
                 position: this.position().subtract(scripts.position())
             };
         }
