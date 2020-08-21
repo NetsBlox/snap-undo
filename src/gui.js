@@ -6600,21 +6600,6 @@ IDE_Morph.prototype.saveProjectToCloud = function (name) {
             this.cloudSaveError()
         );
     }
-    var projectBody, projectSize;
-
-    this.showMessage('Saving project\nto the cloud...');
-    projectBody = this.buildProjectRequest();
-    projectSize = this.verifyProject(projectBody);
-    if (!projectSize) {return; } // Invalid Projects don't return anything.
-    this.showMessage(
-        'Uploading ' + Math.round(projectSize / 1024) + ' KB...'
-    );
-    this.cloud.saveProject(
-        this.projectName,
-        projectBody,
-        () => this.showMessage('saved.', 2),
-        this.cloudError()
-    );
 };
 
 IDE_Morph.prototype.exportProjectMedia = function (name) {
