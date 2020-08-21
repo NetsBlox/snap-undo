@@ -4616,6 +4616,36 @@ IDE_Morph.prototype.save = function () {
     }
 };
 
+IDE_Morph.prototype.saveProject = function (name) {
+    this.nextSteps([
+        () => this.showMessage('Saving...'),
+        () => this.rawSaveProject(name)
+    ]);
+};
+
+// Serialize a project and save to the browser.
+IDE_Morph.prototype.rawSaveProject = function (name) {
+    var str;
+    if (name) {
+        this.setProjectName(name);
+        if (Process.prototype.isCatchingErrors) {
+            try {
+                localStorage['-snap-project-' + name]
+                    = str = this.serializer.serialize(this.stage);
+                this.setURL('#open:' + str);
+                this.showMessage('Saved!', 1);
+            } catch (err) {
+                this.showMessage('Save failed: ' + err);
+            }
+        } else {
+            localStorage['-snap-project-' + name]
+                = str = this.serializer.serialize(this.stage);
+            this.setURL('#open:' + str);
+            this.showMessage('Saved!', 1);
+        }
+    }
+};
+
 IDE_Morph.prototype.exportProject = function (name, plain) {
     // Export project XML, saving a file to disk
     // newWindow requests displaying the project in a new tab.
@@ -6552,8 +6582,7 @@ IDE_Morph.prototype.verifyProject = function (body) {
 };
 
 IDE_Morph.prototype.saveProjectToCloud = function (name) {
-    var myself = this,
-        contentName = this.room.hasMultipleRoles() ?
+    var contentName = this.room.hasMultipleRoles() ?
             this.room.getCurrentRoleName() : this.room.name;
 
     if (name) {
@@ -7154,10 +7183,9 @@ SaveOpenDialogMorph.prototype.shareItem = async function() {
                 this.unshareButton.show();
                 this.shareButton.hide();
                 entry.label.isBold = true;
-                entry.label.drawNew();
-                entry.label.changed();
+                entry.label.rerender();
                 this.buttons.fixLayout();
-                this.drawNew();
+                this.rerender();
                 this.ide.showMessage('shared.', 2);
                 return proj;
             } catch (err){
@@ -7186,10 +7214,9 @@ SaveOpenDialogMorph.prototype.unshareItem = async function() {
             this.shareButton.show();
             this.unshareButton.hide();
             entry.label.isBold = false;
-            entry.label.drawNew();
-            entry.label.changed();
+            entry.label.rerender();
             this.buttons.fixLayout();
-            this.drawNew();
+            this.rerender();
 
             this.ide.showMessage('unshared.', 2);
             return item;
