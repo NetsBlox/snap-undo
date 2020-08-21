@@ -6141,11 +6141,11 @@ SpriteMorph.prototype.toggleVariableWatcher = function (varName, isGlobal) {
             watcher.fixLayout(); // re-hide hidden parts
             watcher.keepWithin(stage);
         }
-        this.refreshVariableWatcher(varName);
         if (isGlobal) {
             ide.flushBlocksCache('variables');
             ide.refreshPalette();
         }
+        this.refreshVariableWatcher(varName);
         return;
     }
 
@@ -6163,9 +6163,9 @@ SpriteMorph.prototype.toggleVariableWatcher = function (varName, isGlobal) {
     }
     watcher.fixLayout();
     watcher.keepWithin(stage);
-    this.refreshVariableWatcher(varName);
     stage.add(watcher);
     watcher.changed();
+    this.refreshVariableWatcher(varName);
     return watcher;
 };
 
