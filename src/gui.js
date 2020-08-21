@@ -2535,6 +2535,7 @@ IDE_Morph.prototype.selectSprite = function (sprite) {
     this.corral.refresh();
     this.fixLayout('selectSprite');
     this.currentSprite.scripts.fixMultiArgs();
+    return this.currentSprite;
 };
 
 // IDE_Morph retina display support
@@ -2739,7 +2740,7 @@ IDE_Morph.prototype.addNewSprite = function () {
         sprite.turn(rnd.call(this, 1, 360));
     }
     return SnapActions.addSprite(sprite)
-        .then(() => this.selectSprite(sprite));
+        .then(sprite => this.selectSprite(sprite));
 };
 
 IDE_Morph.prototype.paintNewSprite = function () {
