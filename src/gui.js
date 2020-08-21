@@ -8726,7 +8726,7 @@ SpriteIconMorph.prototype.reactToDropOf = function (morph, hand) {
 
 SpriteIconMorph.prototype.copyStack = function (block) {
     var sprite = this.object,
-    	dup = block.fullCopy(),
+        dup = block.fullCopy(),
         // FIXME: This positioning can be problematic...
         y = Math.max(
             sprite.scripts.children.map(stack =>

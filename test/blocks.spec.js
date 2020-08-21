@@ -1,4 +1,4 @@
-/* globals expect, driver */
+/* globals expect, driver, assert */
 
 describe('blocks', function() {
     this.timeout(5000);
@@ -117,7 +117,6 @@ describe('blocks', function() {
         });
 
         it('should set active editor on move block to editor', async function() {
-            const {ScriptsMorph} = driver.globals();
             const sprite = driver.ide().currentSprite;
             const spec = 'sprite block %s';
             const definition = new CustomBlockDefinition(spec, sprite);
@@ -153,8 +152,8 @@ describe('blocks', function() {
                 .find(item => item.selector === 'turnLeft');
 
             await driver.expect(
-                        () => hatBlock.nextBlock(),
-                        'first block not connected'
+                () => hatBlock.nextBlock(),
+                'first block not connected'
             );
             dropPosition = hatBlock.nextBlock().bottomAttachPoint()
                 .add(new Point(turnBlock.width()/2, turnBlock.height()/2))

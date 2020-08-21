@@ -1,9 +1,8 @@
 /*globals driver, expect, TestUtils */
 describe('save', function() {
-    let SnapCloud, ProjectDialogMorph;
+    let SnapCloud;
     before(() => {
         SnapCloud = driver.globals().SnapCloud;
-        ProjectDialogMorph = driver.globals().ProjectDialogMorph;
     });
     this.timeout(15000);
 
