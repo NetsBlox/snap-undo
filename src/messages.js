@@ -93,8 +93,8 @@ MessageCreatorMorph.prototype.fixLayout = function() {
         )));
         this.minWidth = this.minWidth || 0;
         var originalWidth = this.body.width() + this.padding * 2;
-        this.silentSetWidth(Math.max(originalWidth, this.minWidth));
-        this.silentSetHeight(
+        this.bounds.setWidth(Math.max(originalWidth, this.minWidth));
+        this.bounds.setHeight(
             this.body.height()
             + this.padding * 2
             + th
@@ -109,12 +109,12 @@ MessageCreatorMorph.prototype.fixLayout = function() {
 
     if (this.buttons && (this.buttons.children.length > 0)) {
         this.buttons.fixLayout();
-        this.silentSetHeight(
+        this.bounds.setHeight(
             this.height()
             + this.buttons.height()
             + this.padding
         );
-        this.silentSetWidth(Math.max(
+        this.bounds.setWidth(Math.max(
             this.width(),
             this.buttons.width()
             + (2 * this.padding)
@@ -141,11 +141,11 @@ MessageCreatorMorph.prototype.init = function(target, action) {
     this.addBody(messageBlock);
     var fixLayout = messageBlock.fixLayout;
     messageBlock.fixLayout = function() {
-        this.parent.drawNew();
+        this.parent.rerender();
         fixLayout.call(this);
         myself.fixLayout();
-        myself.handle.drawNew();  // Should this be automatic?
-        myself.drawNew();
+        myself.handle.rerender();  // Should this be automatic?
+        myself.rerender();
     };
 
     this.accept = function() {
@@ -164,7 +164,7 @@ MessageCreatorMorph.prototype.init = function(target, action) {
     this.addButton('ok', 'OK');
     this.addButton('cancel', 'Cancel');
     this.fixLayout();
-    this.drawNew();
+    this.rerender();
     this.minWidth = this.width();
 };
 
@@ -197,7 +197,7 @@ MessageDefinitionBlock.prototype.init = function() {
     this.color = SpriteMorph.prototype.blockColor.network;
     this.category = 'network';
     this.setSpec('name: %hintname fields: %mhintfield');
-    this.drawNew();
+    this.rerender();
 };
 
 MessageDefinitionBlock.prototype.messageName = function() {
