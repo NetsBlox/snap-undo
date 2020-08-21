@@ -65,7 +65,8 @@ describe('undo', function() {
             await driver.actionsSettled();
             const initialPosition = block.position();
 
-            await SnapActions.setBlockPosition(block, new Point(400, 400));
+            driver.dragAndDrop(block, new Point(400, 400));
+            await driver.actionsSettled();
             const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
             await SnapUndo.undo(undoId);
             await driver.actionsSettled();
@@ -167,6 +168,7 @@ describe('undo', function() {
             await driver.actionsSettled();
         });
 
+        // failing
         it('should revert (new) input to cslot on undo', async function() {
             const [block] = Object.values(SnapActions._blocks);
             driver.selectCategory('motion');
@@ -202,6 +204,7 @@ describe('undo', function() {
             await selectServiceAndRPC(block, 'CloudVariables', 'setVariable');
         });
 
+        // failing
         it('should clear RPC field on service field change', async function() {
             await selectService(block, 'PublicRoles');
             const [rpcName] = block.inputs()[1].evaluate();
@@ -220,6 +223,7 @@ describe('undo', function() {
             assert.equal(rpcName, 'setVariable');
         });
 
+        // failing
         it('should restore inputs on undo RPC field change', async function() {
             await driver.expect(
                 () => block.inputs().length > 2,

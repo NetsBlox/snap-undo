@@ -622,13 +622,13 @@ ActionManager.prototype.serializeBlock = function(block, force, justMe) {
     return serialized;
 };
 
-ActionManager.prototype.deserializeBlock = function(ser) {
+ActionManager.prototype.deserializeBlock = function(ser, owner) {
     this.serializer.project = this.ide();
 
     if (ser[0] !== '<') {
         return this.getBlockFromId(ser);
     } else if (ser.indexOf('<script>') === 0) {
-        return this.serializer.loadScript(this.serializer.parse(ser));
+        return this.serializer.loadScript(this.serializer.parse(ser), owner);
     } else {  // Comment
         return this.serializer.loadComment(this.serializer.parse(ser));
     }
@@ -1450,7 +1450,7 @@ ActionManager.prototype.onReplaceBlock = function(block, newBlock) {
 ActionManager.prototype._onAddBlock = function(block, ownerId, x, y, callback) {
     var myself = this,
         ide = this.ide(),
-        owner = this._owners[ownerId],
+        owner = this.getOwnerFromId(ownerId),
         position = new Point(x, y),
         firstBlock,
         afterAdd = function() {
@@ -1470,7 +1470,7 @@ ActionManager.prototype._onAddBlock = function(block, ownerId, x, y, callback) {
         };
 
 
-    firstBlock = this.deserializeBlock(block);
+    firstBlock = this.deserializeBlock(block, owner);
 
     if (firstBlock.snapSound) {
         firstBlock.snapSound.play();

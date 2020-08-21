@@ -1463,10 +1463,8 @@ SnapSerializer.prototype.loadBlock = function (model, isReporter, object) {
         }
     } else if (model.tag === 'custom-block') {
         isGlobal = model.attributes.scope ? false : true;
-        //receiver = isGlobal ? this.project.stage : object;
-        receiver = isGlobal ? this.project.stage
-            : this.project.sprites[model.attributes.scope];
-        rm = model.childNamed('receiver');
+        receiver = isGlobal ? this.project.stage : object;
+        const rm = model.childNamed('receiver');
         if (rm && rm.children[0] && rm.children[0].tag !== 'project') {
             receiver = this.loadValue(
                 model.childNamed('receiver').children[0]
@@ -2688,6 +2686,7 @@ ReporterBlockMorph.prototype.toScriptXML = function (
 
 CustomCommandBlockMorph.prototype.toBlockXML = function (serializer) {
     var scope = this.isGlobal ? undefined : 'local';
+    const definition = this.definition || this.scriptTarget().getMethod(this.blockSpec);
     return serializer.format(
         '<custom-block collabId="@" s="@"%>%%%</custom-block>',
         this.id,
@@ -2696,18 +2695,18 @@ CustomCommandBlockMorph.prototype.toBlockXML = function (serializer) {
                 '' : serializer.format(' scope="@"', scope),
         serializer.store(this.inputs()),
         this.isGlobal &&
-        	this.definition.variableNames.length &&
+        	definition.variableNames.length &&
             !serializer.isExportingBlocksLibrary ?
                 '<variables>' +
                     this.variables.toXML(serializer) +
                     '</variables>'
                         : '',
         this.comment ? this.comment.toXML(serializer) : '',
-        (serializer.isSavingPortable || scope) && !this.definition.receiver[serializer.idProperty] ?
+        (serializer.isSavingPortable || scope) && !definition.receiver[serializer.idProperty] ?
                 '<receiver>' +
                     (serializer.isSavingCustomBlockOwners ?
-                    serializer.store(this.definition.receiver) :
-                    '<ref actionID="' + this.definition.receiver.id +'"/>') +
+                    serializer.store(definition.receiver) :
+                    '<ref actionID="' + definition.receiver.id +'"/>') +
                     '</receiver>'
                         : ''
     );

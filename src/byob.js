@@ -621,9 +621,9 @@ CustomCommandBlockMorph.prototype.refresh = function (aDefinition) {
     // future performance optimization plan:
     // null out the definition for local blocks here,
     // and then cache them again when invoking them
-    if (!this.isGlobal && !this.isPrototype) {
-        this.definition = null;
-    }
+    //if (!this.isGlobal && !this.isPrototype) {
+        //this.definition = null;
+    //}
 
     this.setCategory(def.category);
     if (this.blockSpec !== newSpec) {
