@@ -7629,12 +7629,7 @@ ScriptsMorph.prototype.moveBlock = function (block, target, hand) {
 };
 
 ScriptsMorph.prototype.addBlock = function (block) {
-    var position = block.position(),
-        scripts = block.parentThatIsA(ScriptsMorph),
-        ownerId = this.scriptTarget().id;
-
-    SnapActions.addBlock(block, scripts, position, ownerId);
-
+    SnapActions.addBlock(block, this.scriptTarget(), block.position());
     block.destroy();
 };
 
@@ -7653,10 +7648,9 @@ ScriptsMorph.prototype.setBlockPosition = function (block, hand) {
             hand.grabOrigin.origin.add(block);
 
             // copy the blocks and add them to the new editor
-            var dup = block.fullCopy(),
-                ownerId = this.scriptTarget().id;
+            const dup = block.fullCopy();
 
-            return SnapActions.addBlock(dup, this, position, ownerId)
+            return SnapActions.addBlock(dup, this.scriptTarget(), position)
                 // if that succeeds, remove them from the current editor
                 .then(function() {
                     return SnapActions.removeBlock(block);
@@ -13881,7 +13875,7 @@ ScriptFocusMorph.prototype.fillInBlock = function (block) {
         } else {
             position = new Point(this.left(), this.center().y + block.height()/2);
         }
-        action = SnapActions.addBlock(block, this.editor, position);
+        action = SnapActions.addBlock(block, this.editor.scriptTarget(), position);
     } else if (this.element instanceof CommandBlockMorph) {
         var target;
         if (this.atEnd) {

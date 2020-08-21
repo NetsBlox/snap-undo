@@ -8742,21 +8742,20 @@ SpriteIconMorph.prototype.copyStack = function (block) {
     // delete all local custom blocks (methods) that the receiver
     // doesn't understand
     dup.allChildren().forEach(morph => {
-	    if (morph.isCustomBlock &&
+        if (morph.isCustomBlock &&
             !morph.isGlobal &&
-        		!sprite.getMethod(morph.blockSpec)
+            !sprite.getMethod(morph.blockSpec)
         ) {
             morph.deleteBlock();
         }
     });
 
     dup.id = null;
-    SnapActions.addBlock(dup, sprite.scripts, position);
+    SnapActions.addBlock(dup, sprite, position);
 };
 
 SpriteIconMorph.prototype.copyCostume = function (costume) {
-    var dup = costume.copy(),
-        serialized;
+    const dup = costume.copy();
 
     dup.name = this.object.newCostumeName(dup.name);
     SnapActions.addCostume(dup, this.object);

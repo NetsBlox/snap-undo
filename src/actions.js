@@ -667,18 +667,18 @@ ActionManager.prototype._getStatementIds = function(block) {
     return ids;
 };
 
-ActionManager.prototype._addBlock = function(block, scripts, position, ownerId) {
-    var stdPosition = this.convertToStandardPosition(scripts, position),
-        serialized,
-        ids;
+ActionManager.prototype._addBlock = function(block, scriptTarget, position) {
+    const scripts = scriptTarget instanceof BlockEditorMorph ?
+        scriptTarget.definition.scripts : scriptTarget.scripts;
+    const stdPosition = this.convertToStandardPosition(scripts, position);
 
     this._idBlocks(block);
-    ids = this._getStatementIds(block);
+    const ids = this._getStatementIds(block);
 
-    serialized = this.serializeBlock(block, true);
+    const serialized = this.serializeBlock(block, true);
     return [
         serialized,
-        ownerId || scripts.owner.id,
+        scriptTarget.id,
         stdPosition.x,
         stdPosition.y,
         ids
