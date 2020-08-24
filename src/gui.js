@@ -3736,6 +3736,7 @@ IDE_Morph.prototype.settingsMenu = function () {
         'check for block\nto text mapping features',
         false
     );
+    /*
     addPreference(
         'Inheritance support',
         () => {
@@ -3750,6 +3751,7 @@ IDE_Morph.prototype.settingsMenu = function () {
         'check for sprite\ninheritance features',
         true
     );
+    */
     addPreference(
         'Hyper blocks support',
         () => Process.prototype.enableHyperOps =

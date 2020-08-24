@@ -570,7 +570,8 @@ SyntaxElementMorph.prototype.getVarNamesDict = function () {
     var block = this.parentThatIsA(BlockMorph),
         rcvr,
         tempVars = [],
-        dict;
+        dict,
+        oop = StageMorph.prototype.enableInheritance;
 
     if (!block) {
         return {};
@@ -612,7 +613,6 @@ SyntaxElementMorph.prototype.getVarNamesDict = function () {
             dict['~'] = null;
             dict.my = [{// wrap the submenu into a 1-item array to translate it
                 'anchor' : ['anchor'],
-                'parent' : ['parent'],
                 'name' : ['name'],
                 'temporary?' : ['temporary?'],
                 'dangling?' : ['dangling?'],
@@ -621,6 +621,9 @@ SyntaxElementMorph.prototype.getVarNamesDict = function () {
                 'rotation x' : ['rotation x'],
                 'rotation y' : ['rotation y']
             }];
+            if (oop) {
+                dict.my[0].parent = ['parent'];
+            }
             if (this.world().currentKey === 16) { // shift
                 dict.my[0]['~'] = null; // don't forget we're inside an array...
                 dict.my[0]['microphone modifier'] = ['microphone modifier'];
