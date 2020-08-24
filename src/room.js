@@ -1968,7 +1968,10 @@ RoomEditorMorph.prototype.updateMsgPalette = function() {
             var fields = stage.messageTypes.msgTypes[this.blockSpec].fields.length === 0 ?
                 'This message type has no fields.' :
                 stage.messageTypes.msgTypes[this.blockSpec].fields;
-            new SpeechBubbleMorph(fields, null, null, 2).popUp(this.world(), new Point(0, 0).add(this.bounds.corner));
+
+            const bubble = new SpeechBubbleMorph(fields, null, null, 2);
+            const position = new Point(0, 0).add(this.bounds.corner);
+            bubble.popUp(this.world(), position);
         };
 
         // Custom menu

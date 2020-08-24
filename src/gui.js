@@ -3783,7 +3783,7 @@ IDE_Morph.prototype.projectMenu = function () {
     var menu,
         world = this.world(),
         graphicsName = this.currentSprite instanceof SpriteMorph ?
-                'Costumes' : 'Backgrounds',
+            'Costumes' : 'Backgrounds',
         shiftClicked = (world.currentKey === 16);
 
     menu = new MenuMorph(this);
@@ -3888,7 +3888,7 @@ IDE_Morph.prototype.projectMenu = function () {
     }
     menu.addItem(
         shiftClicked ?
-                'Export project as plain text...' : 'Export project...',
+            'Export project as plain text...' : 'Export project...',
         () => {
             if (this.projectName) {
                 this.exportProject(this.projectName, shiftClicked);
@@ -6583,8 +6583,8 @@ IDE_Morph.prototype.verifyProject = function (body) {
 };
 
 IDE_Morph.prototype.saveProjectToCloud = function (name) {
-    var contentName = this.room.hasMultipleRoles() ?
-            this.room.getCurrentRoleName() : this.room.name;
+    const contentName = this.room.hasMultipleRoles() ?
+        this.room.getCurrentRoleName() : this.room.name;
 
     if (name) {
         this.showMessage('Saving ' + contentName + '\nto the cloud...');
