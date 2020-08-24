@@ -1143,7 +1143,7 @@ MessageMorph.prototype.init = function (type, contents) {
     MessageMorph.uber.init.call(this);
     this.setColor(IDE_Morph.prototype.groupColor);
     this.icon = new SymbolMorph('mail', 25);
-    this.icon.setHeight(15);
+    this.icon.setHeight(25);
     this.icon.rerender();
 
     this.label = new StringMorph(

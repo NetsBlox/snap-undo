@@ -2769,19 +2769,20 @@ IDE_Morph.prototype.newCamSprite = function () {
 
     sprite.name = this.newSpriteName(sprite.name);
     sprite.setCenter(this.stage.center());
-    this.stage.add(sprite);
-    this.sprites.add(sprite);
-    this.corral.addSprite(sprite);
-    this.selectSprite(sprite);
+    sprite.parent = this.stage;
 
     camDialog = new CamSnapshotDialogMorph(
         this,
         sprite,
-        () => this.removeSprite(sprite),
-        function (costume) { // needs to be "function" to it can access "this"
+        nop,
+        costume => { // needs to be "function" to it can access "this"
             sprite.addCostume(costume);
             sprite.wearCostume(costume);
-            this.close();
+
+            camDialog.close();
+            SnapActions.addSprite(sprite).then(() => {
+                this.selectSprite(sprite);
+            });
         });
 
     camDialog.popUp(this.world());
