@@ -8157,6 +8157,12 @@ CloudProjectExamples.prototype.getContent = function(project) {
     return src;
 };
 
+CloudProjectExamples.prototype.open = async function(project) {
+    const xml = await this.getContent(project);
+    await this.ide.droppedText(xml);
+    this.ide.updateUrlQueryString(project.name, false, true);
+};
+
 CloudProjectExamples.prototype.list = function() {
     const projects = this.ide.getMediaList('Examples');
     return projects.map(example => ({

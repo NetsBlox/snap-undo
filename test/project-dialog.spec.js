@@ -1,4 +1,4 @@
-/*globals driver, TestUtils*/
+/*globals driver, TestUtils, assert*/
 describe('ProjectDialogMorph', function() {
     this.timeout(5000);
 
@@ -179,6 +179,14 @@ describe('ProjectDialogMorph', function() {
             const dialog = await TestUtils.openProjectsBrowser();
             TestUtils.setProjectsBrowserSource(dialog, 'examples');
             await TestUtils.openProject('Dice', dialog);
+        });
+
+        it('should set url on opening example', async function() {
+            const dialog = await TestUtils.openProjectsBrowser();
+            TestUtils.setProjectsBrowserSource(dialog, 'examples');
+            await TestUtils.openProject('Dice', dialog);
+            const url = driver.globals().location.href;
+            assert(url.includes('?action=example'));
         });
     });
 });
