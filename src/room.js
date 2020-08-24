@@ -1731,7 +1731,7 @@ RoomEditorMorph.prototype.init = function(room, sliderColor) {
     this.addRoleBtn = button;
 
     this.room.rerender();
-    this.updateControlButtons();
+    this.updateToolbar();
 
     this.acceptsDrops = false;
     this.contents.acceptsDrops = false;
@@ -1739,7 +1739,7 @@ RoomEditorMorph.prototype.init = function(room, sliderColor) {
 
 RoomEditorMorph.prototype.step = function() {
     if (this.version !== this.room.version) {
-        this.updateControlButtons();
+        this.updateToolbar();
         this.version = this.room.version;
     }
 
@@ -1756,7 +1756,7 @@ RoomEditorMorph.prototype.show = function() {
     }
 };
 
-RoomEditorMorph.prototype.updateControlButtons = function() {
+RoomEditorMorph.prototype.updateToolbar = function() {
     var sf = this.parentThatIsA(ScrollFrameMorph);
 
     if (!sf) {return; }
@@ -1765,17 +1765,18 @@ RoomEditorMorph.prototype.updateControlButtons = function() {
         sf.removeChild(sf.toolBar);
         this.changed();
     }
-    sf.toolBar = this.addToggleReplay();
+    sf.toolBar = this.addToolbar();
     sf.add(sf.toolBar);
 
     //sf.toolBar.isVisible = !this.replayControls.enabled;
+    sf.toolBar.fixLayout();
     sf.toolBar.rerender();
 
     sf.adjustToolBar();
     this.updateRoomControls();
 };
 
-RoomEditorMorph.prototype.addToggleReplay = function() {
+RoomEditorMorph.prototype.addToolbar = function() {
     var myself = this,
         toolBar = new AlignmentMorph(),
         shade = (new Color(140, 140, 140)),
@@ -1794,7 +1795,7 @@ RoomEditorMorph.prototype.addToggleReplay = function() {
                 } else {
                     myself.enterReplayMode();
                 }
-                myself.updateControlButtons();
+                myself.updateToolbar();
             },
             this.isReplayMode() ? exitSymbol : enterSymbol,
             null,
@@ -1818,7 +1819,7 @@ RoomEditorMorph.prototype.addToggleReplay = function() {
                 myself.exitReplayMode();
             }
             myself.toggleRecordMode();
-            myself.updateControlButtons();
+            myself.updateToolbar();
         },
         this.isRecording() ? stopRecordSymbol : recordSymbol,
         null,
