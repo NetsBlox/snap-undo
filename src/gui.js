@@ -3796,15 +3796,15 @@ IDE_Morph.prototype.projectMenu = function () {
     if (shiftClicked) {
         menu.addItem(
             localize('Replay events from file'),
-            function() {
+            () => {
                 var inp = document.createElement('input');
                 if (SnapUndo.allEvents.length > 1) {
-                    myself.newProject();
+                    this.newProject();
                 }
 
-                if (myself.filePicker) {
-                    document.body.removeChild(myself.filePicker);
-                    myself.filePicker = null;
+                if (this.filePicker) {
+                    document.body.removeChild(this.filePicker);
+                    this.filePicker = null;
                 }
                 inp.type = 'file';
                 inp.style.color = "transparent";
@@ -3821,17 +3821,17 @@ IDE_Morph.prototype.projectMenu = function () {
                     function () {
                         var reader = new FileReader();
                         document.body.removeChild(inp);
-                        myself.filePicker = null;
+                        this.filePicker = null;
 
                         reader.onloadend = function(result) {
-                            return myself.loadReplayFromXml(result.target.result);
+                            return this.loadReplayFromXml(result.target.result);
                         };
                         reader.readAsText(inp.files[0]);
                     },
                     false
                 );
                 document.body.appendChild(inp);
-                myself.filePicker = inp;
+                this.filePicker = inp;
                 inp.click();
             },
             'Load project replay from the beginning',
@@ -3868,17 +3868,17 @@ IDE_Morph.prototype.projectMenu = function () {
         );
         menu.addItem(
             localize('Export project without history...'),
-            function () {
-                var savingHistory = myself.serializer.isSavingHistory;
-                if (myself.projectName) {
-                    myself.serializer.isSavingHistory = false;
-                    myself.exportProject(myself.projectName, shiftClicked);
-                    myself.serializer.isSavingHistory = savingHistory;
+            () => {
+                var savingHistory = this.serializer.isSavingHistory;
+                if (this.projectName) {
+                    this.serializer.isSavingHistory = false;
+                    this.exportProject(this.projectName, shiftClicked);
+                    this.serializer.isSavingHistory = savingHistory;
                 } else {
-                    myself.prompt('Export Project As...', function (name) {
-                        myself.serializer.isSavingHistory = false;
-                        myself.exportProject(name, shiftClicked);
-                        myself.serializer.isSavingHistory = savingHistory;
+                    this.prompt('Export Project As...', function (name) {
+                        this.serializer.isSavingHistory = false;
+                        this.exportProject(name, shiftClicked);
+                        this.serializer.isSavingHistory = savingHistory;
                     }, null, 'exportProject');
                 }
             },
