@@ -688,12 +688,15 @@ RoomMorph.prototype.inviteUser = function (role) {
 
     callback = friends => {
         friends.unshift('myself');
+        const world = this.world();
         const dialog = new UserDialogMorph(this, user => {
             if (user) {
                 this.inviteGuest(user, role.id);
             }
         }, friends);
-        dialog.popUp(this.world());
+        dialog.popUp(world);
+        dialog.setCenter(world.center());
+        dialog.filterField.edit();
     };
 
     if (this.isOwner() || this.isCollaborator()) {
@@ -2143,7 +2146,7 @@ UserDialogMorph.prototype.buildFilterField = function () {
 UserDialogMorph.prototype.popUp = function(wrrld) {
     var world = wrrld || this.target.world();
     if (world) {
-        ProjectDialogMorph.uber.popUp.call(this, world);
+        UserDialogMorph.uber.popUp.call(this, world);
         this.handle = new HandleMorph(
             this,
             200,
@@ -2151,8 +2154,6 @@ UserDialogMorph.prototype.popUp = function(wrrld) {
             this.corner,
             this.corner
         );
-        this.setCenter(world.center());
-        this.filterField.edit();
     }
 };
 
