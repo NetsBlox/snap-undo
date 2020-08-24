@@ -686,9 +686,14 @@ RoomMorph.prototype.inviteUser = function (role) {
     var myself = this,
         callback;
 
-    callback = function(friends) {
+    callback = friends => {
         friends.unshift('myself');
-        myself._inviteGuestDialog(role, friends);
+        const dialog = new UserDialogMorph(this, user => {
+            if (user) {
+                this.inviteGuest(user, role.id);
+            }
+        }, friends);
+        dialog.popUp(this.world());
     };
 
     if (this.isOwner() || this.isCollaborator()) {
@@ -747,14 +752,6 @@ RoomMorph.prototype.promptShare = function(name) {
     } else {  // notify user no available recipients
         myself.ide.showMessage('There are no other roles in the room!', 2);
     }
-};
-
-RoomMorph.prototype._inviteGuestDialog = function (role, friends) {
-    new UserDialogMorph(this, function(user) {
-        if (user) {
-            this.inviteGuest(user, role.id);
-        }
-    }, friends).popUp();
 };
 
 RoomMorph.prototype.inviteGuest = function (friend, role) {
@@ -2024,7 +2021,7 @@ UserDialogMorph.prototype.buildContents = function() {
     this.listField.fontSize = InputFieldMorph.prototype.fontSize;
     this.listField.typeInPadding = InputFieldMorph.prototype.typeInPadding;
     this.listField.contrast = InputFieldMorph.prototype.contrast;
-    this.listField.rerender = InputFieldMorph.prototype.rerender;
+    this.listField.render = InputFieldMorph.prototype.render;
     this.listField.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
 
     this.body.add(this.listField);
@@ -2145,7 +2142,6 @@ UserDialogMorph.prototype.buildFilterField = function () {
 
 UserDialogMorph.prototype.popUp = function(wrrld) {
     var world = wrrld || this.target.world();
-    this.setCenter(world.center());
     if (world) {
         ProjectDialogMorph.uber.popUp.call(this, world);
         this.handle = new HandleMorph(
@@ -2155,6 +2151,7 @@ UserDialogMorph.prototype.popUp = function(wrrld) {
             this.corner,
             this.corner
         );
+        this.setCenter(world.center());
         this.filterField.edit();
     }
 };
