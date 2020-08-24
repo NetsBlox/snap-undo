@@ -7644,8 +7644,9 @@ ScriptsMorph.prototype.setBlockPosition = function (block, hand) {
     };
 
     if (hand) {
-        if (hand.grabOrigin.origin !== this) {  // move between scripts morph
-            hand.grabOrigin.origin.add(block);
+        const originScripts = hand.grabOrigin.origin.parentThatIsA(ScriptsMorph);
+        if (originScripts !== this) {  // move between scripts morph
+            originScripts.add(block);
 
             // copy the blocks and add them to the new editor
             const dup = block.fullCopy();
