@@ -249,7 +249,7 @@ IDE_Morph.prototype.init = function (isAutoFill) {
     // additional properties:
     this.cloud = SnapCloud;
     this.cloudMsg = null;
-    this.source = null;
+    this.source = 'local';
     this.serializer = new SnapSerializer();
     this.globalVariables = new VariableFrame();
     this.currentSprite = new SpriteMorph(this.globalVariables);
@@ -4585,9 +4585,9 @@ IDE_Morph.prototype.save = function () {
         return this.showMessage('Please exit replay mode before saving');
     }
 
-    if (this.source === 'examples' || this.source === 'local') {
-        // cannot save to examples, deprecated localStorage
-        this.source = null;
+    if (this.source === 'examples') {
+        // cannot save to examples
+        this.source = 'local';
     }
 
     // temporary hack - only allow exporting projects to disk
