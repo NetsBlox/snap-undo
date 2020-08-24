@@ -814,7 +814,7 @@ RoomMorph.prototype._invitationResponse = function (id, response, role) {
                 myself.ide.newRole(role);
             }
             myself.ide.showMessage(localize('Opening ') + role +
-                localize(' at ') + project.ProjectName, 2);
+                localize(' at ') + project.RoomName, 2);
             myself.ide.silentSetProjectName(role);
             SnapCloud.disconnect();
         },
