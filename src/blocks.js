@@ -5755,27 +5755,12 @@ HatBlockMorph.prototype.readout = function () {
     );
 };
 
-// finds and returns the msg queue for this hatblock
-HatBlockMorph.prototype._msgQueue = function () {
-    var queues = this.world().children[0].sockets.processes;
-    for (var i=0; i<queues.length; i++) {
-        var procs = queues[i];
-        if (procs.length && procs[0].block === this) return procs;
-    }
-};
-
 // clears the msg que for this  hatblock
 HatBlockMorph.prototype.clearMessages = function () {
-    var queues = this.world().children[0].sockets.processes;
-    var curQueue = this._msgQueue();
-    // delete it from the main queue
-    for (var i = 0; i < queues.length; i++) {
-        if (queues[i] === curQueue) {
-            queues.splice(i, 1);
-            this.updateReadout();
-            return;
-        }
-    }
+    const ide = this.parentThatIsA(IDE_Morph);
+    const queue = ide.sockets.getMessageQueue(this);
+    queue.empty();
+    this.updateReadout();
 };
 
 // creates, updates and destroys the readout as necessary
@@ -5785,8 +5770,9 @@ HatBlockMorph.prototype.updateReadout = function () {
         world = this.world(),
         readColor = new Color(242, 119, 68);
     if (!world) return;
-    var msgQ = this._msgQueue();
-    this.msgCount =  msgQ ? msgQ.length : 0;
+    const ide = this.parentThatIsA(IDE_Morph);
+    const queue = ide.sockets.getMessageQueue(this);
+    this.msgCount =  queue ? queue.contents.length : 0;
     var readout = this.readout();
     if (this.msgCount < 1) {
         if (readout) {

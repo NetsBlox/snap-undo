@@ -1,6 +1,6 @@
-/*globals nop, SnapCloud, SERVER_URL, SERVER_ADDRESS, Context, SpriteMorph,
+/*globals nop, SnapCloud, SERVER_URL, SERVER_ADDRESS,
   StageMorph, SnapActions, DialogBoxMorph, IDE_Morph, isObject, NetsBloxSerializer,
-  localize, VariableFrame*/
+  localize, VariableFrame, isSnapObject*/
 // WebSocket Manager
 
 var WebSocketManager = function (ide) {
@@ -8,7 +8,7 @@ var WebSocketManager = function (ide) {
     this.uuid = SnapCloud.clientId;
     this.websocket = null;
     this.messages = [];
-    this.processes = [];  // Queued processes to start
+    this.msgHandlerQueues = [];
     this._protocol = SERVER_URL.substring(0,5) === 'https' ? 'wss:' : 'ws:';
     this.url = this._protocol + '//' + SERVER_ADDRESS;
     this.lastSocketActivity = Date.now();
@@ -447,68 +447,51 @@ WebSocketManager.prototype.updateRoomInfo = function() {
  * @return {undefined}
  */
 WebSocketManager.prototype.onMessageReceived = function (message, content, msg) {
-    var hats = [],
-        idle = !this.processes.length,
-        stage = this.ide.stage,
-        block;
+    var idle = !this.msgHandlerQueues.length,
+        stage = this.ide.stage;
 
     content = content || [];
     if (message !== '') {
         // if the message is for requestId
+        const isReplyMsg = message === '__reply__';
         stage.threads.processes.forEach(function (p) {
-            if (message === '__reply__' && (p.requestId === msg.requestId) ) p.reply = msg;
-        });
-        stage.children.concat(stage).forEach(function (morph) {
-            if (morph instanceof SpriteMorph || morph instanceof StageMorph) {
-                hats = hats.concat(morph.allHatBlocksForSocket(message));
-            }
+            if (isReplyMsg && (p.requestId === msg.requestId)) p.reply = msg;
         });
 
-        for (var h = hats.length; h--;) {
-            block = hats[h];
-            // Initialize the variable frame with the message content for
-            // receiveSocketMessage blocks
-            let variables = null;
-            if (block.selector === 'receiveSocketMessage') {
-                variables = new VariableFrame();
-                variables.addVar('__message__', content);
-                variables.addVar('__requestId__', msg.requestId);
-                variables.addVar('__srcId__', msg.srcId);
-            }
+        stage.children.concat(stage).forEach(morph => {
+            if (isSnapObject(morph)) {
+                morph.allHatBlocksForSocket(message).forEach(block => {
+                    const variables = new VariableFrame();
+                    variables.addVar('__message__', content);
+                    variables.addVar('__requestId__', msg.requestId);
+                    variables.addVar('__srcId__', msg.srcId);
 
-            // Find the process list for the given block
-            this.addProcess({
-                messageType: message,
-                block: block,
-                isThreadSafe: stage.isThreadSafe,
-                variables: variables
-            });
-        }
+                    this.addMsgToQueue(morph, block, message, variables);
+                });
+            }
+        });
 
         if (idle) {
             // This is done in a setTimeout to allow for some of the processes to accumulate
             // and not block the main UI thread. Otherwise, it would simply try to start the
             // last message each time (we are more efficient when we can batch it like this).
-            setTimeout(this.startProcesses.bind(this), 50);
+            setTimeout(this.tryStartQueuedMsgs.bind(this), 50);
         }
     }
 };
 
-/**
- * Add a process to the queue of processes to run. These processes are sorted
- * by their top block
- *
- * @param process
- * @return {undefined}
- */
-WebSocketManager.prototype.addProcess = function (process) {
-    for (var i = 0; i < this.processes.length; i++) {
-        if (process.block === this.processes[i][0].block) {
-            this.processes[i].push(process);
-            return;
-        }
+WebSocketManager.prototype.addMsgToQueue = function(morph, block, messageType, variables) {
+    let queue = this.getMessageQueue(block);
+
+    if (!queue) {
+        queue = new MessageHandlerQueue(this.ide.stage, block, morph);
+        this.msgHandlerQueues.push(queue);
     }
-    this.processes.push([process]);
+    queue.addMessage({variables, messageType});
+};
+
+WebSocketManager.prototype.getMessageQueue = function (handler) {
+    return this.msgHandlerQueues.find(queue => queue.handler === handler);
 };
 
 /**
@@ -518,46 +501,18 @@ WebSocketManager.prototype.addProcess = function (process) {
  *
  * @return {undefined}
  */
-WebSocketManager.prototype.startProcesses = function () {
-    var process,
-        block,
-        stage = this.ide.stage,
-        activeBlock,
-        expectedMsgType;
-
-    // Check each set of processes to see if the block is free
-    for (var i = 0; i < this.processes.length; i++) {
-        block = this.processes[i][0].block;
-        activeBlock = !!stage.threads.findProcess(block);
-        if (!activeBlock) {  // Check if the process can be added
-            expectedMsgType = block.inputs()[0].contents().text;
-            process = this.processes[i].shift();
-            while (process && process.messageType !== expectedMsgType) {
-                process = this.processes[i].shift();
-            }
-            block.updateReadout();
-            if (process) {
-                stage.threads.startProcess(
-                    process.block,
-                    null,
-                    process.isThreadSafe,
-                    null,
-                    null,
-                    null,
-                    false,
-                    null,
-                    process.variables
-                );
-            }
-            if (!this.processes[i].length) {
-                this.processes.splice(i,1);
-                i--;
-            }
+WebSocketManager.prototype.tryStartQueuedMsgs = function () {
+    for (let i = 0; i < this.msgHandlerQueues.length; i++) {
+        const queue = this.msgHandlerQueues[i];
+        queue.tryHandleNextMessage();
+        if (queue.isEmpty()) {
+            this.msgHandlerQueues.splice(i, 1);
+            i--;
         }
     }
 
-    if (this.processes.length) {
-        setTimeout(this.startProcesses.bind(this), 5);
+    if (this.msgHandlerQueues.length) {
+        setTimeout(() => this.tryStartQueuedMsgs(), 5);
     }
 };
 
@@ -614,3 +569,65 @@ WebSocketManager.prototype._destroy = function () {
     this.websocket.onclose = nop;
     this.websocket.close();
 };
+
+class MessageHandlerQueue {
+    constructor (stage, handler, receiver) {
+        this.stage = stage;
+        this.receiver = receiver;
+        this.handler = handler;
+        this.contents = [];
+    }
+
+    addMessage(msg) {
+        this.contents.push(msg);
+    }
+
+    tryHandleNextMessage() {
+        if (this.isHandlerIdle()) {
+            const msg = this.getNextMessage();
+            this.handler.updateReadout();
+            if (msg) {
+                this.handleMessage(msg);
+            }
+        }
+    }
+
+    handleMessage(msg) {
+        this.stage.threads.startProcess(
+            this.handler,
+            this.receiver,
+            this.stage.isThreadSafe,
+            null,
+            null,
+            null,
+            false,
+            null,
+            msg.variables
+        );
+    }
+
+    isEmpty() {
+        return this.contents.length === 0;
+    }
+
+    empty() {
+        this.contents = [];
+    }
+
+    isHandlerIdle() {
+        return !this.stage.threads.findProcess(this.handler);
+    }
+
+    getExpectedMsgType() {
+        return this.handler.inputs()[0].contents().text;
+    }
+
+    getNextMessage() {
+        const msgType = this.getExpectedMsgType();
+        let nextMsg = this.contents.shift();
+        while (nextMsg && nextMsg.messageType !== msgType) {
+            nextMsg = this.contents.shift();
+        }
+        return nextMsg;
+    }
+}
