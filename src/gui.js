@@ -8219,13 +8219,20 @@ ProjectDialogMorph.prototype.initPreview = function () {
     };
     this.preview.renderCachedTexture = function (ctx) {
         if (this.cachedTexture) {
-            ctx.drawImage(this.cachedTexture, this.edge, this.edge);
+            const scale = Math.min(
+                    (this.width() / this.cachedTexture.width),
+                    (this.height() / this.cachedTexture.height)
+                ),
+                width = scale * this.cachedTexture.width,
+                height = scale * this.cachedTexture.height;
+            ctx.drawImage(this.cachedTexture, this.edge, this.edge, width, height);
         }
     };
     this.preview.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
-    this.preview.setExtent(  // FIXME: Move this to the projects version?
+    this.preview.setExtent(
         this.ide.serializer.thumbnailSize.divideBy(4).add(this.preview.edge * 2)
     );
+        
 
     this.body.add(this.preview);
     if (this.task === 'save') {
