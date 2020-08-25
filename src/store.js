@@ -1554,15 +1554,15 @@ SnapSerializer.prototype.loadBlock = function (model, isReporter, object) {
             batch = model.children.splice(structIndex, structIndex + batchLength + 1);
             structVals = batch.map(function(value) {
                 if (value.tag === 'block' || value.tag === 'custom-block') {
-                    return self.loadBlock(value);
+                    return self.loadBlock(value, true, object);
                 }
                 if (value.tag === 'script') {
-                    return self.loadScript(value);
+                    return self.loadScript(value, object);
                 }
                 if (value.tag === 'color') {
                     return self.loadColor(value);
                 }
-                return self.loadValue(value) || '';
+                return self.loadValue(value, object) || '';
             });
         }
     }
