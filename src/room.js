@@ -1935,11 +1935,13 @@ RoomEditorMorph.prototype.createMsgPalette = function() {
     palette.padding = 12;
     palette.acceptsDrops = false;
     palette.contents.acceptsDrops = false;
+    // TODO: Why is this showing the scroll bars?
 
     return palette;
 };
 
 RoomEditorMorph.prototype.updateMsgPalette = function() {
+    const margin = 10;
     var stage = this.room.ide.stage,
         palette = this.palette,
         msgs = stage.deletableMessageNames(),
@@ -1950,6 +1952,10 @@ RoomEditorMorph.prototype.updateMsgPalette = function() {
         palette.contents.removeChild(child);
     });
 
+    let position = new Point(
+        palette.bounds.origin.x + margin,
+        palette.bounds.origin.y + margin,
+    );
     for (var i = 0; i < msgs.length; i++) {
         // Build block morph
         msg = new ReporterBlockMorph();
@@ -1959,7 +1965,8 @@ RoomEditorMorph.prototype.updateMsgPalette = function() {
         msg.forMsg = true;
         msg.isTemplate = true;
         msg.setColor(new Color(217,77,17));
-        msg.setPosition(new Point(palette.bounds.origin.x + 10, palette.bounds.origin.y + 24 * i + 6));
+        msg.setPosition(position);
+        position.y += msg.height() + margin;
         // Don't allow multiple instances of the block to exist at once
         msg.justDropped = function() {
             this.destroy();
