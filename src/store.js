@@ -2687,8 +2687,16 @@ ReporterBlockMorph.prototype.toScriptXML = function (
 CustomCommandBlockMorph.prototype.toBlockXML = function (serializer) {
     var scope = this.isGlobal ? undefined : 'local';
     const definition = this.definition || this.scriptTarget().getMethod(this.blockSpec);
+    let receiver = '';
+    if ((serializer.isSavingPortable || scope) && !definition.receiver[serializer.idProperty]) {
+        receiver = '<receiver>' + (serializer.isSavingCustomBlockOwners ?
+            serializer.store(definition.receiver) : '<ref actionID="' +
+                definition.receiver.id + '"/>') +
+            '</receiver>';
+    }
+
     return serializer.format(
-        '<custom-block collabId="@" s="@"%>%%%</custom-block>',
+        '<custom-block collabId="@" s="@"%>%%%%</custom-block>',
         this.id,
         this.semanticSpec,
         this.isGlobal ?
@@ -2702,13 +2710,7 @@ CustomCommandBlockMorph.prototype.toBlockXML = function (serializer) {
                     '</variables>'
                         : '',
         this.comment ? this.comment.toXML(serializer) : '',
-        (serializer.isSavingPortable || scope) && !definition.receiver[serializer.idProperty] ?
-                '<receiver>' +
-                    (serializer.isSavingCustomBlockOwners ?
-                    serializer.store(definition.receiver) :
-                    '<ref actionID="' + definition.receiver.id +'"/>') +
-                    '</receiver>'
-                        : ''
+        receiver,
     );
 };
 
