@@ -76,15 +76,19 @@ modules.store = '2020-July-08';
 // XML_Serializer instance creation:
 
 function XML_Serializer() {
+    this.instanceCount += 1;
     this.contents = [];
     this.media = [];
     this.isCollectingMedia = false;
     this.dependencies = null;
     this.isExportingBlocksLibrary = false;
+    this.idProperty = `serializationID_${this.instanceCount}`;
+    this.mediaIdProperty = `serializationMediaID_${this.instanceCount}`;
 }
 
 // XML_Serializer preferences settings:
 
+XML_Serializer.prototype.instanceCount = 0;
 XML_Serializer.prototype.idProperty = 'serializationID';
 XML_Serializer.prototype.mediaIdProperty = 'serializationMediaID';
 XML_Serializer.prototype.mediaDetectionProperty = 'isMedia';
