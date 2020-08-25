@@ -4,7 +4,7 @@
  MessageOutputSlotMorph, MessageInputSlotMorph, SymbolMorph, PushButtonMorph, MenuMorph,
  SpeechBubbleMorph, ProjectDialogMorph, HandleMorph, ReplayControls, fontHeight,
  AlignmentMorph, copy, TableDialogMorph, Table, TableMorph, WebSocketManager,
- TableFrameMorph, WHITE*/
+ TableFrameMorph, WHITE, ZERO, Rectangle*/
 /* * * * * * * * * RoomMorph * * * * * * * * */
 RoomMorph.prototype = new Morph();
 RoomMorph.prototype.constructor = RoomMorph;
@@ -1686,11 +1686,11 @@ function RoomEditorMorph(room, sliderColor) {
 RoomEditorMorph.prototype.init = function(room, sliderColor) {
     RoomEditorMorph.uber.init.call(this, null, null, sliderColor);
 
-    this.palette = this.createMsgPalette();
-    this.add(this.palette);
-
     this.room = room;
     this.add(room);
+
+    this.palette = this.createMsgPalette();
+    this.add(this.palette);
 
     // Check for queried shared messages
     this.room.checkForSharedMsgs(this.room.getCurrentRoleName());
@@ -1848,8 +1848,6 @@ RoomEditorMorph.prototype.fixLayout = function() {
     this.room.fixLayout();
 
     this.updateMsgPalette();
-    this.palette.setWidth(this.width()/2);
-    this.palette.setHeight(this.center().y);
 
     this.addRoleBtn.setCenter(this.room.center());
     this.addRoleBtn.setTop(this.room.roomName.bottom() + 5);
@@ -1932,11 +1930,8 @@ RoomEditorMorph.prototype.updateRoomControls = function() {
 RoomEditorMorph.prototype.createMsgPalette = function() {
     var palette = new ScrollFrameMorph();
     palette.setColor(new Color(0, 0, 0, 0));
-    palette.padding = 12;
     palette.acceptsDrops = false;
     palette.contents.acceptsDrops = false;
-    // TODO: Why is this showing the scroll bars?
-
     return palette;
 };
 
@@ -1952,10 +1947,13 @@ RoomEditorMorph.prototype.updateMsgPalette = function() {
         palette.contents.removeChild(child);
     });
 
-    let position = new Point(
+    const position = new Point(
         palette.bounds.origin.x + margin,
         palette.bounds.origin.y + margin,
     );
+    const msgExtent = new Rectangle();
+    msgExtent.origin = palette.bounds.origin.copy();
+    msgExtent.setExtent(ZERO);
     for (var i = 0; i < msgs.length; i++) {
         // Build block morph
         msg = new ReporterBlockMorph();
@@ -1967,6 +1965,7 @@ RoomEditorMorph.prototype.updateMsgPalette = function() {
         msg.setColor(new Color(217,77,17));
         msg.setPosition(position);
         position.y += msg.height() + margin;
+        msgExtent.mergeWith(msg.bounds);
         // Don't allow multiple instances of the block to exist at once
         msg.justDropped = function() {
             this.destroy();
@@ -1988,9 +1987,26 @@ RoomEditorMorph.prototype.updateMsgPalette = function() {
         msg.children[0].customContextMenu = menu;
         msg.customContextMenu = menu;
 
-        palette.addContents(msg);
+        palette.contents.add(msg);
     }
+    const leftMost = this.room.getRoles()
+        .map(role => role.left())
+        .reduce((leftMost, left) => Math.min(left, leftMost), Infinity);
+    const maxWidth = leftMost - this.left();
+    const maxHeight = this.room.height();
 
+    palette.bounds.setWidth(Math.min(msgExtent.width() + margin, maxWidth));
+    palette.bounds.setHeight(Math.min(msgExtent.height() + margin, maxHeight));
+    let extent = palette.contents.children.reduce(
+        (point, child) => point.max(child.bounds.extent()),
+        palette.bounds.extent(),
+    );
+    palette.contents.bounds.setExtent(extent);
+
+    palette.contents.adjustBounds();
+    palette.fixLayout();
+    palette.rerender();
+    palette.version = stage.messageTypes.version;
 };
 
 // UserDialogMorph ////////////////////////////////////////////////////
