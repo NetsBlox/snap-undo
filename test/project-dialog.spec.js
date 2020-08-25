@@ -1,4 +1,4 @@
-/*globals driver, TestUtils, assert*/
+/*globals driver, TestUtils */
 describe('ProjectDialogMorph', function() {
     this.timeout(5000);
 
@@ -186,7 +186,10 @@ describe('ProjectDialogMorph', function() {
             TestUtils.setProjectsBrowserSource(dialog, 'examples');
             await TestUtils.openProject('Dice', dialog);
             const url = driver.globals().location.href;
-            assert(url.includes('?action=example'));
+            await driver.expect(
+                () => url.includes('?action=example'),
+                `Expected URL to contain example info: ${url}`
+            );
         });
     });
 });
