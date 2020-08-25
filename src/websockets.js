@@ -494,13 +494,6 @@ WebSocketManager.prototype.getMessageQueue = function (handler) {
     return this.msgHandlerQueues.find(queue => queue.handler === handler);
 };
 
-/**
- * We will create a mutex on the network message/event listening blocks. That is,
- * network messages will not trigger a process until the currently running
- * process for the network event has terminated
- *
- * @return {undefined}
- */
 WebSocketManager.prototype.tryStartQueuedMsgs = function () {
     for (let i = 0; i < this.msgHandlerQueues.length; i++) {
         const queue = this.msgHandlerQueues[i];

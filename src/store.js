@@ -1648,7 +1648,7 @@ SnapSerializer.prototype.loadInput = function (model, input, block, object) {
         });
         input.fixLayout();
     } else if (model.tag === 'block' || model.tag === 'custom-block') {
-//        block.silentReplaceInput(input, this.loadBlock(model, true, object));
+        // block.silentReplaceInput(input, this.loadBlock(model, true, object));
         block.replaceInput(input, this.loadBlock(model, true, object));
     } else if (model.tag === 'color') {
         input.setColor(this.loadColor(model.contents));

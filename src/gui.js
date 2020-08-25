@@ -92,6 +92,7 @@ modules.gui = '2020-August-08';
 
 // Declarations
 
+/*
 var IDE_Morph;
 var ProjectDialogMorph;
 var LibraryDialogMorph;
@@ -105,6 +106,7 @@ var StageHandleMorph;
 var PaletteHandleMorph;
 var CamSnapshotDialogMorph;
 var SoundRecorderDialogMorph;
+*/
 
 var SERVER_URL = SERVER_URL || window.location.origin;
 var SERVER_ADDRESS = SERVER_URL.replace(/^.*\/\//, '');
@@ -8241,7 +8243,6 @@ ProjectDialogMorph.prototype.initPreview = function () {
     this.preview.setExtent(
         this.ide.serializer.thumbnailSize.divideBy(4).add(this.preview.edge * 2)
     );
-        
 
     this.body.add(this.preview);
     if (this.task === 'save') {
