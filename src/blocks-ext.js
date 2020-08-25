@@ -251,32 +251,6 @@ StructInputSlotMorph.prototype.getFieldValue = function(fieldname, value) {
     return value;  // The input slot is occupied by another block
 };
 
-StructInputSlotMorph.prototype.setDefaultFieldArg = function(index) {
-    // Reset the field and return it
-    var isStructField = index < this.fields.length,
-        parentIndex,
-        arg;
-
-    if (isStructField) {
-
-        parentIndex = this.parent.children.indexOf(this) + index + 1;
-
-        arg = this.fieldContent[index] = this.getFieldValue(this.fields[index]);
-        this.parent.children.splice(parentIndex, 1, arg);
-        arg.parent = this.parent;
-    }
-
-    arg.rerender();
-    arg.fixLayout();
-    arg.rerender();
-
-    this.parent.rerender();
-    this.parent.fixLayout();
-    this.parent.rerender();
-
-    return arg;
-};
-
 InputSlotMorph.prototype.serviceNames = async function () {
     var services = await Services.getServicesMetadata(),
         hasAuthoredServices,
@@ -523,8 +497,8 @@ var addStructReplaceSupport = function(fn) {
             structInput.fields.length >= inputIndex - structInputIndex) {
 
             relIndex = inputIndex - structInputIndex - 1;
-            var defaultArg = structInput.setDefaultFieldArg(relIndex);
-            this.silentReplaceInput(arg, defaultArg);
+            const defaultArg = structInput.getFieldValue(structInput.fields[relIndex]);
+            this.replaceInput(arg, defaultArg);
             this.cachedInputs = null;
         } else {
             fn.apply(this, arguments);
