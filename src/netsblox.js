@@ -92,24 +92,17 @@ NetsBloxMorph.prototype.cloudMenu = async function () {
 
     const isLoggedIn = this.cloud.username;
     if (isLoggedIn) {
-        menu.addItem(
-            'Link to Snap! account...',
-            'linkAccount'
-        );
-
         const userData = await this.cloud.getUserData();
-        if (userData && userData.linkedAccounts.length) {
-            const submenu = new MenuMorph(this);
-            userData.linkedAccounts.forEach(account => {
-                const {username} = account;
-                submenu.addItem(
-                    username,
-                    () => this.unlinkAccount(account),
-                );
-            });
-            menu.addMenu(
+        const linkedAccounts = userData && userData.linkedAccounts;
+        if (linkedAccounts.length === 0) {
+            menu.addItem(
+                'Link to Snap! account...',
+                'linkAccount'
+            );
+        } else {
+            menu.addItem(
                 localize('Unlink Snap! account...'),
-                submenu
+                () => this.unlinkAccount(userData.linkedAccounts[0]),
             );
         }
     }
