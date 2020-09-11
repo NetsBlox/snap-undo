@@ -1017,11 +1017,9 @@ NetsBloxMorph.prototype.reportBug = function () {
     dialog.labelString = localize('What went wrong?');
     dialog.createLabel();
     dialog.addBody(frame);
-    frame.drawNew();
     dialog.addButton('ok', 'OK');
     dialog.addButton('cancel', 'Cancel');
     dialog.fixLayout();
-    dialog.drawNew();
     dialog.popUp(world);
     dialog.setCenter(world.center());
     text.edit();
