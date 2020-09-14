@@ -78,19 +78,15 @@ describe('undo', function() {
         });
 
         it('should preserve other block pos after connection undone', async function() {
-            this.timeout(10000);
-            await driver.sleep(750);
             const bottomBlock = await driver.addBlock('doSayFor', new Point(300, 300));
             await driver.actionsSettled();
 
-            await driver.sleep(750);
             const bottomBlockPos = bottomBlock.position();
             const expectedPos = block.position();
             const dropTarget = bottomBlock.topLeft().add(new Point(block.width()/2, 0));
             driver.dragAndDrop(block, dropTarget);
             await driver.actionsSettled();
 
-            await driver.sleep(750);
             const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
             await SnapUndo.undo(undoId);
 
@@ -99,7 +95,6 @@ describe('undo', function() {
                 `Bottom block moved from ${expectedPos} (${block.position()})`
             );
 
-            // TODO: ensure the bottom block didn't move
             assert(
                 bottomBlockPos.eq(bottomBlock.position()),
                 `Bottom block moved from ${bottomBlockPos} to ${bottomBlock.position()}`
