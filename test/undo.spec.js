@@ -59,7 +59,6 @@ describe('undo', function() {
         });
 
         it('should restore pos after connecting to another block', async function() {
-            this.timeout(10000);
             const bottomBlock = await driver.addBlock('doSayFor', new Point(300, 300));
             const [topTarget] = bottomBlock.attachTargets();
             await driver.moveBlock(block, topTarget);
