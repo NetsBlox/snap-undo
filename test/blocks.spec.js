@@ -1,4 +1,4 @@
-/* globals expect, driver */
+/* globals expect, driver, assert */
 
 describe('blocks', function() {
     this.timeout(5000);
@@ -50,7 +50,21 @@ describe('blocks', function() {
                 .then(() => driver.selectCategory('custom'));
         });
 
-        it('should create (sprite) custom block', function() {
+        it('should create custom block', async function() {
+            // Create a custom block definition
+            var sprite = driver.ide().currentSprite,
+                spec = 'global block %s',
+                definition = new CustomBlockDefinition(spec);
+
+            // Get the sprite
+            definition.isGlobal = true;
+            definition.category = 'motion';
+            definition = await SnapActions.addCustomBlock(definition, sprite);
+            const block = await driver.addBlock(definition.blockInstance(), position);
+            assert.notEqual(block.selector, 'errorObsolete');
+        });
+
+        it('should create (sprite) custom block', async function() {
             // Create a custom block definition
             var sprite = driver.ide().currentSprite,
                 spec = 'sprite block %s',
@@ -58,8 +72,9 @@ describe('blocks', function() {
 
             // Get the sprite
             definition.category = 'motion';
-            return SnapActions.addCustomBlock(definition, sprite)
-                .then(() => driver.addBlock(definition.blockInstance(), position));
+            definition = await SnapActions.addCustomBlock(definition, sprite);
+            const block = await driver.addBlock(definition.blockInstance(), position);
+            assert.notEqual(block.selector, 'errorObsolete');
         });
 
         it('should be able to attach comment to prototype hat block', function() {
@@ -102,7 +117,6 @@ describe('blocks', function() {
         });
 
         it('should set active editor on move block to editor', async function() {
-            const {ScriptsMorph} = driver.globals();
             const sprite = driver.ide().currentSprite;
             const spec = 'sprite block %s';
             const definition = new CustomBlockDefinition(spec, sprite);
@@ -138,8 +152,8 @@ describe('blocks', function() {
                 .find(item => item.selector === 'turnLeft');
 
             await driver.expect(
-                        () => hatBlock.nextBlock(),
-                        'first block not connected'
+                () => hatBlock.nextBlock(),
+                'first block not connected'
             );
             dropPosition = hatBlock.nextBlock().bottomAttachPoint()
                 .add(new Point(turnBlock.width()/2, turnBlock.height()/2))
@@ -196,6 +210,50 @@ describe('blocks', function() {
                         'block not connected'
                     );
                 });
+        });
+
+        it('should be able to undo in custom block editor', async () => {
+            var sprite = driver.ide().currentSprite,
+                spec = 'sprite block %s',
+                definition = new CustomBlockDefinition(spec, sprite);
+
+            // Get the sprite
+            definition.category = 'motion';
+            await SnapActions.addCustomBlock(definition, sprite);
+            driver.selectCategory('custom');
+            const block = driver.palette().contents.children
+                .find(item => item instanceof CustomCommandBlockMorph);
+
+            // Edit the custom block
+            driver.rightClick(block);
+            let editBtn = driver.dialog().children.find(item => item.action === 'edit');
+            driver.click(editBtn);
+
+            // add block to the prototype hat morph
+            // moveBlock
+            driver.selectCategory('motion');
+            let forwardBlock = driver.palette().contents.children
+                .find(item => item.selector === 'forward');
+
+            let editor = driver.dialog();
+
+            // drop it on the prototype hat block
+            let scripts = editor.body.contents;
+            let hatBlock = scripts.children[0];
+            let dropPosition = hatBlock.bottomAttachPoint()
+                .add(new Point(forwardBlock.width()/2, forwardBlock.height()/2))
+                .subtract(forwardBlock.topAttachPoint().subtract(forwardBlock.topLeft()));
+
+            driver.dragAndDrop(forwardBlock, dropPosition);
+            await driver.expect(
+                () => hatBlock.nextBlock(),
+                'block not connected'
+            );
+            const [undoBtn] = driver.dialog().body.toolBar.children;
+            assert.equal(undoBtn.isDisabled, false, 'Undo button is disabled');
+            driver.click(undoBtn);
+            await driver.actionsSettled();
+            assert(!hatBlock.nextBlock(), 'Block not undone');
         });
     });
 

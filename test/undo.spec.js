@@ -58,7 +58,7 @@ describe('undo', function() {
             await driver.moveBlock(block, target);
         });
 
-        it('should restore pos after connecting to another block', async function() {
+        it.only('should restore pos after connecting to another block', async function() {
             this.timeout(10000);
             await driver.sleep(500);
             console.log('>>>> test starting');
@@ -66,13 +66,13 @@ describe('undo', function() {
             const [topTarget] = bottomBlock.attachTargets();
             await driver.sleep(500);
             await driver.moveBlock(block, topTarget);
+            await driver.actionsSettled();
             const expectedPos = block.position();
-            await driver.sleep(500);
-            await SnapActions.setBlockPosition(block, new Point(400, 400));
+            driver.dragAndDrop(block, new Point(400, 400));
             await driver.sleep(500);
             const undoId = driver.ide().currentSprite.scripts.undoOwnerId();
             await SnapUndo.undo(undoId);
-            await driver.sleep(500);
+            await driver.actionsSettled();
             console.log('>>>> test finishing... ');
 
             assert(
