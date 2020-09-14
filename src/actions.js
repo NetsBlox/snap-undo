@@ -744,13 +744,6 @@ ActionManager.prototype._getBlockState = function(id, grabbed = true) {
         position = grabbed ? this.getLastGrabPosition() || currentBlockPos : currentBlockPos,
         state;
 
-    console.log('is using grab pos?', position !== currentBlockPos);
-    if (position !== currentBlockPos) {
-        const err = new Error();
-        console.log(err.stack);
-        // TODO: Why is it true? W
-    }
-
     // Use the last connection unless the last connection was to the
     // top of a command block and it has a position set
     if (isNewBlock) {
@@ -758,8 +751,6 @@ ActionManager.prototype._getBlockState = function(id, grabbed = true) {
     } else if (target && !ActionManager.isWeakTarget(target)) {
         state = [target];
     } else {
-        position = this.getLastGrabPosition() ||
-            this.getStandardPosition(this.getBlockFromId(id));
         state = [position.x, position.y];
     }
 
@@ -2295,10 +2286,7 @@ ActionManager.prototype._onDeleteCustomBlock = function(id, ownerId) {
             rcvr.customBlocks.splice(idx, 1);
         }
 
-        console.assert('get blockspec!');
-        debugger;
-        // FIXME: How can I get the blockSpec?
-        method = rcvr.getMethod(this.blockSpec);
+        const method = rcvr.getMethod(this.blockSpec);
         if (method) {
             rcvr.allDependentInvocationsOf(this.blockSpec).forEach(
                 block => block.refresh(method)
