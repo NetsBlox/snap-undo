@@ -70,12 +70,12 @@ AlignmentMorph, TabMorph, Costume, MorphicPreferences, BlockMorph,
 ToggleMorph, InputSlotDialogMorph, ScriptsMorph, isNil, SymbolMorph,
 BlockExportDialogMorph, BlockImportDialogMorph, SnapTranslator, localize,
 List, ArgMorph, SnapCloud, HandleMorph, SVG_Costume, LOGO_IMAGE
-fontHeight, sb, CommentMorph, CommandBlockMorph, SnapActions
+fontHeight, sb, CommentMorph, CommandBlockMorph, SnapActions, ExtensionRegistry
 BlockLabelPlaceHolderMorph, SpeechBubbleMorph, ScriptFocusMorph,
 XML_Element, WatcherMorph, BlockRemovalDialogMorph, saveAs, TableMorph,
 isSnapObject, isRetinaEnabled, disableRetinaSupport, enableRetinaSupport,
-isRetinaSupported, SliderMorph, utils, CloudError,
-AlignmentMorph, TabMorph, Costume, MorphicPreferences,BlockMorph, ToggleMorph,
+isRetinaSupported, SliderMorph, utils, CloudError, NetsBloxExtensions
+AlignmentMorph, TabMorph, Costume, MorphicPreferences,BlockMorph,
 InputSlotDialogMorph, ScriptsMorph, isNil, SymbolMorph, fontHeight,  localize,
 BlockExportDialogMorph, BlockImportDialogMorph, SnapTranslator, List, ArgMorph,
 HandleMorph, SVG_Costume, TableDialogMorph, CommentMorph, saveAs,
@@ -306,6 +306,15 @@ IDE_Morph.prototype.init = function (isAutoFill) {
     // override inherited properites:
     this.color = this.backgroundColor;
     this.activeEditor = this;
+    this.extensions = new ExtensionRegistry(this);
+    NetsBloxExtensions = this.extensions;
+
+    setTimeout(() => {  // FIXME: Remove this
+        const node = document.createElement('script');
+        node.setAttribute('src', 'extensions/autograder.js');
+        node.setAttribute('type', 'text/javascript');
+        document.body.appendChild(node);
+    }, 500);
 };
 
 IDE_Morph.prototype.openIn = function (world) {
@@ -1110,6 +1119,33 @@ IDE_Morph.prototype.createControlBar = function () {
     this.controlBar.add(settingsButton);
     this.controlBar.settingsButton = settingsButton; // for menu positioning
 
+    // extensions options
+    button = new PushButtonMorph(
+        this,
+        function() {
+            var menu = myself.extensionsMenu(),
+                pos = myself.controlBar.extensionsButton.bottomLeft();
+            menu.popup(myself.world(), pos);
+        },
+        new SymbolMorph('robot', 14)  // FIXME
+        //'\u2699'
+    );
+    button.corner = 12;
+    button.color = colors[0];
+    button.highlightColor = colors[1];
+    button.pressColor = colors[2];
+    button.labelMinExtent = new Point(36, 18);
+    button.padding = 0;
+    button.labelShadowOffset = new Point(-1, -1);
+    button.labelShadowColor = colors[1];
+    button.labelColor = this.buttonLabelColor;
+    button.contrast = this.buttonContrast;
+    // button.hint = 'edit settings';
+    button.fixLayout();
+    const extensionsButton = button;
+    this.controlBar.add(extensionsButton);
+    this.controlBar.extensionsButton = extensionsButton; // for menu positioning
+
     // cloudButton
     button = new ToggleButtonMorph(
         null, //colors,
@@ -1172,6 +1208,9 @@ IDE_Morph.prototype.createControlBar = function () {
 
         steppingButton.setCenter(myself.controlBar.center());
         steppingButton.setRight(slider.left() - padding);
+
+        extensionsButton.setCenter(myself.controlBar.center());
+        extensionsButton.setRight(steppingButton.left() - padding);
 
         settingsButton.setCenter(myself.controlBar.center());
         settingsButton.setLeft(this.left());
