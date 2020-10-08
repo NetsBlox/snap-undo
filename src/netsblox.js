@@ -126,6 +126,13 @@ NetsBloxMorph.prototype.settingsMenu = function () {
         return action !== 'toggleCollaborativeEditing';
     });
 
+    menu.addItem('Load Autograder...', () => {
+        const node = document.createElement('script');
+        node.setAttribute('src', 'extensions/autograder.js');
+        node.setAttribute('type', 'text/javascript');
+        document.body.appendChild(node);
+    });
+
     return menu;
 };
 

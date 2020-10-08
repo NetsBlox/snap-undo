@@ -308,13 +308,6 @@ IDE_Morph.prototype.init = function (isAutoFill) {
     this.activeEditor = this;
     this.extensions = new ExtensionRegistry(this);
     NetsBloxExtensions = this.extensions;
-
-    setTimeout(() => {  // FIXME: Remove this
-        const node = document.createElement('script');
-        node.setAttribute('src', 'extensions/autograder.js');
-        node.setAttribute('type', 'text/javascript');
-        document.body.appendChild(node);
-    }, 500);
 };
 
 IDE_Morph.prototype.openIn = function (world) {
@@ -1145,6 +1138,7 @@ IDE_Morph.prototype.createControlBar = function () {
     const extensionsButton = button;
     this.controlBar.add(extensionsButton);
     this.controlBar.extensionsButton = extensionsButton; // for menu positioning
+    this.controlBar.extensionsButton.hide();
 
     // cloudButton
     button = new ToggleButtonMorph(
