@@ -292,12 +292,12 @@
                 .map(spec => {
                     const isInput = !BlockMorph.prototype.labelPart(spec);
                     if (isInput) {
-                        return inputs[index++];
+                        return JSON.stringify(inputs[index++]);
                     }
                     return spec;
                 })
                 .join(' ');
-            return `"${testCaseName}" should report ${output}`;
+            return `"${testCaseName}" should report ${JSON.stringify(output)}`;
         }
     }
 
@@ -341,7 +341,7 @@
 
         getFailureReason() {
             if (this.actual !== null) {
-                return `reported "${toJS(this.actual)}"`;
+                return `reported "${JSON.stringify(toJS(this.actual))}"`;
             } else {
                 return 'did not report';
             }
