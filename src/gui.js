@@ -3361,6 +3361,21 @@ IDE_Morph.prototype.settingsMenu = function () {
         'Microphone resolution...',
         'microphoneMenu'
     );
+
+    const submenu = new MenuMorph(this);
+    submenu.addItem('CS1000 Autograder', () => {
+        const name = 'CS1000';
+        if (this.extensions.isLoaded(name)) {
+            this.showMessage(`Extension "${name}" is already loaded`, 2);
+        } else {
+            const node = document.createElement('script');
+            node.setAttribute('src', 'extensions/autograder.js');
+            node.setAttribute('type', 'text/javascript');
+            document.body.appendChild(node);
+        }
+    });
+    menu.addMenu('Load Extension...', submenu);
+
     menu.addLine();
     /*
     addPreference(
