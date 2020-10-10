@@ -1,5 +1,5 @@
 /* globals NetsBloxExtensions, snapEquals, fontHeight, Point, DialogBoxMorph,
- ScrollFrameMorph, nop, HandleMorph*/
+ ScrollFrameMorph, nop, HandleMorph, List, SpriteMorph, ToggleMorph, BlockMorph*/
 // This is an example extension for autograding in NetsBlox
 (function() {
     class Autograder {
@@ -18,9 +18,9 @@
                         new TestCase([2, 1, 3], true),
                         new TestCase([1, 1, 3], true),
                         new TestCase([3, 1, 3], true),
-                        new TestCase([-2, -1, -3], true),
-                        new TestCase([-1, -1, -3], true),
-                        new TestCase([-3, -1, -3], true),
+                        new TestCase([-2, -3, -1], true),
+                        new TestCase([-1, -3, -1], true),
+                        new TestCase([-3, -3, -1], true),
                         new TestCase([0, -1, -3], false),
                         new TestCase([-4, -1, -3], false),
                         new TestCase([0, 1, 3], false),
@@ -90,8 +90,6 @@
         async showResults(testResults) {
             if (!this.resultsDialog) {
                 const world = this.ide.world();
-                //const passing = testResults.filter(r => r.status);
-                //const message = `${passing.length} passing. ${testResults.length-passing.length} failing.`;
                 const dialog = new DialogBoxMorph().withKey('GradeAssignment');
                 const frame = new ScrollFrameMorph();
                 frame.acceptsDrops = false;
@@ -114,7 +112,7 @@
                     var th = fontHeight(this.titleFontSize) + this.titlePadding * 2,
                         x = 0,
                         y = 0,
-                        fp, fw;
+                        fp;
                     this.buttons.fixLayout();
                     this.body.setPosition(this.position().add(new Point(
                         this.padding,
@@ -125,15 +123,9 @@
                         this.height() - this.padding * 3 - th - this.buttons.height()
                     ));
                     fp = this.body.position();
-                    fw = this.body.width();
                     frame.contents.children.forEach(function (icon) {
                         icon.setPosition(fp.add(new Point(x, y)));
                         y += icon.height();
-                        //x += icon.width();
-                        //if (x + icon.width() > fw) {
-                            //x = 0;
-                            //y += icon.height();
-                        //}
                     });
                     frame.contents.adjustBounds();
                     this.label.setCenter(this.center());
@@ -262,7 +254,12 @@
             const {threads} = this.ide.stage;
             zip(block.inputs(), inputs).forEach(pair => {
                 const [input, value] = pair;
-                input.setContents(value);
+                if (value instanceof List) {
+                    const valueAsBlock = value.blockify();
+                    block.replaceInput(input, valueAsBlock);
+                } else {
+                    input.setContents(value);
+                }
             });
 
             return new Promise((resolve, reject) => {
@@ -312,8 +309,8 @@
 
         async run(fn) {
             try {
-                const result = await fn(...this.inputs);
-                if (snapEquals(result, this.output)) {
+                const result = await fn(...this.inputs.map(toSnap));
+                if (snapEquals(result, toSnap(this.output))) {
                     return new TestResult(this, true);
                 } else {
                     return new FailingTest(this, result, this.output);
@@ -344,7 +341,7 @@
 
         getFailureReason() {
             if (this.actual !== null) {
-                return `reported "${this.actual}"`;
+                return `reported "${toJS(this.actual)}"`;
             } else {
                 return 'did not report';
             }
@@ -372,6 +369,24 @@
         }
 
         return result;
+    }
+
+    function toSnap(data) {
+        if (Array.isArray(data)) {
+            const contents = data.map(toSnap);
+            return new List(contents);
+        } else if (typeof data === 'object') {
+            return toSnap(Object.entries(data));
+        }
+        return data;
+    }
+
+    function toJS(data) {
+        if (data instanceof List) {
+            return data.asArray().map(toJS);
+        } else {
+            return data;
+        }
     }
 
     NetsBloxExtensions.register(Autograder);
