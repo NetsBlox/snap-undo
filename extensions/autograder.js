@@ -105,6 +105,10 @@
                 dialog.addButton('ok', 'Rerun');
                 dialog.addButton('cancel', 'Close');
                 dialog.ok = () => this.grade(this.currentAssignment);
+                dialog.cancel = () => {
+                    this.resultsDialog = null;
+                    DialogBoxMorph.prototype.cancel.call(dialog);
+                };
 
                 dialog.fixLayout = function () {
                     var th = fontHeight(this.titleFontSize) + this.titlePadding * 2,

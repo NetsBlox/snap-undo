@@ -126,12 +126,19 @@ NetsBloxMorph.prototype.settingsMenu = function () {
         return action !== 'toggleCollaborativeEditing';
     });
 
-    menu.addItem('Load Autograder...', () => {
-        const node = document.createElement('script');
-        node.setAttribute('src', 'extensions/autograder.js');
-        node.setAttribute('type', 'text/javascript');
-        document.body.appendChild(node);
+    const submenu = new MenuMorph(this);
+    submenu.addItem('CS1000 Autograder', () => {
+        const name = 'CS1000';
+        if (this.extensions.isLoaded(name)) {
+            this.showMessage(`Extension "${name}" is already loaded`, 2);
+        } else {
+            const node = document.createElement('script');
+            node.setAttribute('src', 'extensions/autograder.js');
+            node.setAttribute('type', 'text/javascript');
+            document.body.appendChild(node);
+        }
     });
+    menu.addMenu('Load Extensions...', submenu);
 
     return menu;
 };
