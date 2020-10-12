@@ -1120,7 +1120,7 @@ IDE_Morph.prototype.createControlBar = function () {
                 pos = myself.controlBar.extensionsButton.bottomLeft();
             menu.popup(myself.world(), pos);
         },
-        new SymbolMorph('robot', 14)  // FIXME
+        new SymbolMorph('puzzlePiece', 14)
         //'\u2699'
     );
     button.corner = 12;
