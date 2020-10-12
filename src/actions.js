@@ -20,7 +20,7 @@ function ActionManager() {
     this.isLeader = false;
     this._pendingLocalActions = [];
     this._attemptedLocalActions = [];
-    this.emitActions = false;
+    this.listeners = [];
     this.initialize();
 }
 
@@ -3045,12 +3045,13 @@ ActionManager.prototype.afterActionApplied = function(action) {
     // a custom block)
 
     active.onSetActive();
-    if (this.emitActions) {
-        window.parent.postMessage({
+    this.listeners.forEach(pair => {
+        const [source, origin] = pair;;
+        source.postMessage({
             type: 'action',
             data: action
-        });
-    }
+        }, origin);
+    });
 };
 
 ActionManager.prototype.onMessage = function(msg) {
