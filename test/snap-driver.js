@@ -98,32 +98,36 @@ SnapDriver.prototype.selectSprite = function(name) {
 };
 
 SnapDriver.prototype.keys = function(text) {
-    let world = this.world();
-    let keyboard = world.keyboardReceiver;
+    const world = this.world();
 
     text.split('').forEach(letter => {
-        const event = {
-            keyCode: letter.charCodeAt(0)
+        const eventInfo = {
+            key: letter,
+            keyCode: letter.charCodeAt(0),
+            shiftKey: letter !== letter.toLowerCase(),
         };
-        world.currentKey = event.keyCode;
-        keyboard.processKeyPress(event);
-        world.currentKey = null;
+
+        let event = new KeyboardEvent('keydown', eventInfo);
+        world.keyboardHandler.dispatchEvent(event);
+        event = new KeyboardEvent('keypress', eventInfo);
+        world.keyboardHandler.dispatchEvent(event);
+        event = new KeyboardEvent('keyup', eventInfo);
+        world.keyboardHandler.dispatchEvent(event);
     });
+    world.keyboardHandler.value = text;
+    let event = new InputEvent('input');
+    world.keyboardHandler.dispatchEvent(event);
 };
 
 // Add block by spec
 SnapDriver.prototype.addBlock = function(spec, position) {
-    const SpriteMorph = this.globals().SpriteMorph;
-    const Point = this.globals().Point;
-    const SnapActions = this.globals().SnapActions;
+    const {SpriteMorph, Point, SnapActions} = this.globals();
     var block = typeof spec === 'string' ?
         SpriteMorph.prototype.blockForSelector(spec, true) : spec;
     var sprite = this.ide().currentSprite;
 
     position = position || new Point(400, 400);
-    let action = SnapActions.addBlock(block, sprite.scripts, position);
-    return action;
-    //return SnapActions.addBlock(block, sprite.scripts, position);
+    return SnapActions.addBlock(block, sprite, position);
 };
 
 // morphic interactions
@@ -173,7 +177,6 @@ SnapDriver.prototype.mouseUp = function(position) {
 SnapDriver.prototype.dragAndDrop = function(srcMorph, position, start = null) {
     const {MorphicPreferences, Point} = this.globals();
 
-    // Drag from the upper left corner if not told otherwise
     if(start == null)
     {
         start = srcMorph.topLeft().add(new Point(2, srcMorph.height() / 2));
@@ -212,34 +215,29 @@ SnapDriver.prototype._defer = function() {
     };
 };
 
-// fn: synchronous function returning a boolean
-SnapDriver.prototype.waitUntil = function(fn, maxWait) {
-    const deferred = this._defer();
-
-    var startTime = Date.now();
-    var check = function() {
-        let result = fn();
-        if (result || Date.now()-startTime > maxWait) {
-            if (result) {
-                deferred.resolve(result);
-            } else {
-                deferred.reject(result || '');
-            }
-        } else {
-            setTimeout(check, 25);
-        }
-    };
+SnapDriver.prototype.waitUntil = async function(fn, maxWait) {
+    const startTime = Date.now();
     maxWait = maxWait || 6000;
-    check();
+    const timeExceeded = () => Date.now()-startTime > maxWait;
+    let result = await fn();
 
-    return deferred.promise;
+    while (!result) {
+        if (timeExceeded()) {
+            throw new Error('Timeout Exceeded');
+        }
+        await this.sleep(25);
+        result = await fn();
+    }
+    return result;
 };
 
-SnapDriver.prototype.expect = function(fn, msg, opts={}) {
-    return this.waitUntil(fn, opts.maxWait)
-        .catch(e => {
-            throw new Error(msg, e);
-        });
+SnapDriver.prototype.expect = async function(fn, msg, opts={}) {
+    try {
+        return await this.waitUntil(fn, opts.maxWait);
+    } catch (err) {
+        const error = err.message === 'Timeout Exceeded' ? new Error(msg) : err;
+        throw error;
+    }
 };
 
 // netsblox additions
@@ -282,7 +280,10 @@ SnapDriver.prototype.login = async function(name, password='password') {
     const btn = this.ide().controlBar.cloudButton;
     this.click(btn);
 
-    let dropdown = this.dialog();
+    let dropdown = await this.expect(
+        () => this.dialog(),
+        new Error('Cloud menu never appeared'),
+    );
     const logoutBtn = dropdown.children.find(item => item.action === 'logout');
     const isLoggedIn = !!logoutBtn;
 
@@ -297,15 +298,18 @@ SnapDriver.prototype.login = async function(name, password='password') {
     this.click(btn);
 
     // click the login button
-    dropdown = this.dialog();
+    dropdown = await this.expect(
+        () => this.dialog(),
+        new Error('Cloud menu never appeared'),
+    );
     const loginBtn = dropdown.children.find(item => item.action === 'initializeCloud');
     this.click(loginBtn);
 
     // enter login credentials
-    console.log(`logging in as ${name}`);
-    this.keys(name);
-    this.keys('\t');
-    this.keys(password);
+    const [form] = this.dialog().body.children;
+    const [, userField, , passwordField] = form.children;
+    userField.setContents(name);
+    passwordField.setContents(password);
     this.dialog().ok();
     await this.expect(
         () => !!this.isShowingDialogTitle(title => title.includes('connected')),
@@ -336,12 +340,15 @@ SnapDriver.prototype.inviteCollaborator = async function(username) {
     const controlBar = this.ide().controlBar;
     this.click(controlBar.cloudButton);
 
-    const dropdown = this.dialog();
+    const dropdown = await this.expect(
+        () => !this.dialog().title && this.dialog(),
+        new Error('Cloud menu never appeared'),
+    );
     const collabs = dropdown.children.find(item => item.action === 'manageCollaborators');
     this.click(collabs);
 
     await this.expect(
-        () => this.dialog(),
+        () => !this.dialog().title,
         `Collaborator dialog did not appear`
     );
 
@@ -398,7 +405,6 @@ SnapDriver.prototype.saveProjectAs = function(name, waitForSave=true) {
             const saveBtn = dialog.buttons.children[0];
             this.click(saveBtn);
             if (waitForSave) {
-                // TODO
                 return this.expect(
                     () => this.isShowingSavedMsg(),
                     `Did not see save message after "Save"`
@@ -460,34 +466,28 @@ SnapDriver.prototype.openProjectsBrowser = function() {
         .then(() => this.dialog());
 };
 
-SnapDriver.prototype.openProject = function(name, waitForComplete=true) {
+SnapDriver.prototype.openProject = async function(name, waitForComplete=true) {
     // Open the project dialog
-    let projectDialog;
-    return this.openProjectsBrowser()
-        .then(dialog => {
-            projectDialog = dialog;
-            return this.expect(
-                () => this.getProjectList(projectDialog).includes(name),
-                `Could not find ${name} in project list`
-            );
-        })
-        .then(() => {
-            const projectList = projectDialog.listField.listContents.children;
-            const listItem = projectList.find(item => item.labelString === name);
-            this.click(listItem);
-            projectDialog.accept();
+    const projectDialog = await this.openProjectsBrowser();
+    await this.expect(
+        () => this.getProjectList(projectDialog).includes(name),
+        `Could not find ${name} in project list`
+    );
+    const projectList = projectDialog.listField.listContents.children;
+    const listItem = projectList.find(item => item.labelString === name);
+    this.click(listItem);
+    projectDialog.accept();
 
-            // Check for the if-else block
-            if (waitForComplete) {
-                return this.expect(
-                    () => {
-                        const blockCount = this.ide().currentSprite.scripts.children.length;
-                        return blockCount > 0;
-                    },
-                    `Did not see blocks after loading saved project`
-                );
-            }
-        });
+    // Check for the if-else block
+    if (waitForComplete) {
+        return this.expect(
+            () => {
+                const blockCount = this.ide().currentSprite.scripts.children.length;
+                return blockCount > 0;
+            },
+            `Did not see blocks after loading saved project`
+        );
+    }
 };
 
 SnapDriver.prototype.disconnect = function() {
@@ -498,4 +498,23 @@ SnapDriver.prototype.disconnect = function() {
 SnapDriver.prototype.connect = function() {
     delete this.ide().sockets.onClose;
     this.ide().sockets.onClose();
+};
+
+SnapDriver.prototype.actionsSettled = async function() {
+    const {SnapActions} = this.globals();
+    const pendingActions = SnapActions._attemptedLocalActions
+        .concat(SnapActions._pendingLocalActions)
+        .map(action => action.promise);
+
+    await Promise.allSettled(pendingActions);
+};
+
+SnapDriver.prototype.moveBlock = function(spec, target, pos) {
+    const {hand} = this.world();
+    const {SnapActions, SpriteMorph} = this.globals();
+    const block = typeof spec === 'string' ?
+        SpriteMorph.prototype.blockForSelector(spec, true) : spec;
+
+    hand.grabOrigin = block.situation();
+    return SnapActions.moveBlock(block, target, pos);
 };

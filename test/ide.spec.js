@@ -1,4 +1,4 @@
-/*globals driver, expect, EmbeddedNetsBloxAPI */
+/*globals driver, expect, assert, EmbeddedNetsBloxAPI */
 describe('ide', function() {
     let SnapCloud, SnapActions, SnapUndo;
 
@@ -8,6 +8,37 @@ describe('ide', function() {
         SnapActions = driver.globals().SnapActions;
         SnapUndo = driver.globals().SnapUndo;
         return driver.reset();
+    });
+
+    describe('about', function() {
+        it('should show about message', function() {
+            const len = driver.dialogs().length;
+            const ide = driver.ide();
+            ide.snapMenu();
+            const about = driver.dialog().children[1];
+            driver.click(about);
+            assert.equal(driver.dialogs().length, len + 1);
+        });
+    });
+
+    describe('notifications', function() {
+        afterEach(() => driver.dialogs().forEach(d => d.destroy()));
+
+        it('should show notification', function() {
+            const ide = driver.ide();
+            const len = driver.dialogs().length;
+            ide.simpleNotification('hello!');
+            assert.equal(driver.dialogs().length, len + 1);
+            driver.click(driver.dialog());
+        });
+
+        it('should not close on click if sticky', function() {
+            const ide = driver.ide();
+            const len = driver.dialogs().length;
+            ide.simpleNotification('hello!', true);
+            driver.click(driver.dialog());
+            assert.equal(driver.dialogs().length, len + 1);
+        });
     });
 
     describe('menus', function() {
@@ -75,42 +106,20 @@ describe('ide', function() {
             driver.ide().saveSetting('language', 'en');
         });
 
-        it('should not change replay length on lang change', function(done) {
-            SnapActions.addVariable('testVar', true)
-                .then(() => {
-                    var len = SnapUndo.allEvents.length;
-                    var err;
-
-                    driver.ide().setLanguage('en');
-                    setTimeout(function() {  // give the project time to load
-                        try {
-                            expect(SnapUndo.allEvents.length).toBe(len);
-                        } catch(e) {
-                            err = e;
-                        } finally {
-                            done(err);
-                        }
-                    }, 200);
-                });
+        it('should not change replay length on lang change', async function() {
+            await SnapActions.addVariable('testVar', true);
+            const len = SnapUndo.allEvents.length;
+            driver.ide().setLanguage('en');
+            await driver.sleep(200);
+            assert.equal(SnapUndo.allEvents.length, len);
         });
 
-        it('should not change replay length on ide refresh', function(done) {
-            SnapActions.addVariable('testVar', true)
-                .then(() => {
-                    var len = SnapUndo.allEvents.length;
-                    var err;
-
-                    driver.ide().refreshIDE();
-                    setTimeout(function() {  // give the project time to load
-                        try {
-                            expect(SnapUndo.allEvents.length).toBe(len);
-                        } catch(e) {
-                            err = e;
-                        } finally {
-                            done(err);
-                        }
-                    }, 200);
-                });
+        it('should not change replay length on ide refresh', async function() {
+            await SnapActions.addVariable('testVar', true);
+            const len = SnapUndo.allEvents.length;
+            driver.ide().refreshIDE();
+            await driver.sleep(200);
+            assert.equal(SnapUndo.allEvents.length, len);
         });
 
         it('should not change replay length on toggle dynamic input labels', function(done) {
@@ -350,49 +359,11 @@ describe('ide', function() {
 
         describe('getURL', () => {
             it('should support relative addresses', () => {
-                let response = driver.ide().getURL('lang-ca.js');
+                let response = driver.ide().getURL('locale/lang-ca.js');
                 expect(response.startsWith('/*')).toBe(true);
             });
         });
 
-    });
-
-    describe('tools', function() {
-        beforeEach(() => driver.reset());
-
-        it('should be able to run the label block', function() {
-            this.timeout(10000);
-            // Import the tools
-            var ide = driver.ide();
-
-            // Click the project menu
-            driver.click(ide.controlBar.projectButton);
-            var dialog = driver.dialog();
-            var importBtn = dialog.children.find(child => child.labelString === 'Import tools');
-
-            driver.click(importBtn);
-            expect(importBtn).toNotBe(undefined);
-
-            return driver.waitUntil(() => driver.dialog())
-                .then(() => {  // run the label block
-                    driver.selectCategory('Custom');
-                    var labelBlock = driver.palette().children[0].children
-                        .find(item => item.blockSpec === 'label %txt of size %n');
-
-                    if (!labelBlock) throw new Error(`Could not find label block!`);
-
-                    driver.click(labelBlock);
-
-                    // Wait for some sort of result
-                    var sprite = driver.ide().sprites.at(1);
-                    var startX = sprite.xPosition();
-                    return driver.waitUntil(
-                        () => driver.dialog() || sprite.xPosition() !== startX
-                    ).then(() => {
-                        if (driver.dialog()) throw new Error('label block failed to execute');
-                    });
-                });
-        });
     });
 
     function getFirstDiffChar (str1, str2) {
