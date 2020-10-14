@@ -4,66 +4,88 @@
 (function() {
     class Autograder {
         constructor(ide) {  // TODO: Use an API wrapper instead?
-            this.name = 'CS1000';
+            this.name = 'Text Analysis';
             this.ide = ide;
             this.currentAssignment = null;
             this.resultsDialog = null;
             this.assignments = [
-                new CustomBlockAssignment(
-                    this.ide,
+                new Assignment(
                     'Assignment 2: Between',
                     'assignment-two/between.xml',
-                    `is %'number' between %'lower' and %'upper'`,
-                    [
-                        new TestCase([2, 1, 3], true),
-                        new TestCase([1, 1, 3], true),
-                        new TestCase([3, 1, 3], true),
-                        new TestCase([-2, -3, -1], true),
-                        new TestCase([-1, -3, -1], true),
-                        new TestCase([-3, -3, -1], true),
-                        new TestCase([0, -1, -3], false),
-                        new TestCase([-4, -1, -3], false),
-                        new TestCase([0, 1, 3], false),
-                        new TestCase([4, 1, 3], false),
-                    ]
+                    new CustomBlockTestSuite(
+                        this.ide,
+                        `is %'number' between %'lower' and %'upper'`,
+                        [
+                            new TestCase([2, 1, 3], true),
+                            new TestCase([1, 1, 3], true),
+                            new TestCase([3, 1, 3], true),
+                            new TestCase([-2, -3, -1], true),
+                            new TestCase([-1, -3, -1], true),
+                            new TestCase([-3, -3, -1], true),
+                            new TestCase([0, -1, -3], false),
+                            new TestCase([-4, -1, -3], false),
+                            new TestCase([0, 1, 3], false),
+                            new TestCase([4, 1, 3], false),
+                        ]
+                    )
                 ),
-                new CustomBlockAssignment(
-                    this.ide,
+                new Assignment(
                     'Assignment 3: Contains',
                     'assignment-three/contains.xml',
-                    `is there a %'letter' in %'word'`,
-                    [
-                        new TestCase(['c', 'cat'], true),
-                        new TestCase(['a', 'cat'], true),
-                        new TestCase(['t', 'cat'], true),
-                        new TestCase(['a', 'dog'], false),
-                        new TestCase(['d', 'snack'], false),
-                        new TestCase(['C', 'snack'], true),
-                    ]
+                    new CustomBlockTestSuite(
+                        this.ide,
+                        `is there a %'letter' in %'word'`,
+                        [
+                            new TestCase(['c', 'cat'], true),
+                            new TestCase(['a', 'cat'], true),
+                            new TestCase(['t', 'cat'], true),
+                            new TestCase(['a', 'dog'], false),
+                            new TestCase(['d', 'snack'], false),
+                            new TestCase(['C', 'snack'], true),
+                        ]
+                    ),
                 ),
-                new CustomBlockAssignment(
-                    this.ide,
+                new Assignment(
                     'Assignment 4: Reverse List',
                     'assignment-four/reverse-list.xml',
-                    `reverse %'original list'`,
-                    [
-                        new TestCase([[]], []),
-                        new TestCase([[1, 2]], [2, 1]),
-                        new TestCase([[2, 1, 3]], [3, 1, 2]),
-                        new TestCase([[2, 1, []]], [[], 1, 2]),
-                    ]
+                    new CustomBlockTestSuite(
+                        this.ide,
+                        `reverse %'original list'`,
+                        [
+                            new TestCase([[]], []),
+                            new TestCase([[1, 2]], [2, 1]),
+                            new TestCase([[2, 1, 3]], [3, 1, 2]),
+                            new TestCase([[2, 1, []]], [[], 1, 2]),
+                        ]
+                    ),
                 ),
-                new CustomBlockAssignment(
-                    this.ide,
+                new Assignment(
                     'Assignment 5: To Lowercase',
                     'assignment-five/to-lower-case.xml',
-                    `to lowercase %'original string'`,
-                    [
-                        new TestCase(['abc'], 'abc'),
-                        new TestCase(['aBc'], 'aBc'),
-                        new TestCase(['123'], '123'),
-                        new TestCase(['HeLlO?'], 'hello?'),
-                    ]
+                    new CustomBlockTestSuite(
+                        this.ide,
+                        `to lowercase %'original string'`,
+                        [
+                            new TestCase(['abc'], 'abc'),
+                            new TestCase(['aBc'], 'aBc'),
+                            new TestCase(['123'], '123'),
+                            new TestCase(['HeLlO?'], 'hello?'),
+                        ]
+                    ),
+                ),
+                new Assignment(
+                    'Assignment 6: LDA Preprocessing',
+                    'assignment-five/to-lower-case.xml',  // FIXME
+                    new CustomBlockTestSuite(
+                        this.ide,
+                        `to lowercase %'original string'`,
+                        [
+                            new TestCase(['abc'], 'abc'),
+                            new TestCase(['aBc'], 'aBc'),
+                            new TestCase(['123'], '123'),
+                            new TestCase(['HeLlO?'], 'hello?'),
+                        ]
+                    ),
                 ),
             ];
         }
@@ -158,7 +180,7 @@
                 // TODO: Create a test result line with either a green tick or a red x
                 //const icon = new SymbolMorph('tick', 12);
                 const {testCase} = result;
-                let message = this.currentAssignment.getTestName(testCase);
+                let message = this.currentAssignment.testSuite.getName(testCase);
                 if (!result.status && result.getFailureReason()) {
                     message += ` (${result.getFailureReason()})`;
                 }
@@ -216,9 +238,10 @@
     }
 
     class Assignment {
-        constructor(name, filepath) {
+        constructor(name, filepath, testSuite) {
             this.name = name;
             this.filepath = filepath;
+            this.testSuite = testSuite;
         }
 
         async fetch() {
@@ -228,16 +251,27 @@
         }
 
         async grade() {
-            throw new Error(`Cannot grade ${this.name}`);
+            if (!this.testSuite) {
+                throw new Error(`Cannot grade ${this.name}`);
+            }
+            return this.testSuite.grade();
         }
     }
 
-    class CustomBlockAssignment extends Assignment {
-        constructor(ide, name, filepath, spec, testCases) {
-            super(name, filepath);
+    class TestSuite {
+        constructor(testCases) {
+            this.testCases = testCases;
+        }
+
+        async grade() {
+        }
+    }
+
+    class CustomBlockTestSuite extends TestSuite {
+        constructor(ide, spec, testCases) {
+            super(testCases);
             this.ide = ide;
             this.blockSpec = spec;
-            this.testCases = testCases;
         }
 
         async grade() {
@@ -284,7 +318,7 @@
             );
         }
 
-        getTestName(testCase) {
+        getName(testCase) {
             const {inputs, output} = testCase;
             const spec = this.blockSpec;
             let index = 0;
