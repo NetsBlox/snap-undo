@@ -3363,8 +3363,8 @@ IDE_Morph.prototype.settingsMenu = function () {
     );
 
     const submenu = new MenuMorph(this);
-    submenu.addItem('CS1000 Autograder', () => {
-        const name = 'CS1000';
+    submenu.addItem('Text Analysis Autograder', () => {
+        const name = 'Text Analysis';
         if (this.extensions.isLoaded(name)) {
             this.showMessage(`Extension "${name}" is already loaded`, 2);
         } else {

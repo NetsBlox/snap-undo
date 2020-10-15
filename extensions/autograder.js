@@ -2,6 +2,8 @@
  ScrollFrameMorph, nop, HandleMorph, List, SpriteMorph, ToggleMorph, BlockMorph*/
 // This is an example extension for autograding in NetsBlox
 (function() {
+    const CS1000 = 'https://raw.githubusercontent.com/CliffordAnderson/CS1000/master';
+    const NetsBlox = 'https://raw.githubusercontent.com/NetsBlox/Snap--Build-Your-Own-Blocks/780-client-extensions';
     class Autograder {
         constructor(ide) {  // TODO: Use an API wrapper instead?
             this.name = 'Text Analysis';
@@ -11,79 +13,185 @@
             this.assignments = [
                 new Assignment(
                     'Assignment 2: Between',
-                    'assignment-two/between.xml',
+                    `${CS1000}/assignment-two/between.xml`,
                     new CustomBlockTestSuite(
                         this.ide,
                         `is %'number' between %'lower' and %'upper'`,
                         [
-                            new TestCase([2, 1, 3], true),
-                            new TestCase([1, 1, 3], true),
-                            new TestCase([3, 1, 3], true),
-                            new TestCase([-2, -3, -1], true),
-                            new TestCase([-1, -3, -1], true),
-                            new TestCase([-3, -3, -1], true),
-                            new TestCase([0, -1, -3], false),
-                            new TestCase([-4, -1, -3], false),
-                            new TestCase([0, 1, 3], false),
-                            new TestCase([4, 1, 3], false),
+                            new ExactOutputTestCase([2, 1, 3], true),
+                            new ExactOutputTestCase([1, 1, 3], true),
+                            new ExactOutputTestCase([3, 1, 3], true),
+                            new ExactOutputTestCase([-2, -3, -1], true),
+                            new ExactOutputTestCase([-1, -3, -1], true),
+                            new ExactOutputTestCase([-3, -3, -1], true),
+                            new ExactOutputTestCase([0, -1, -3], false),
+                            new ExactOutputTestCase([-4, -1, -3], false),
+                            new ExactOutputTestCase([0, 1, 3], false),
+                            new ExactOutputTestCase([4, 1, 3], false),
                         ]
                     )
                 ),
                 new Assignment(
                     'Assignment 3: Contains',
-                    'assignment-three/contains.xml',
+                    `${CS1000}/assignment-three/contains.xml`,
                     new CustomBlockTestSuite(
                         this.ide,
                         `is there a %'letter' in %'word'`,
                         [
-                            new TestCase(['c', 'cat'], true),
-                            new TestCase(['a', 'cat'], true),
-                            new TestCase(['t', 'cat'], true),
-                            new TestCase(['a', 'dog'], false),
-                            new TestCase(['d', 'snack'], false),
-                            new TestCase(['C', 'snack'], true),
+                            new ExactOutputTestCase(['c', 'cat'], true),
+                            new ExactOutputTestCase(['a', 'cat'], true),
+                            new ExactOutputTestCase(['t', 'cat'], true),
+                            new ExactOutputTestCase(['a', 'dog'], false),
+                            new ExactOutputTestCase(['d', 'snack'], false),
+                            new ExactOutputTestCase(['C', 'snack'], true),
                         ]
                     ),
                 ),
                 new Assignment(
                     'Assignment 4: Reverse List',
-                    'assignment-four/reverse-list.xml',
+                    `${CS1000}/assignment-four/reverse-list.xml`,
                     new CustomBlockTestSuite(
                         this.ide,
                         `reverse %'original list'`,
                         [
-                            new TestCase([[]], []),
-                            new TestCase([[1, 2]], [2, 1]),
-                            new TestCase([[2, 1, 3]], [3, 1, 2]),
-                            new TestCase([[2, 1, []]], [[], 1, 2]),
+                            new ExactOutputTestCase([[]], []),
+                            new ExactOutputTestCase([[1, 2]], [2, 1]),
+                            new ExactOutputTestCase([[2, 1, 3]], [3, 1, 2]),
+                            new ExactOutputTestCase([[2, 1, []]], [[], 1, 2]),
                         ]
                     ),
                 ),
                 new Assignment(
                     'Assignment 5: To Lowercase',
-                    'assignment-five/to-lower-case.xml',
+                    `${CS1000}/assignment-five/to-lower-case.xml`,
                     new CustomBlockTestSuite(
                         this.ide,
                         `to lowercase %'original string'`,
                         [
-                            new TestCase(['abc'], 'abc'),
-                            new TestCase(['aBc'], 'aBc'),
-                            new TestCase(['123'], '123'),
-                            new TestCase(['HeLlO?'], 'hello?'),
+                            new ExactOutputTestCase(['abc'], 'abc'),
+                            new ExactOutputTestCase(['aBc'], 'aBc'),
+                            new ExactOutputTestCase(['123'], '123'),
+                            new ExactOutputTestCase(['HeLlO?'], 'hello?'),
                         ]
                     ),
                 ),
                 new Assignment(
                     'Assignment 6: LDA Preprocessing',
-                    'assignment-five/to-lower-case.xml',  // FIXME
+                    `${NetsBlox}/extensions/LDAPreprocessing.xml`,
                     new CustomBlockTestSuite(
                         this.ide,
-                        `to lowercase %'original string'`,
+                        `%'data' in jsLDA format`,
                         [
-                            new TestCase(['abc'], 'abc'),
-                            new TestCase(['aBc'], 'aBc'),
-                            new TestCase(['123'], '123'),
-                            new TestCase(['HeLlO?'], 'hello?'),
+                            new NamedTestCase(
+                                'should create tab-separated list',
+                                [
+                                    [
+                                        ['URL', 'Time', 'Station', 'Show', 'IAShowID', 'IAPreview', 'Snippet'],
+                                        ['someUrl', '', 'station', '', '', '', 'some text'],
+                                    ],
+                                ],
+                                result => result.split('\t').length > 1,
+                            ),
+                            new NamedTestCase(
+                                'should have 3 columns',
+                                [
+                                    [
+                                        ['URL', 'Time', 'Station', 'Show', 'IAShowID', 'IAPreview', 'Snippet'],
+                                        ['someUrl', '', 'station', '', '', '', 'some text'],
+                                    ],
+                                ],
+                                result => {
+                                    const firstLine = result.split('\n').shift();
+                                    const columns = firstLine.split('\t');
+                                    return columns.length === 3;  // TODO: throw error?
+                                }
+                            ),
+                            new NamedTestCase(
+                                'should only include data (skip header!)',
+                                [
+                                    [
+                                        ['URL', 'Time', 'Station', 'Show', 'IAShowID', 'IAPreview', 'Snippet'],
+                                        ['someUrl', '', 'station', '', '', '', 'some text'],
+                                    ],
+                                ],
+                                result => {
+                                    const firstLine = result.split('\n').shift();
+                                    const [url] = firstLine.split('\t');
+                                    return url !== 'URL';
+                                }
+                            ),
+                            new NamedTestCase(
+                                'should report URL in first column',
+                                [
+                                    [
+                                        ['URL', 'Time', 'Station', 'Show', 'IAShowID', 'IAPreview', 'Snippet'],
+                                        ['someUrl', '', 'station', '', '', '', 'some text'],
+                                    ],
+                                ],
+                                result => {
+                                    const firstLine = result.split('\n').shift();
+                                    const [url] = firstLine.split('\t');
+                                    return url === 'someUrl';
+                                }
+                            ),
+                            new NamedTestCase(
+                                'should report station in second column',
+                                [
+                                    [
+                                        ['URL', 'Time', 'Station', 'Show', 'IAShowID', 'IAPreview', 'Snippet'],
+                                        ['someUrl', '', 'station', '', '', '', 'some text'],
+                                    ],
+                                ],
+                                result => {
+                                    const firstLine = result.split('\n').shift();
+                                    const [,station] = firstLine.split('\t');
+                                    return station === 'station';
+                                }
+                            ),
+                            new NamedTestCase(
+                                'should report snippet in third column',
+                                [
+                                    [
+                                        ['URL', 'Time', 'Station', 'Show', 'IAShowID', 'IAPreview', 'Snippet'],
+                                        ['someUrl', '', 'station', '', '', '', 'some text'],
+                                    ],
+                                ],
+                                result => {
+                                    const firstLine = result.split('\n').shift();
+                                    const [,,snippet] = firstLine.split('\t');
+                                    return snippet === 'some text';
+                                }
+                            ),
+                            new NamedTestCase(
+                                'should remove quotes from text',
+                                [
+                                    [
+                                        ['URL', 'Time', 'Station', 'Show', 'IAShowID', 'IAPreview', 'Snippet'],
+                                        ['someUrl', '', 'station', '', '', '', '"some text"'],
+                                    ],
+                                ],
+                                result => {
+                                    const firstLine = result.split('\n').shift();
+                                    const columns = firstLine.split('\t');
+                                    const text = columns.pop();
+                                    return !text.startsWith('"');
+                                }
+                            ),
+                            new NamedTestCase(
+                                'should convert text to lowercase',
+                                [
+                                    [
+                                        ['URL', 'Time', 'Station', 'Show', 'IAShowID', 'IAPreview', 'Snippet'],
+                                        ['someUrl', '', 'station', '', '', '', 'SOME TEXT'],
+                                    ],
+                                ],
+                                result => {
+                                    const firstLine = result.split('\n').shift();
+                                    const columns = firstLine.split('\t');
+                                    const text = columns.pop();
+                                    return text.toLowerCase() === text;
+                                }
+                            ),
                         ]
                     ),
                 ),
@@ -94,6 +202,13 @@
             const dict = {};
             if (this.currentAssignment) {
                 dict[`Grade assignment`] = () => this.grade(this.currentAssignment);
+                if (this.currentAssignment.name.startsWith('Assignment 6')) {
+                    dict[`Run jsLDA...`] = () => window.open(
+                        'https://mimno.infosci.cornell.edu/jsLDA/jslda.html',
+                        '_blank'
+                    );
+                }
+
                 dict['~'] = '~';
                 const submenu = {};
                 this.assignments.forEach(assignment => {
@@ -180,10 +295,8 @@
                 // TODO: Create a test result line with either a green tick or a red x
                 //const icon = new SymbolMorph('tick', 12);
                 const {testCase} = result;
-                let message = this.currentAssignment.testSuite.getName(testCase);
-                if (!result.status && result.getFailureReason()) {
-                    message += ` (${result.getFailureReason()})`;
-                }
+                let message = this.currentAssignment.testSuite.getName(testCase, result);
+                // TODO: Add details on click?
                 const icon = new ToggleMorph(
                     'checkbox',
                     null,
@@ -238,15 +351,14 @@
     }
 
     class Assignment {
-        constructor(name, filepath, testSuite) {
+        constructor(name, url, testSuite) {
             this.name = name;
-            this.filepath = filepath;
+            this.url = url;
             this.testSuite = testSuite;
         }
 
         async fetch() {
-            const url = `https://raw.githubusercontent.com/CliffordAnderson/CS1000/master/${this.filepath}`;
-            const response = await fetch(url);
+            const response = await fetch(this.url);
             return await response.text();
         }
 
@@ -318,7 +430,11 @@
             );
         }
 
-        getName(testCase) {
+        getName(testCase, result) {
+            if (testCase.name) {
+                return testCase.name;
+            }
+            // FIXME: shouldn't this be handled by the test case?
             const {inputs, output} = testCase;
             const spec = this.blockSpec;
             let index = 0;
@@ -331,20 +447,25 @@
                     return spec;
                 })
                 .join(' ');
-            return `"${testCaseName}" should report ${JSON.stringify(output)}`;
+            let displayText = `"${testCaseName}" should report ${JSON.stringify(output)}`;
+            if (!result.status && result.getFailureReason()) {
+                displayText += ` (${result.getFailureReason()})`;
+            }
+            return displayText;
         }
+
     }
 
     class TestCase {
-        constructor(inputs, output) {
+        constructor(inputs, testFn) {
             this.inputs = inputs;
-            this.output = output;
+            this.test = testFn;
         }
 
         async run(fn) {
             try {
                 const result = await fn(...this.inputs.map(toSnap));
-                if (snapEquals(result, toSnap(this.output))) {
+                if (await this.test(result)) {
                     return new TestResult(this, true);
                 } else {
                     return new FailingTest(this, result, this.output);
@@ -352,6 +473,19 @@
             } catch (err) {
                 return new ErroredTest(this, err);
             }
+        }
+    }
+
+    class ExactOutputTestCase extends TestCase {
+        constructor(inputs, output) {
+            super(inputs, actual => snapEquals(actual, toSnap(output)));
+        }
+    }
+
+    class NamedTestCase extends TestCase {
+        constructor(name, inputs, testFn) {
+            super(inputs, testFn);
+            this.name = name;
         }
     }
 
