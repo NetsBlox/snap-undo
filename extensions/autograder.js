@@ -435,7 +435,7 @@
                 return testCase.name;
             }
             // FIXME: shouldn't this be handled by the test case?
-            const {inputs, output} = testCase;
+            const {inputs} = testCase;
             const spec = this.blockSpec;
             let index = 0;
             const testCaseName = BlockMorph.prototype.parseSpec(spec)
@@ -447,7 +447,7 @@
                     return spec;
                 })
                 .join(' ');
-            let displayText = `"${testCaseName}" should report ${JSON.stringify(output)}`;
+            let displayText = `"${testCaseName}" ${testCase.description}`;
             if (!result.status && result.getFailureReason()) {
                 displayText += ` (${result.getFailureReason()})`;
             }
@@ -460,6 +460,7 @@
         constructor(inputs, testFn) {
             this.inputs = inputs;
             this.test = testFn;
+            this.description = null;
         }
 
         async run(fn) {
@@ -479,6 +480,7 @@
     class ExactOutputTestCase extends TestCase {
         constructor(inputs, output) {
             super(inputs, actual => snapEquals(actual, toSnap(output)));
+            this.description = `should report ${JSON.stringify(output)}`;
         }
     }
 
