@@ -3837,6 +3837,19 @@ IDE_Morph.prototype.settingsMenu = function () {
         'check to enable\ndropping commands in all rings',
         true
     );
+
+    // FIXME: remove the following tomorrow (only to not confuse current students)
+    menu.addItem('Load Autograder...', () => {
+        const name = 'Text Analysis';
+        if (this.extensions.isLoaded(name)) {
+            this.showMessage(`Extension "${name}" is already loaded`, 2);
+        } else {
+            const node = document.createElement('script');
+            node.setAttribute('src', 'extensions/autograder.js');
+            node.setAttribute('type', 'text/javascript');
+            document.body.appendChild(node);
+        }
+    });
     return menu;
 };
 
