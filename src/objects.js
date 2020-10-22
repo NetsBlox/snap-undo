@@ -1425,6 +1425,7 @@ SpriteMorph.prototype.initBlocks = function () {
             defaults: [['motion'], ['myself']]
         },
     };
+    // TODO: add blocks for extensions?
 };
 
 SpriteMorph.prototype.initBlocks();

@@ -7,8 +7,10 @@ class ExtensionRegistry {
     register(extension) {
         this.registry.push(new extension(this.ide));
         // TODO: Request permissions? Wrap the IDE?
-        // TODO: Add an entry to the menu
+        // TODO: Add an about section? What if there is no menu?
         this.ide.controlBar.extensionsButton.show();
+
+        // TODO: register new blocks?
     }
 
     isLoaded(name) {
