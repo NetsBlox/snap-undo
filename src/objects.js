@@ -12162,19 +12162,6 @@ WatcherMorph.prototype.userMenu = function () {
                     );
                 }
             );
-            if (this.currentValue.canBeJSON()) {
-                menu.addItem(
-                    'blockify',
-                    () => {
-                        var world = ide.world();
-                        this.currentValue.blockify().pickUp(world);
-                        world.hand.grabOrigin = {
-                            origin: ide.palette,
-                            position: ide.palette.center()
-                        };
-                    }
-                );
-            }
         } else if (this.currentValue instanceof List &&
                 this.currentValue.canBeJSON()) {
             menu.addItem(
@@ -12221,6 +12208,21 @@ WatcherMorph.prototype.userMenu = function () {
                 vNames.forEach(vName => monitor(vName));
             }
         }
+
+        if (this.currentValue.blockify) {
+            menu.addItem(
+                'blockify',
+                () => {
+                    var world = ide.world();
+                    this.currentValue.blockify().pickUp(world);
+                    world.hand.grabOrigin = {
+                        origin: ide.palette,
+                        position: ide.palette.center()
+                    };
+                }
+            );
+        }
+
         menu.addItem(
             'hide...',
             function () {
