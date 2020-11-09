@@ -6114,7 +6114,7 @@ SpriteMorph.prototype.findVariableWatcher = function (varName) {
     );
 };
 
-SpriteMorph.prototype.toggleVariableWatcher = function (varName, isGlobal) {
+SpriteMorph.prototype.toggleVariableWatcher = function (varName, isGlobal, silent) {
     var stage = this.parentThatIsA(StageMorph),
         ide = this.parentThatIsA(IDE_Morph),
         globals = this.globalVariables(),
@@ -6128,11 +6128,13 @@ SpriteMorph.prototype.toggleVariableWatcher = function (varName, isGlobal) {
         isGlobal = contains(globals.names(), varName);
     }
     watcher = this.findVariableWatcher(varName);
-    SnapActions.toggleVariableWatcher(
-        varName,
-        isGlobal,
-        watcher && watcher.isVisible
-    );
+    if (!silent) {
+        SnapActions.toggleVariableWatcher(
+            varName,
+            isGlobal,
+            watcher && watcher.isVisible
+        );
+    }
     if (watcher !== null) {
         if (watcher.isVisible) {
             watcher.hide();
