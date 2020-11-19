@@ -1,4 +1,42 @@
 /*globals SpriteMorph*/
+function Extension (name) {
+    this.name = name;
+}
+
+Extension.prototype.getMenu = function() {
+    return null;
+};
+
+Extension.prototype.getCategories = function() {
+    return [];
+};
+
+Extension.prototype.getBlocks = function() {
+    return [];
+};
+
+class CustomBlock {
+    constructor(name, type, category, spec, defaults=[], impl) {
+        this.name = name;
+        this.type = type;
+        this.category = category;
+        this.spec = spec;
+        this.defaults = defaults;
+        this.impl = impl;
+    }
+}
+
+class Category {
+    constructor(name, color=new Color(120, 120, 120), blocks=[]) {
+        this.name = name;
+        this.color = color;
+        this.blocks = blocks;
+    }
+}
+
+Extension.Block = CustomBlock;
+Extension.Category = Category;
+
 class ExtensionRegistry {
     constructor(ide) {
         this.ide = ide;
@@ -7,6 +45,10 @@ class ExtensionRegistry {
 
     register(Extension) {
         const extension = new Extension(this.ide);
+        if (this.isLoaded(extension.name)) {
+            return;
+        }
+
         try {
             this.validate(extension);
         } catch (err) {
