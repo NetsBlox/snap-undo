@@ -3362,19 +3362,10 @@ IDE_Morph.prototype.settingsMenu = function () {
         'microphoneMenu'
     );
 
-    const submenu = new MenuMorph(this);
-    submenu.addItem('Text Analysis Autograder', () => {
-        const name = 'Text Analysis';
-        if (this.extensions.isLoaded(name)) {
-            this.showMessage(`Extension "${name}" is already loaded`, 2);
-        } else {
-            const node = document.createElement('script');
-            node.setAttribute('src', 'extensions/autograder.js');
-            node.setAttribute('type', 'text/javascript');
-            document.body.appendChild(node);
-        }
-    });
+    /*
+    TODO: Discover extensions...
     menu.addMenu('Load Extension...', submenu);
+    */
 
     menu.addLine();
     /*
@@ -3838,19 +3829,18 @@ IDE_Morph.prototype.settingsMenu = function () {
         true
     );
 
-    // FIXME: remove the following tomorrow (only to not confuse current students)
-    menu.addItem('Load Autograder...', () => {
-        const name = 'Text Analysis';
-        if (this.extensions.isLoaded(name)) {
-            this.showMessage(`Extension "${name}" is already loaded`, 2);
-        } else {
-            const node = document.createElement('script');
-            node.setAttribute('src', 'extensions/autograder.js');
-            node.setAttribute('type', 'text/javascript');
-            document.body.appendChild(node);
-        }
-    });
     return menu;
+};
+
+IDE_Morph.prototype.loadExtension = function (name, url) {
+    if (this.extensions.isLoaded(name)) {
+        this.showMessage(`Extension "${name}" is already loaded`, 2);
+    } else {
+        const node = document.createElement('script');
+        node.setAttribute('src', url);
+        node.setAttribute('type', 'text/javascript');
+        document.body.appendChild(node);
+    }
 };
 
 IDE_Morph.prototype.projectMenu = function () {
