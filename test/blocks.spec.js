@@ -592,7 +592,7 @@ describe('blocks', function() {
             expect(middleBlock.nextBlock()).toBe(bottomBlock, msg);
         });
 
-        it.only('should disconnect when moving cBlock to wrap', async () => {
+        it('should disconnect when moving cBlock to wrap', async () => {
             const {ScriptsMorph,copy} = driver.globals();
             const point = new Point(300, 300);
             const topBlock = await driver.addBlock('forward', point);
