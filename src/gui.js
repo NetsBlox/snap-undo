@@ -3836,11 +3836,27 @@ IDE_Morph.prototype.settingsMenu = function () {
     return menu;
 };
 
-IDE_Morph.prototype.loadExtension = function (url) {
-    const node = document.createElement('script');
-    node.setAttribute('src', url);
-    node.setAttribute('type', 'text/javascript');
-    document.body.appendChild(node);
+IDE_Morph.prototype.loadExtension = async function (url) {
+    if (await this.isTrustedExtension(url)) {
+        const node = document.createElement('script');
+        node.setAttribute('src', url);
+        node.setAttribute('type', 'text/javascript');
+        document.body.appendChild(node);
+    }
+};
+
+IDE_Morph.prototype.isTrustedExtension = async function (url) {
+    const isAutoTrusted = url.startsWith('/') || url.startsWith(window.location.origin);
+    if (isAutoTrusted) {
+        return true;
+    }
+
+    const title = 'Install Third-Party Extension?';
+    const message = 'An untrusted third-party extension was encountered and\nrequires approval to load:\n\n' +
+        url + '\n\nIf the above URL is not recognized or trusted, installation is not \nrecommended as ' +
+        'third-party extensions could be malicious.' +
+        '\n\nWould you like to install this extension?';
+    return await this.confirm(message, title);
 };
 
 IDE_Morph.prototype.projectMenu = function () {
