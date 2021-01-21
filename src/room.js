@@ -774,7 +774,11 @@ RoomMorph.prototype.promptInvite = function (id, role, roomName, inviter) {
         'Would you like to move to "' + roomName + '"?' :
         inviter + ' has invited you to join\nhim/her at "' + roomName + '"';
 
-    dialog.cancel = () => this.respondToInvitation(id, role, false);
+    const superCancel = dialog.cancel;
+    dialog.cancel = () => {
+        this.respondToInvitation(id, role, false);
+        superCancel.call(dialog);
+    };
     dialog.askYesNo(
         'Room Invitation',
         localize(msg),
