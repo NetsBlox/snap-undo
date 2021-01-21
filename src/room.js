@@ -769,7 +769,7 @@ RoomMorph.prototype.promptInvite = function (id, role, roomName, inviter) {
     const dialog = new DialogBoxMorph(
         null,
         () => this.respondToInvitation(id, role, true)
-    );
+    ).withKey(id);
     const msg = inviter === SnapCloud.username ?
         'Would you like to move to "' + roomName + '"?' :
         inviter + ' has invited you to join\nhim/her at "' + roomName + '"';
