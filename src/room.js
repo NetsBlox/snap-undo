@@ -788,6 +788,8 @@ RoomMorph.prototype.respondToInvitation = function (id, role, accepted) {
         accepted,
         async project => {
             // Load the project or make the project empty
+            if (!accepted) return;
+
             this.ide.source = 'cloud';
             if (project.Public === 'true') {
                 location.hash = '#present:Username=' +
