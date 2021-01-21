@@ -38,15 +38,18 @@ SnapDriver.prototype.dialog = function() {
 };
 
 // Controlling the IDE
-SnapDriver.prototype.reset = function() {
-    var world = this.world();
-
+SnapDriver.prototype.reset = async function() {
     // Close all open dialogs
-    var dialogs = world.children.slice(1);
+    const oldVersion = this.ide().room.version;
+    const dialogs = this.world().children.slice(1);
     dialogs.forEach(dialog => dialog.destroy());
 
     this.ide().exitReplayMode();
-    return this.ide().newProject();
+    await this.ide().newProject();
+    await this.expect(
+        () => this.ide().room.version !== oldVersion,
+        'No room state received'
+    );
 };
 
 SnapDriver.prototype.setProjectName = function(name) {
@@ -336,19 +339,33 @@ SnapDriver.prototype.logout = async function() {
     }
 };
 
+SnapDriver.prototype.invite = async function(username, roleName) {
+    const {room} = this.ide();
+    const roles = room.getRoles();
+    if (!roleName) {
+        roleName = roles[0].name;
+    }
+    const role = roles.find(role => role.name === roleName);
+    if (!role) {
+        throw new Error(`Role not found: ${roleName}`);
+    }
+    room.inviteGuest(username, role.id);
+};
+
 SnapDriver.prototype.inviteCollaborator = async function(username) {
     const controlBar = this.ide().controlBar;
     this.click(controlBar.cloudButton);
 
-    const dropdown = await this.expect(
-        () => !this.dialog().title && this.dialog(),
+    await this.expect(
+        () => this.dialog() && !this.dialog().title,
         new Error('Cloud menu never appeared'),
     );
+    const dropdown = this.dialog();
     const collabs = dropdown.children.find(item => item.action === 'manageCollaborators');
     this.click(collabs);
 
     await this.expect(
-        () => !this.dialog().title,
+        () => this.dialog() && !this.dialog().title,
         `Collaborator dialog did not appear`
     );
 
@@ -356,6 +373,7 @@ SnapDriver.prototype.inviteCollaborator = async function(username) {
     const otherUserItem = dialog.listField.elements
         .find(element => element.username === username);
 
+    if (!otherUserItem) throw new Error(`Could not find user: ${username}`);
     dialog.listField.select(otherUserItem);
 
     // click the invite button
