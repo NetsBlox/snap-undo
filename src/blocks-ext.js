@@ -409,7 +409,7 @@ RPCInputSlotMorph.prototype.methodSignature = function () {
         }
 
         rpcNames.forEach(name => {
-            const {deprecated, categories} = this.fieldsFor[name];
+            const {deprecated, categories=[]} = this.fieldsFor[name];
             if (!deprecated) {
                 if (categories.length) {
                     categories.forEach(categoryList => addRPCMenuItem(name, categoryList));
