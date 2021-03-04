@@ -1,7 +1,7 @@
 /*globals driver, assert */
 describe('widgets', function() {
     describe('DialogBoxMorph', function() {
-        it.only('should consider title width on fixLayout', function() {
+        it('should consider title width on fixLayout', function() {
             const {DialogBoxMorph, world} = driver.globals();
             new DialogBoxMorph().inform(
                 'Some longer title text',
