@@ -3167,6 +3167,7 @@ Morph.prototype.destroy = function () {
         this.fullChanged();
         this.parent.removeChild(this);
     }
+    this.isVisible = false;
 };
 
 // Morph stepping:
