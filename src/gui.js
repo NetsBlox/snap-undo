@@ -5469,7 +5469,7 @@ IDE_Morph.prototype.rawOpenScriptString = function (str) {
 
 IDE_Morph.prototype.openDataString = async function (str, name, type) {
     const msg = this.showMessage(localize('Opening data...'));
-    await sleep();
+    await utils.sleep();
     await this.rawOpenDataString(str, name, type);
     msg.destroy();
 };
