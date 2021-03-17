@@ -451,7 +451,7 @@ describe('ide', function() {
             });
 
             it('should set variable and open example', async () => {
-                const querystring = '?action=example&ProjectName=Battleship&editMode&' +
+                const querystring = '?action=example&ProjectName=Movies&editMode&noRun&' +
                     'setVariable=' + encodeURIComponent('testVariable=testValue');
                 await reloadIframe(frame, window.origin + querystring);
                 await driver.expect(
