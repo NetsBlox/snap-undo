@@ -531,7 +531,7 @@ IDE_Morph.prototype.interpretUrlAnchors = async function (loc) {
             msg.destroy();
             applyFlags(dict);
         } catch (err) {
-            this.cloudError()(err);
+            this.cloudError()(err.message);
         }
     } else if (loc.hash.substr(0, 7) === '#cloud:') {
         this.shield = new Morph();
@@ -554,7 +554,7 @@ IDE_Morph.prototype.interpretUrlAnchors = async function (loc) {
             msg.destroy();
             this.toggleAppMode(false);
         } catch (err) {
-            this.cloudError()(err);
+            this.cloudError()(err.message);
         }
     } else if (loc.hash.substr(0, 4) === '#dl:') {
         myself.showMessage('Fetching project\nfrom the cloud...');
@@ -567,7 +567,7 @@ IDE_Morph.prototype.interpretUrlAnchors = async function (loc) {
             const projectData = await SnapCloud.getPublicProject(SnapCloud.encodeDict(dict));
             window.open('data:text/xml,' + projectData);
         } catch (err) {
-            this.cloudError()(err);
+            this.cloudError()(err.message);
         }
     } else if (loc.hash.substr(0, 6) === '#lang:') {
         urlLanguage = loc.hash.substr(6);
@@ -611,7 +611,7 @@ IDE_Morph.prototype.interpretUrlAnchors = async function (loc) {
             await myself.rawLoadCloudProject(xml);
             applyFlags(dict);
         } catch (err) {
-            this.cloudError()(err);
+            this.cloudError()(err.message);
         }
         msg.destroy();
 
@@ -3198,7 +3198,7 @@ IDE_Morph.prototype.cloudMenu = function () {
             'open shared project from cloud...',
             () => {
                 this.prompt('Author name…', usr => {
-                    this.prompt('Project name...', prj => {
+                    this.prompt('Project name...', async prj => {
                         var id = 'Username=' +
                             encodeURIComponent(usr.toLowerCase()) +
                             '&ProjectName=' +
@@ -3206,32 +3206,19 @@ IDE_Morph.prototype.cloudMenu = function () {
                         this.showMessage(
                             'Fetching project\nfrom the cloud...'
                         );
-                        SnapCloud.getPublicProject(
-                            id,
-                            projectData => {
-                                var msg;
-                                if (!Process.prototype.isCatchingErrors) {
-                                    window.open(
-                                        'data:text/xml,' + projectData
-                                    );
-                                }
-                                this.nextSteps([
-                                    () => {
-                                        msg = this.showMessage(
-                                            'Opening project...'
-                                        );
-                                    },
-                                    function () {nop(); }, // yield (Chrome)
-                                    function () {
-                                        SnapActions.openProject(projectData)
-                                            .then(function() {
-                                                msg.destroy();
-                                            });
-                                    }
-                                ]);
-                            },
-                            this.cloudError()
-                        );
+                        try {
+                            const projectData = await SnapCloud.getPublicProject(id);
+                            if (!Process.prototype.isCatchingErrors) {
+                                window.open(
+                                    'data:text/xml,' + projectData
+                                );
+                            }
+                            const msg = this.showMessage('Opening project...');
+                            await SnapActions.openProject(projectData);
+                            msg.destroy();
+                        } catch (err) {
+                            this.cloudError()(err.message);
+                        }
 
                     }, null, 'project');
                 }, null, 'project');
