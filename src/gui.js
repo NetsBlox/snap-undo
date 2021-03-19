@@ -557,7 +557,7 @@ IDE_Morph.prototype.interpretUrlAnchors = async function (loc) {
             this.cloudError()(err.message);
         }
     } else if (loc.hash.substr(0, 4) === '#dl:') {
-        myself.showMessage('Fetching project\nfrom the cloud...');
+        let m = myself.showMessage('Fetching project\nfrom the cloud...');
 
         // make sure to lowercase the username
         dict = SnapCloud.parseDict(loc.hash.substr(4));
@@ -585,6 +585,7 @@ IDE_Morph.prototype.interpretUrlAnchors = async function (loc) {
             // Cleanup
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
+            m.destroy();
         } catch (err) {
             this.cloudError()(err.message);
         }
