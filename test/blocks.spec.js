@@ -18,7 +18,7 @@ describe('blocks', function() {
             .then(() => driver.selectCategory('control'));
     });
 
-    describe.only('import scripts', function() {
+    describe('import scripts', function() {
         const SCRIPT_XML = '<script><block s="forward"><l>10</l></block><block s="turn"><l>15</l></block><block s="setHeading"><l>90</l></block></script>';
         afterEach(function() {
             const {world} = driver.globals();
