@@ -2346,11 +2346,11 @@ IDE_Morph.prototype.droppedText = async function (aString, name, fileType) {
             if (handIsFull) {
                 this.showMessage(localize('Cannot import scripts while dragging another object.'));
             } else {
-                const paletteContents = this.palette.contents;
-                script.setPosition(paletteContents.center());
-                paletteContents.add(script);
+                script.setPosition(this.palette.center());
+                this.palette.add(script);
                 delete script.id;
                 script.pickUp(this.world());
+                this.showMessage(localize('Imported script.'), 2);
             }
         }
         return;
@@ -5439,13 +5439,6 @@ IDE_Morph.prototype.rawOpenScriptString = function (str) {
         script = this.serializer.loadScript(xml, this.currentSprite);
     }
     return script;
-    script.setPosition(this.world().hand.position());
-    scripts.add(script);
-    scripts.adjustBounds();
-    this.showMessage(
-        'Imported Script.',
-        2
-    );
 };
 
 IDE_Morph.prototype.openDataString = async function (str, name, type) {
